@@ -373,7 +373,29 @@
       "Helmet_106": 27,
       "Helmet_107": 28,
       "Helmet_108": 29,
-      "Helmet_109": 30
+      "Helmet_109": 30,
+      "Helmet_9": 34,
+      "Armour_9": 35,
+      "Weapon_9": 50,
+      "Helmet_10": 36,
+      "Armour_10": 37,
+      "Weapon_10": 51,
+      "Helmet_11": 38,
+      "Armour_11": 39,
+      "Weapon_11": 52,
+      "Helmet_12": 40,
+      "Armour_12": 41,
+      "Weapon_12": 53,
+      "Helmet_13": 42,
+      "Armour_13": 43,
+      "Weapon_13": 54,
+      "Helmet_14": 44,
+      "Armour_14": 45,
+      "Weapon_14": 55,
+      "Helmet_110": 47,
+      "Helmet_111": 49,
+      "Helmet_112": 46,
+      "Helmet_113": 48
     }
   },
   "skinSets": {
@@ -385,6 +407,12 @@
     "DruidSet": "SteppingStoneCharIcon3.png",
     "BunnySet": "SteppingStoneCharIcon7.png",
     "ClownSet": "SteppingStoneCharIcon8.png",
-    "MillionaireSet": "SteppingStoneCharIcon6.png"
+    "MillionaireSet": "SteppingStoneCharIcon6.png",
+    "FishbowlSet": "SteppingStoneCharIcon9.png",
+    "EagleSet": "SteppingStoneCharIcon10.png",
+    "SkaterSet": "SteppingStoneCharIcon11.png",
+    "CatSet": "SteppingStoneCharIcon12.png",
+    "SharkSet": "SteppingStoneCharIcon13.png",
+    "MushroomSet": "SteppingStoneCharIcon14.png"
   }
 }
