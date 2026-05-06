@@ -64,6 +64,8 @@ export function MountPanel() {
         const combined: any[] = [];
         let baseDamageMulti = 0;
         let baseHealthMulti = 0;
+        let ascensionDmgMulti = 0;
+        let ascensionHpMulti = 0;
 
         // 1. Inherent Stats from Library
         if (mountUpgradeLibrary) {
@@ -74,8 +76,6 @@ export function MountPanel() {
                 const levelInfo = upgradeData.LevelInfo.find((l: any) => l.Level === targetLevel) || upgradeData.LevelInfo[0];
 
                 // Calculate Ascension Multiplier
-                let ascensionDmgMulti = 0;
-                let ascensionHpMulti = 0;
                 const mountAscensionLevel = profile.misc.mountAscensionLevel || 0;
                 if (mountAscensionLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
                     const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;

@@ -18,6 +18,21 @@ export default function Gallery() {
     const [showOnlyChanges, setShowOnlyChanges] = useState(false);
     const [md5Manifest, setMd5Manifest] = useState<Record<string, Record<string, string>>>({});
 
+    // Subtraction states
+    const [isDiffing, setIsDiffing] = useState(false);
+    const [diffImageUrl, setDiffImageUrl] = useState<string | null>(null);
+    const [showDiff, setShowDiff] = useState(false);
+    const [diffColor, setDiffColor] = useState('#ff00ff'); // Default Magenta
+
+    const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : { r: 255, g: 0, b: 255 };
+    };
+
     useEffect(() => {
         async function fetchManifests() {
             setLoading(true);
@@ -92,6 +107,78 @@ export default function Gallery() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const computeImageDiff = async (imgName: string, v1: string, v2: string, color: string) => {
+        setIsDiffing(true);
+        // Don't reset showDiff here to allow seamless color change
+
+        const url1 = `${import.meta.env.BASE_URL}Texture2D/${v1}/${imgName}`;
+        const url2 = `${import.meta.env.BASE_URL}Texture2D/${v2}/${imgName}`;
+
+        try {
+            const loadImage = (url: string): Promise<HTMLImageElement> => {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+                    img.src = url;
+                });
+            };
+
+            const [img1, img2] = await Promise.all([loadImage(url1), loadImage(url2)]);
+
+            const canvas = document.createElement('canvas');
+            const width = Math.max(img1.width, img2.width);
+            const height = Math.max(img1.height, img2.height);
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            // Draw first image
+            ctx.drawImage(img1, 0, 0);
+            const data1 = ctx.getImageData(0, 0, width, height);
+
+            // Draw second image on a temporary canvas to get its data
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tempCtx = tempCanvas.getContext('2d');
+            if (!tempCtx) return;
+            tempCtx.drawImage(img2, 0, 0);
+            const data2 = tempCtx.getImageData(0, 0, width, height);
+
+            // Create result data (transparent mask with highlight color)
+            const resultData = ctx.createImageData(width, height);
+            const { r, g, b } = hexToRgb(color);
+
+            for (let i = 0; i < data1.data.length; i += 4) {
+                const rDiff = Math.abs(data1.data[i] - data2.data[i]);
+                const gDiff = Math.abs(data1.data[i + 1] - data2.data[i + 1]);
+                const bDiff = Math.abs(data1.data[i + 2] - data2.data[i + 2]);
+                const aDiff = Math.abs(data1.data[i + 3] - data2.data[i + 3]);
+
+                if (rDiff > 0 || gDiff > 0 || bDiff > 0 || aDiff > 0) {
+                    resultData.data[i] = r;
+                    resultData.data[i + 1] = g;
+                    resultData.data[i + 2] = b;
+                    resultData.data[i + 3] = 255;
+                } else {
+                    resultData.data[i + 3] = 0; // Fully transparent where no diff
+                }
+            }
+
+            ctx.putImageData(resultData, 0, 0);
+            setDiffImageUrl(canvas.toDataURL());
+            setShowDiff(true);
+        } catch (error) {
+            console.error("Error computing image diff:", error);
+        } finally {
+            setIsDiffing(false);
+        }
     };
 
     if (loading || !activeVersion) {
@@ -218,10 +305,10 @@ export default function Gallery() {
                             {/* Hover Overlay */}
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                                 <div className="flex gap-2">
-                                    <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={(e) => { e.stopPropagation(); setSelectedImage(texture); }}>
+                                    <Button size="sm" variant="secondary" className="h-8 w-8 rounded-full p-0" onClick={(e) => { e.stopPropagation(); setSelectedImage(texture); }}>
                                         <Maximize2 size={14} />
                                     </Button>
-                                    <Button size="icon" variant="primary" className="h-8 w-8 rounded-full" onClick={(e) => { e.stopPropagation(); handleDownload(texture, previewVersion); }}>
+                                    <Button size="sm" variant="primary" className="h-8 w-8 rounded-full p-0" onClick={(e) => { e.stopPropagation(); handleDownload(texture, previewVersion); }}>
                                         <Download size={14} />
                                     </Button>
                                 </div>
@@ -236,10 +323,10 @@ export default function Gallery() {
 
             {/* Modal for detail view / comparison */}
             {selectedImage && (
-                <div style={{ margin: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/90 animate-fade-in backdrop-blur-sm" onClick={() => setSelectedImage(null)}>
+                <div style={{ margin: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/90 animate-fade-in backdrop-blur-sm" onClick={() => { setSelectedImage(null); setShowDiff(false); setDiffImageUrl(null); }}>
                     <button
                         className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors p-2 z-[60]"
-                        onClick={() => setSelectedImage(null)}
+                        onClick={() => { setSelectedImage(null); setShowDiff(false); setDiffImageUrl(null); }}
                     >
                         <X size={32} />
                     </button>
@@ -253,20 +340,62 @@ export default function Gallery() {
                                     {compareVersion && <span className="text-xs font-bold text-accent-primary uppercase">vs {compareVersion}</span>}
                                 </div>
                             </div>
-                            {md5Manifest[activeVersion]?.[selectedImage] && (
-                                <Button
-                                    variant="primary"
-                                    className="font-black uppercase tracking-widest gap-2"
-                                    onClick={() => handleDownload(selectedImage, activeVersion)}
-                                >
-                                    <Download size={18} />
-                                    Download Primary
-                                </Button>
-                            )}
+                            <div className="flex items-center gap-4">
+                                {compareVersion && md5Manifest[activeVersion]?.[selectedImage] && md5Manifest[compareVersion]?.[selectedImage] && (
+                                    <div className="flex items-center gap-2 bg-bg-secondary/40 p-1 rounded-lg border border-white/5">
+                                        <div className="flex gap-1 px-2 border-r border-white/10 mr-1">
+                                            {['#ff00ff', '#00ffff', '#39ff14', '#ff3131', '#faff00'].map(c => (
+                                                <button
+                                                    key={c}
+                                                    className={cn(
+                                                        "w-4 h-4 rounded-full border border-white/20 transition-transform hover:scale-125",
+                                                        diffColor === c && "ring-2 ring-white ring-offset-2 ring-offset-black scale-110"
+                                                    )}
+                                                    style={{ backgroundColor: c }}
+                                                    onClick={() => {
+                                                        setDiffColor(c);
+                                                        computeImageDiff(selectedImage, activeVersion, compareVersion, c);
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            className={cn(
+                                                "h-8 font-black uppercase tracking-widest gap-2 text-[10px]",
+                                                showDiff ? "bg-accent-primary text-black hover:bg-accent-primary/80" : "text-text-muted hover:text-white"
+                                            )}
+                                            onClick={() => {
+                                                if (showDiff) setShowDiff(false);
+                                                else if (diffImageUrl) setShowDiff(true);
+                                                else computeImageDiff(selectedImage, activeVersion, compareVersion, diffColor);
+                                            }}
+                                            disabled={isDiffing}
+                                        >
+                                            {isDiffing ? (
+                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                                            ) : (
+                                                <Layers size={14} />
+                                            )}
+                                            {showDiff ? "Diff On" : "Diff Off"}
+                                        </Button>
+                                    </div>
+                                )}
+                                {md5Manifest[activeVersion]?.[selectedImage] && (
+                                    <Button
+                                        variant="primary"
+                                        className="font-black uppercase tracking-widest gap-2"
+                                        onClick={() => handleDownload(selectedImage, activeVersion)}
+                                    >
+                                        <Download size={18} />
+                                        Download
+                                    </Button>
+                                )}
+                            </div>
                         </div>
 
                         <div className={cn(
-                            "grid gap-6",
+                            "grid gap-6 transition-all duration-300",
                             compareVersion ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
                         )}>
                             <Card className={cn(
@@ -276,13 +405,22 @@ export default function Gallery() {
                                 <div className="text-[10px] font-black text-text-muted uppercase tracking-widest bg-bg-input px-2 py-1 rounded">
                                     Version: {activeVersion}
                                 </div>
-                                <div className="flex-1 w-full aspect-square flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-auto p-4 border border-border/20">
+                                <div className="flex-1 w-full aspect-square flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative">
                                     {md5Manifest[activeVersion]?.[selectedImage] ? (
-                                        <img
-                                            src={`${import.meta.env.BASE_URL}Texture2D/${activeVersion}/${selectedImage}`}
-                                            className=" pixelated"
-                                            alt={selectedImage}
-                                        />
+                                        <div className="relative flex items-center justify-center max-w-full max-h-full">
+                                            <img
+                                                src={`${import.meta.env.BASE_URL}Texture2D/${activeVersion}/${selectedImage}`}
+                                                className="pixelated max-w-full max-h-full"
+                                                alt={selectedImage}
+                                            />
+                                            {showDiff && diffImageUrl && (
+                                                <img
+                                                    src={diffImageUrl}
+                                                    className="pixelated absolute top-0 left-0 w-full h-full opacity-80 pointer-events-none"
+                                                    alt="diff overlay"
+                                                />
+                                            )}
+                                        </div>
                                     ) : (
                                         <span className="text-text-muted text-sm font-bold uppercase tracking-widest">Not in this version</span>
                                     )}
@@ -302,16 +440,25 @@ export default function Gallery() {
                                     <div className="text-[10px] font-black text-accent-primary uppercase tracking-widest bg-accent-primary/10 px-2 py-1 rounded">
                                         Comparison: {compareVersion}
                                     </div>
-                                    <div className="flex-1 w-full aspect-square flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-auto p-4 border border-border/20">
+                                    <div className="flex-1 w-full aspect-square flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative">
                                         {md5Manifest[compareVersion]?.[selectedImage] ? (
-                                            <img
-                                                src={`${import.meta.env.BASE_URL}Texture2D/${compareVersion}/${selectedImage}`}
-                                                className="pixelated"
-                                                alt={`${selectedImage} comp`}
-                                                onError={(e) => {
-                                                    (e.target as HTMLImageElement).style.display = 'none';
-                                                }}
-                                            />
+                                            <div className="relative flex items-center justify-center max-w-full max-h-full">
+                                                <img
+                                                    src={`${import.meta.env.BASE_URL}Texture2D/${compareVersion}/${selectedImage}`}
+                                                    className="pixelated max-w-full max-h-full"
+                                                    alt={`${selectedImage} comp`}
+                                                    onError={(e) => {
+                                                        (e.target as HTMLImageElement).style.display = 'none';
+                                                    }}
+                                                />
+                                                {showDiff && diffImageUrl && (
+                                                    <img
+                                                        src={diffImageUrl}
+                                                        className="pixelated absolute top-0 left-0 w-full h-full opacity-80 pointer-events-none"
+                                                        alt="diff overlay"
+                                                    />
+                                                )}
+                                            </div>
                                         ) : (
                                             <span className="text-text-muted text-sm font-bold uppercase tracking-widest">Not in this version</span>
                                         )}

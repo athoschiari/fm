@@ -1123,14 +1123,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                                 icon={<Star className="w-3 h-3" />}
                                                 label="Crit %"
                                                 value={formatPercent(stats.criticalChance || 0)}
-                                                subValue={formatBreakdown(stats.critChanceBreakdown)}
+                                                subValue={formatBreakdown(stats.critChanceBreakdown) ?? undefined}
                                                 color="text-yellow-400"
                                             />
                                             <CompactStat
                                                 icon={<TrendingUp className="w-3 h-3" />}
                                                 label="Crit Damage"
                                                 value={formatMultiplier(stats.criticalDamage || 0)}
-                                                subValue={formatBreakdown(stats.critDamageBreakdown, true)}
+                                                subValue={formatBreakdown(stats.critDamageBreakdown, true) ?? undefined}
                                                 color="text-yellow-500"
                                             />
                                             <CompactStat icon={<Shield className="w-3 h-3" />} label="Block %" value={formatPercent(stats.blockChance || 0)} color="text-blue-400" />
@@ -1138,7 +1138,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                                 icon={<Zap className="w-3 h-3" />}
                                                 label="Double %"
                                                 value={formatPercent(stats.doubleDamageChance || 0)}
-                                                subValue={formatBreakdown(stats.doubleDamageBreakdown)}
+                                                subValue={formatBreakdown(stats.doubleDamageBreakdown) ?? undefined}
                                                 color="text-purple-400"
                                             />
                                             <CompactStat icon={<Heart className="w-3 h-3" />} label="Life Steal %" value={formatPercent(stats.lifeSteal || 0)} color="text-purple-400" />
@@ -1147,14 +1147,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                                 icon={<TrendingUp className="w-3 h-3" />}
                                                 label="Attack Speed"
                                                 value={formatMultiplier(stats.attackSpeedMultiplier)}
-                                                subValue={formatBreakdown(stats.attackSpeedBreakdown, true)}
+                                                subValue={formatBreakdown(stats.attackSpeedBreakdown, true) ?? undefined}
                                                 color="text-orange-400"
                                             />
                                             <CompactStat
                                                 icon={<TrendingUp className="w-3 h-3" />}
                                                 label="Skill CDR %"
                                                 value={formatPercent(stats.skillCooldownReduction)}
-                                                subValue={formatBreakdown(stats.skillCooldownBreakdown)}
+                                                subValue={formatBreakdown(stats.skillCooldownBreakdown) ?? undefined}
                                                 color="text-emerald-400"
                                             />
                                         </div>

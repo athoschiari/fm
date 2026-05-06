@@ -581,7 +581,7 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
                 onClose={() => setIsModalOpen(false)} 
                 onSelect={handleSelectMount} 
                 currentMount={mount} 
-                mountAscensionLevel={isComparing ? (variant === 'original' ? originalMountAscension : testMountAscension) : profile.misc.mountAscensionLevel}
+                mountAscensionLevel={isComparing ? (variant === 'original' ? originalMountAscension : testMountAscension) : (profile.misc.mountAscensionLevel ?? undefined)}
             />
             <InputModal isOpen={isSaveModalOpen} title="Save Mount Preset" label="Name" placeholder="Preset Name" initialValue={spriteInfo?.name || ''} onConfirm={handleSavePreset} onCancel={() => setIsSaveModalOpen(false)} />
         </>

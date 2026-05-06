@@ -423,8 +423,6 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                                 health: health,
                                 damageMulti: (1 + petDamageBonus) * (ascensionDmgMulti || 1),
                                 healthMulti: (1 + petHealthBonus) * (ascensionHpMulti || 1),
-                                ascensionDmgMulti,
-                                ascensionHpMulti,
                                 details: {
                                     damage: { base: baseDamage, techMulti: (1 + petDamageBonus), ascMulti: (ascensionDmgMulti || 1) },
                                     health: { base: baseHealth, techMulti: (1 + petHealthBonus), ascMulti: (ascensionHpMulti || 1) }
