@@ -661,17 +661,17 @@ export default function ForgeCalculator() {
         const cycles = totalForges / autoForgeSummons;
         const autoForgeSeconds = cycles * interval;
 
-        return { 
-            finalHammers, 
-            totalForges, 
-            freeForges, 
-            totalCoins, 
-            totalCoinsMin, 
-            totalCoinsMax, 
-            totalItems, 
-            totalWarPoints, 
+        return {
+            finalHammers,
+            totalForges,
+            freeForges,
+            totalCoins,
+            totalCoinsMin,
+            totalCoinsMax,
+            totalItems,
+            totalWarPoints,
             ages,
-            autoForgeSeconds 
+            autoForgeSeconds
         };
     }, [inputValue, mode, forgeStats, bonuses, warPointsPerAge, brackets, balancingConfig, usePlayerItems, manualBonuses, autoForgeSummons, autoForgeInterval]);
 
@@ -961,11 +961,11 @@ export default function ForgeCalculator() {
                                         <span>AutoForge Estimates</span>
                                         <HelpCircle className="w-3 h-3 opacity-50" />
                                     </div>
-                                    
+
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] text-text-muted uppercase font-bold ml-1">Summons / Cycle</label>
-                                            <select 
+                                            <select
                                                 value={autoForgeSummons}
                                                 onChange={(e) => setAutoForgeSummons(parseInt(e.target.value))}
                                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-white outline-none focus:border-accent-primary"
@@ -977,7 +977,7 @@ export default function ForgeCalculator() {
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] text-text-muted uppercase font-bold ml-1">Cycle Time (s)</label>
-                                            <input 
+                                            <input
                                                 type="number"
                                                 step="0.01"
                                                 value={autoForgeInterval}
@@ -1110,26 +1110,26 @@ export default function ForgeCalculator() {
 
                         {/* Estimated AutoForge Time */}
                         <div className="card p-6 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20 flex flex-col justify-between relative overflow-hidden group">
-                             <div className="absolute right-0 top-0 p-10 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-colors" />
-                             <div className="relative z-10">
-                                 <div className="text-sm font-bold text-green-500 uppercase tracking-wider mb-1">Est. AutoForge Time</div>
-                                 <div className="text-2xl lg:text-3xl font-black text-white">
-                                     {(() => {
-                                         const s = results.autoForgeSeconds;
-                                         if (s === Infinity || isNaN(s)) return '-';
-                                         const h = Math.floor(s / 3600);
-                                         const m = Math.floor((s % 3600) / 60);
-                                         const sec = Math.floor(s % 60);
-                                         if (h > 0) return `${h}h ${m}m ${sec}s`;
-                                         if (m > 0) return `${m}m ${sec}s`;
-                                         return `${sec}s`;
-                                     })()}
-                                 </div>
-                                 <div className="text-xs text-green-300/60 mt-1">
-                                     Using {autoForgeSummons} items every {autoForgeInterval}s
-                                 </div>
-                             </div>
-                             <RefreshCw className="w-10 h-10 absolute right-4 bottom-4 opacity-20 text-green-500 animate-[spin_5s_linear_infinite]" />
+                            <div className="absolute right-0 top-0 p-10 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-colors" />
+                            <div className="relative z-10">
+                                <div className="text-sm font-bold text-green-500 uppercase tracking-wider mb-1">Est. AutoForge Time</div>
+                                <div className="text-2xl lg:text-3xl font-black text-white">
+                                    {(() => {
+                                        const s = results.autoForgeSeconds;
+                                        if (s === Infinity || isNaN(s)) return '-';
+                                        const h = Math.floor(s / 3600);
+                                        const m = Math.floor((s % 3600) / 60);
+                                        const sec = Math.floor(s % 60);
+                                        if (h > 0) return `${h}h ${m}m ${sec}s`;
+                                        if (m > 0) return `${m}m ${sec}s`;
+                                        return `${sec}s`;
+                                    })()}
+                                </div>
+                                <div className="text-xs text-green-300/60 mt-1">
+                                    Using {autoForgeSummons} items every {autoForgeInterval}s
+                                </div>
+                            </div>
+                            <RefreshCw className="w-10 h-10 absolute right-4 bottom-4 opacity-20 text-green-500 animate-[spin_5s_linear_infinite]" />
                         </div>
                     </div>
 
@@ -1146,7 +1146,7 @@ export default function ForgeCalculator() {
                                     age.isMax ? "bg-accent-primary/5 hover:bg-accent-primary/10" : "hover:bg-white/5"
                                 )}>
                                     <div className="flex-1 w-full flex items-center gap-4">
-                                        <div className="shrink-0 p-1 bg-white/5 rounded-lg border border-white/10" style={getAgeIconStyle(age.idx, 48)} />
+                                        <div className="shrink-0 p-1 bg-white/5 rounded-lg border border-white/10" style={getAgeIconStyle(age.idx, 48, selectedVersion)} />
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <span className="font-bold text-lg text-white">{age.name}</span>

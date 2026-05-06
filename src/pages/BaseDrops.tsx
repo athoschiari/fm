@@ -14,7 +14,7 @@ export default function BaseDrops() {
     const [baseVersion, setBaseVersion] = useState('');
     const [targetVersion, setTargetVersion] = useState('');
     const [versions, setVersions] = useState<string[]>([]);
-    
+
     // Cache for relevant files: { [version]: { [fileName]: data } }
     const [dataCache, setDataCache] = useState<Record<string, Record<string, any>>>({});
     const [isLoading, setIsLoading] = useState(false);
@@ -91,7 +91,7 @@ export default function BaseDrops() {
         const diff = targetVal - baseVal;
         const isBetter = diff > 0;
         const hasDiff = Math.abs(diff) > 0.0000001;
-        
+
         return (
             <div className={cn(
                 "flex flex-col items-end p-1 rounded transition-colors group/cell",
@@ -142,7 +142,7 @@ export default function BaseDrops() {
                                 {AGES.map((age, idx) => (
                                     <th key={age} className="p-4 font-bold text-center group w-[120px] sticky top-0 bg-bg-secondary z-20 border-b border-border/50">
                                         <div className="flex flex-col items-center gap-1">
-                                            <div style={getAgeIconStyle(idx, 24)} className="group-hover:scale-110 transition-transform" />
+                                            <div style={getAgeIconStyle(idx, 24, targetVersion)} className="group-hover:scale-110 transition-transform" />
                                             <span className="text-[10px] uppercase tracking-wider text-text-muted group-hover:text-text-primary transition-colors">{age}</span>
                                         </div>
                                     </th>
@@ -153,7 +153,7 @@ export default function BaseDrops() {
                             {levels.map(lvl => {
                                 const targetRow = targetData[lvl];
                                 const baseRow = isCompareMode ? baseData?.[lvl] : null;
-                                
+
                                 return (
                                     <tr key={lvl} className="border-b border-border/10 hover:bg-white/5 transition-colors group">
                                         <td className="p-4 font-mono font-bold sticky left-0 bg-bg-primary shadow-r border-r border-border/50 text-center text-accent-primary z-10">
@@ -228,7 +228,7 @@ export default function BaseDrops() {
                                 const baseRow = isCompareMode ? (
                                     summonConfigBase?.Levels ? summonConfigBase.Levels[lvlIdx] : baseData?.[targetRow.key]
                                 ) : null;
-                                
+
                                 // Get summons required for next level
                                 let tSummons = 0;
                                 let bSummons = 0;
@@ -264,8 +264,8 @@ export default function BaseDrops() {
                                             const rarityColor = getRarityBorderStyle(rarity).borderColor as string;
 
                                             return (
-                                                <td 
-                                                    key={rarity} 
+                                                <td
+                                                    key={rarity}
                                                     className={cn("p-4 text-right font-mono border-r border-border/5 group-hover:bg-white/10 transition-colors")}
                                                     style={{ backgroundColor: (tVal > 0 || bVal > 0) ? `rgba(${rarityColor.replace('rgb(', '').replace(')', '')}, 0.04)` : 'transparent' }}
                                                 >
@@ -312,7 +312,7 @@ export default function BaseDrops() {
                                 {versions.map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                         </div>
-                        
+
                         {isCompareMode && (
                             <>
                                 <div className="p-2 rounded-full bg-accent-primary/10 mt-4">
@@ -331,15 +331,15 @@ export default function BaseDrops() {
                             </>
                         )}
                     </div>
-                    
+
                     <Button
                         variant="primary"
                         size="sm"
                         onClick={() => setIsCompareMode(!isCompareMode)}
                         className={cn(
                             "h-10 px-6 uppercase tracking-widest text-[10px] font-black mt-4 border-2 shadow-lg transition-all",
-                            isCompareMode 
-                                ? "bg-accent-secondary border-accent-secondary text-black" 
+                            isCompareMode
+                                ? "bg-accent-secondary border-accent-secondary text-black"
                                 : "bg-accent-primary/20 border-accent-primary/50 text-white hover:bg-accent-primary hover:text-black shadow-lg shadow-accent-primary/10"
                         )}
                     >
@@ -360,18 +360,18 @@ export default function BaseDrops() {
                         onClick={() => setActiveTab(tab.id as TabType)}
                         className={cn(
                             "px-4 sm:px-8 py-2 sm:py-3 flex items-center gap-2 sm:gap-3 rounded-xl font-black uppercase tracking-widest text-[10px] sm:text-xs transition-all whitespace-nowrap",
-                            activeTab === tab.id 
-                                ? "bg-accent-primary text-black shadow-lg shadow-accent-primary/20 scale-105 z-10" 
+                            activeTab === tab.id
+                                ? "bg-accent-primary text-black shadow-lg shadow-accent-primary/20 scale-105 z-10"
                                 : "text-text-muted hover:text-text-primary hover:bg-white/5"
                         )}
                     >
-                         <SpriteIcon 
-                            name={tab.icon} 
-                            size={14} 
+                        <SpriteIcon
+                            name={tab.icon}
+                            size={14}
                             className={cn(
                                 "transition-all",
                                 activeTab === tab.id ? "" : "opacity-70 group-hover:opacity-100"
-                            )} 
+                            )}
                         />
                         {tab.label}
                     </button>

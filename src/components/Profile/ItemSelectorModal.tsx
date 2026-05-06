@@ -871,7 +871,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         )}
                     >
                         <div
-                            style={getAgeIconStyle(idx, 32)}
+                            style={getAgeIconStyle(idx, 32, selectedVersion)}
                             className={cn(
                                 "shrink-0 rounded bg-white/90",
                                 !isUnlocked && "grayscale opacity-50"
@@ -1134,7 +1134,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                             )}
                                         >
                                             <div
-                                                style={getAgeIconStyle(idx, 24)}
+                                                style={getAgeIconStyle(idx, 24, selectedVersion)}
                                                 className={cn(
                                                     "shrink-0 rounded bg-white/90",
                                                     !isUnlocked && "grayscale opacity-50"
