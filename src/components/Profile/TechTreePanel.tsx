@@ -5,6 +5,7 @@ import { Card } from '../UI/Card';
 import { ConfirmModal } from '../UI/ConfirmModal';
 import { Search, Lock, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useGameDataContext } from '../../context/GameDataContext';
 
 const ICON_SIZE = 40;
 
@@ -51,7 +52,7 @@ export function TechTreePanel() {
     const { profile, updateProfile } = useProfile();
     const { data: treeMapping } = useGameData<any>('TechTreeMapping.json');
     const { data: treeEffects } = useGameData<any>('TechTreeLibrary.json');
-
+    const { selectedVersion } = useGameDataContext();
     const [activeTab, setActiveTab] = useState<TreeName>('Forge');
     const [searchTerm, setSearchTerm] = useState('');
     const [pendingReset, setPendingReset] = useState<{ nodeId: number; count: number } | null>(null);
@@ -205,7 +206,7 @@ export function TechTreePanel() {
         const cssY = sheetH - y - height;
 
         return {
-            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/TechTreeIcons.png)`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/TechTreeIcons.png)`,
             backgroundPosition: `-${x * scale}px -${cssY * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             width: `${ICON_SIZE}px`,
@@ -329,7 +330,7 @@ export function TechTreePanel() {
     return (
         <Card className="p-6">
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <img src={`${import.meta.env.BASE_URL}Texture2D/TechTreeForge.png`} alt="Tech Tree" className="w-8 h-8 object-contain" />
+                <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/TechTreeForge.png`} alt="Tech Tree" className="w-8 h-8 object-contain" />
                 Tech Tree
             </h2>
 

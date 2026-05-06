@@ -4,6 +4,7 @@ import { X, Flame, Plus, Minus, Search, Info, Save, Star, Grid, Settings } from 
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { useProfile } from '../../context/ProfileContext';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { SkillSlot } from '../../types/Profile';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
@@ -25,6 +26,7 @@ interface SkillSelectorModalProps {
 }
 
 export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, isPvp = false, excludeSkillIds = [] }: SkillSelectorModalProps) {
+    const { selectedVersion } = useGameDataContext();
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const globalStats = useGlobalStats();
@@ -151,7 +153,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
                             <SpriteSheetIcon
-                                textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
+                                textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel, selectedVersion)}
                                 spriteWidth={256}
                                 spriteHeight={256}
                                 sheetWidth={2048}
@@ -270,7 +272,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                             {spriteMapping?.skills && (
                                                 <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={getRarityBgStyle(selectedRarity)}>
                                                     <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
+                                                        textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel, selectedVersion)}
                                                         spriteWidth={spriteMapping.skills.sprite_size.width}
                                                         spriteHeight={spriteMapping.skills.sprite_size.height}
                                                         sheetWidth={spriteMapping.skills.texture_size.width}
@@ -299,7 +301,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                         <div className="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center mb-3" style={getRarityBgStyle(selectedRarity)}>
                                             {spriteMapping?.skills && (
                                                 <SpriteSheetIcon
-                                                    textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
+                                                    textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel, selectedVersion)}
                                                     spriteWidth={spriteMapping.skills.sprite_size.width}
                                                     spriteHeight={spriteMapping.skills.sprite_size.height}
                                                     sheetWidth={spriteMapping.skills.texture_size.width}
@@ -445,7 +447,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                                 style={getRarityBgStyle(selectedRarity)}
                                             >
                                                 <SpriteSheetIcon
-                                                    textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
+                                                    textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel, selectedVersion)}
                                                     spriteWidth={spriteMapping.skills.sprite_size.width}
                                                     spriteHeight={spriteMapping.skills.sprite_size.height}
                                                     sheetWidth={spriteMapping.skills.texture_size.width}
@@ -480,7 +482,7 @@ export function SkillSelectorModal({ isOpen, onClose, onSelect, currentSkill, is
                                             if (displaySkill && spriteMapping?.skills) {
                                                 return (
                                                     <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel)}
+                                                        textureSrc={getAscensionTexturePath('SkillIcons', ascensionLevel, selectedVersion)}
                                                         spriteWidth={spriteMapping.skills.sprite_size.width}
                                                         spriteHeight={spriteMapping.skills.sprite_size.height}
                                                         sheetWidth={spriteMapping.skills.texture_size.width}

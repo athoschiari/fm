@@ -1,4 +1,5 @@
 import { useProfile } from '../../context/ProfileContext';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
@@ -7,6 +8,7 @@ import { ItemSlot, MountSlot, UserProfile } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { ItemSelectorModal } from './ItemSelectorModal';
 import { MountSelectorModal } from './MountSelectorModal';
+import { PetSelectorModal } from './PetSelectorModal';
 import { InputModal } from '../UI/InputModal';
 import { AscensionStars } from '../UI/AscensionStars';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
@@ -67,10 +69,15 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const { isComparing, originalItems, testItems,
         originalForgeAscension,
         testForgeAscension,
+        originalPetAscension,
+        testPetAscension,
+        originalMountAscension,
+        testMountAscension,
         updateOriginalForgeAscension,
         updateTestForgeAscension,
         updateOriginalItem, updateTestItem, enterCompareMode,
         isCompactStats } = useComparison();
+    const { selectedVersion } = useGameDataContext();
     const [selectedSlot, setSelectedSlot] = useState<keyof UserProfile['items'] | null>(null);
     const [itemToSave, setItemToSave] = useState<{ slot: keyof UserProfile['items']; item: ItemSlot } | null>(null);
 
@@ -137,11 +144,14 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         }
         if (ascLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
             const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
-            for (let i = 0; i < ascLevel && i < configs.length; i++) {
-                const contributions = configs[i].StatContributions || [];
+            const config = configs[Math.min(ascLevel - 1, configs.length - 1)];
+            if (config) {
+                const contributions = config.StatContributions || [];
                 for (const stat of contributions) {
-                    total += stat.Value;
-                    break; 
+                    if (stat.StatNode?.UniqueStat?.StatType === 'AscensionDamage' || stat.StatNode?.UniqueStat?.StatType === 'Damage') {
+                        total = stat.Value;
+                        break; 
+                    }
                 }
             }
         }
@@ -160,7 +170,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         if (!item) return null;
         const ageName = AGES[item.age] || 'Primitive';
         const fileSlot = SLOT_TO_FILE_MAP[slotKey] || slotKey;
-        return getItemImage(ageName, fileSlot, item.idx, autoMapping);
+        return getItemImage(ageName, fileSlot, item.idx, autoMapping, selectedVersion);
     };
 
     const getItemName = (slotKey: string, item: ItemSlot | null) => {
@@ -226,7 +236,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
             <Card className="p-4 sm:p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
-                        <img src={`${import.meta.env.BASE_URL}Texture2D/IconDivineArmorPaladinarmor.png`} alt="Equipment" className="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}IconDivineArmorPaladinarmor.png`} alt="Equipment" className="w-6 h-6 sm:w-8 sm:h-8 object-contain" />
                         {panelTitle}
                     </h2>
                     <div className="flex flex-wrap items-center gap-3 sm:gap-4">
@@ -267,7 +277,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                     {SLOTS.map((slot) => {
                         const equipped = items[slot.key];
                         const itemImage = getEquippedImage(slot.key, equipped);
-                        const inventoryStyle = getInventoryIconStyle(slot.key, 48);
+                        const inventoryStyle = getInventoryIconStyle(slot.key, 48, selectedVersion);
                         const hasDiff = itemsDiffer(slot.key);
 
                         if (!equipped) {
@@ -344,6 +354,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                 forgeAscensionLevel={globalAscensionLevel}
             />
 
+
             <InputModal
                 isOpen={itemToSave !== null}
                 title={saveModalProps.title}
@@ -370,6 +381,7 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
         updateOriginalMountAscension,
         updateTestMountAscension
     } = useComparison();
+    const { selectedVersion } = useGameDataContext();
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
@@ -470,18 +482,29 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
         }
         if (ascLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
             const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
-            for (let i = 0; i < ascLevel && i < ascConfigs.length; i++) {
-                (ascConfigs[i].StatContributions || []).forEach((s: any) => {
-                    if (s.StatNode?.UniqueStat?.StatType === 'Damage') ascDmg += s.Value;
-                    if (s.StatNode?.UniqueStat?.StatType === 'Health') ascHp += s.Value;
+            const config = ascConfigs[Math.min(ascLevel - 1, ascConfigs.length - 1)];
+            if (config) {
+                (config.StatContributions || []).forEach((s: any) => {
+                    const type = s.StatNode?.UniqueStat?.StatType;
+                    if (type === 'Damage' || type === 'AscensionDamage') ascDmg = s.Value;
+                    if (type === 'Health' || type === 'AscensionHealth') ascHp = s.Value;
                 });
             }
         }
+        const techDmgMulti = 1 + mountDamageBonus;
+        const techHpMulti = 1 + mountHealthBonus;
+        const ascDmgMulti = ascDmg || 1;
+        const ascHpMulti = ascHp || 1;
+
         return { 
-            damage: damage * (1 + mountDamageBonus) * (1 + ascDmg), 
-            health: health * (1 + mountHealthBonus) * (1 + ascHp),
-            damageMulti: (1 + mountDamageBonus) * (1 + ascDmg),
-            healthMulti: (1 + mountHealthBonus) * (1 + ascHp),
+            damage: damage * techDmgMulti * ascDmgMulti, 
+            health: health * techHpMulti * ascHpMulti,
+            damageMulti: techDmgMulti * ascDmgMulti,
+            healthMulti: techHpMulti * ascHpMulti,
+            details: {
+                damage: { base: damage, techMulti: techDmgMulti, ascMulti: ascDmgMulti },
+                health: { base: health, techMulti: techHpMulti, ascMulti: ascHpMulti }
+            },
             ascLevel 
         };
     };
@@ -518,7 +541,8 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
                             damageMulti: mountData?.damageMulti || 1,
                             healthMulti: mountData?.healthMulti || 1,
                             bonus: 0,
-                            isMelee: false
+                            isMelee: false,
+                            details: (mountData as any)?.details
                         }}
                         perfection={perfection}
                         getStatPerfection={(statId, value) => getStatPerfection(statId, value, secondaryStatLibrary)}
@@ -531,15 +555,15 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
                         hideAgeStyles={true}
                         rarity={mount.rarity}
                         renderIcon={() => spriteInfo && (
-                            <SpriteSheetIcon
-                                textureSrc={getAscensionTexturePath('MountIcons', currentAscension)}
-                                spriteWidth={spriteInfo.config.sprite_size.width}
-                                spriteHeight={spriteInfo.config.sprite_size.height}
-                                sheetWidth={spriteInfo.config.texture_size.width}
-                                sheetHeight={spriteInfo.config.texture_size.height}
-                                iconIndex={spriteInfo.spriteIndex}
-                                className="w-14 h-14"
-                            />
+                                <SpriteSheetIcon
+                                    textureSrc={getAscensionTexturePath('MountIcons', currentAscension, selectedVersion)}
+                                    spriteWidth={spriteInfo.config.sprite_size.width}
+                                    spriteHeight={spriteInfo.config.sprite_size.height}
+                                    sheetWidth={spriteInfo.config.texture_size.width}
+                                    sheetHeight={spriteInfo.config.texture_size.height}
+                                    iconIndex={spriteInfo.spriteIndex}
+                                    className="w-12 h-12"
+                                />
                         )}
                     />
                 ) : (
@@ -547,12 +571,18 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
                         onClick={() => setIsModalOpen(true)}
                         className="h-full rounded-xl border-2 border-dashed border-border hover:border-accent-primary/50 cursor-pointer transition-colors relative flex flex-col items-center justify-center gap-3 p-3 bg-bg-input/30 min-h-[160px]"
                     >
-                        <div style={getInventoryIconStyle('Mount', 48) || {}} className="opacity-30" />
+                        <div style={getInventoryIconStyle('Mount', 48, selectedVersion) || {}} className="opacity-30" />
                         <span className="text-sm text-text-muted">Click to select Mount</span>
                     </div>
                 )}
             </div>
-            <MountSelectorModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSelect={handleSelectMount} currentMount={mount} />
+            <MountSelectorModal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                onSelect={handleSelectMount} 
+                currentMount={mount} 
+                mountAscensionLevel={isComparing ? (variant === 'original' ? originalMountAscension : testMountAscension) : profile.misc.mountAscensionLevel}
+            />
             <InputModal isOpen={isSaveModalOpen} title="Save Mount Preset" label="Name" placeholder="Preset Name" initialValue={spriteInfo?.name || ''} onConfirm={handleSavePreset} onCancel={() => setIsSaveModalOpen(false)} />
         </>
     );

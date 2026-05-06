@@ -6,6 +6,7 @@ import { cn } from '../lib/utils';
 import { Hammer, Zap, Info, X, RefreshCw, Star, Plus, Minus } from 'lucide-react';
 import { getTechNodeName, getTechNodeDescription } from '../utils/techUtils';
 import { useTreeMode } from '../context/TreeModeContext';
+import { useGameDataContext } from '../context/GameDataContext';
 
 const ICON_SIZE = 48;
 const NODE_HEIGHT = 140;
@@ -17,6 +18,7 @@ type TreeName = 'Forge' | 'Power' | 'SkillsPetTech';
 
 export default function TechTree() {
     const { profile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const { treeMode } = useTreeMode();
     const { data: treeMapping, loading: l1 } = useGameData<any>('TechTreeMapping.json');
     const { data: treeEffects, loading: l2 } = useGameData<any>('TechTreeLibrary.json');
@@ -126,9 +128,10 @@ export default function TechTree() {
         const sheetH = treeMapping.texture_size?.height || 1024;
         const scale = ICON_SIZE / width;
         const cssY = sheetH - y - height;
+        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
 
         return {
-            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/TechTreeIcons.png)`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}TechTreeIcons.png)`,
             backgroundPosition: `-${x * scale}px -${cssY * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             width: `${ICON_SIZE}px`,

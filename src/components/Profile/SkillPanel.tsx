@@ -1,5 +1,6 @@
 import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { Card } from '../UI/Card';
@@ -18,6 +19,9 @@ import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
 import { formatNumber } from '../../utils/format';
 
+import { StatBreakdownTooltip } from '../UI/StatBreakdownTooltip';
+import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+
 // Helper for truncation (sync with StatEngine)
 const truncate = (value: number, decimals: number): number => {
     const factor = Math.pow(10, decimals);
@@ -34,11 +38,12 @@ interface SkillPanelProps {
 
 export function SkillPanel({ variant = 'default', title, compareSkills, considerAnimation = false, setConsiderAnimation }: SkillPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
-    const { 
-        isComparing, 
-        originalSkills, 
-        testSkills, 
-        originalSkillAscension, 
+    const { selectedVersion } = useGameDataContext();
+    const {
+        isComparing,
+        originalSkills,
+        testSkills,
+        originalSkillAscension,
         testSkillAscension,
         updateOriginalSkill,
         updateTestSkill,
@@ -47,7 +52,9 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
         isCompactStats
     } = useComparison();
     const { optimizeSkills, isReady } = useProfileOptimizer();
-    
+    const techModifiers = useTreeModifiers();
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
+
     const equippedSkills = useMemo(() => {
         if (variant === 'original' && originalSkills) return originalSkills;
         if (variant === 'test' && testSkills) return testSkills;
@@ -62,10 +69,30 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
         return profile.misc.skillAscensionLevel || 0;
     }, [isComparing, variant, originalSkillAscension, testSkillAscension, profile.misc.skillAscensionLevel]);
 
+    const { activeAscensionDmgMulti, activeAscensionHpMulti } = useMemo(() => {
+        let d = 1, h = 1;
+        if (skillAscensionLevel > 0 && ascensionConfigsLibrary?.Skills?.AscensionConfigPerLevel) {
+            const ascConfigs = ascensionConfigsLibrary.Skills.AscensionConfigPerLevel;
+            const config = ascConfigs[Math.min(skillAscensionLevel - 1, ascConfigs.length - 1)];
+            if (config) {
+                const stats = config.StatContributions || [];
+                for (const s of stats) {
+                    const sTarget = s.StatNode?.StatTarget?.$type;
+                    const sType = s.StatNode?.UniqueStat?.StatType;
+                    if (sTarget === 'ActiveSkillStatTarget') {
+                        if (sType === 'Damage' || sType === 'AscensionDamage') d = s.Value;
+                        if (sType === 'Health' || sType === 'AscensionHealth') h = s.Value;
+                    }
+                }
+            }
+        }
+        return { activeAscensionDmgMulti: d, activeAscensionHpMulti: h };
+    }, [skillAscensionLevel, ascensionConfigsLibrary]);
+
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const globalStats = useGlobalStats();
-    
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingIdx, setEditingIdx] = useState<number | null>(null);
     const [frequencyWindow, setFrequencyWindow] = useState(60);
@@ -169,18 +196,19 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
         if (!skillData) return null;
 
         const levelIdx = skill.level - 1;
-        let damage = skillData.DamagePerLevel?.[levelIdx] || 0;
-        let health = skillData.HealthPerLevel?.[levelIdx] || 0;
+        const baseDmg = skillData.DamagePerLevel?.[levelIdx] || 0;
+        const baseHp = skillData.HealthPerLevel?.[levelIdx] || 0;
         const duration = skillData.ActiveDuration || 0;
         const cooldown = skillData.Cooldown || 0;
 
-        const skillFactor = globalStats?.skillDamageMultiplier || 1;
-        const globalFactor = globalStats?.damageMultiplier || 1;
-        const totalDamageMulti = truncate(skillFactor + globalFactor - 1, 4);
-        const totalHealthMulti = totalDamageMulti;
+        const techActiveSkillDmgBonus = techModifiers['SkillDamage'] || 0;
+        const techActiveSkillHpBonus = techModifiers['SkillHealth'] || 0;
 
-        damage = damage * totalDamageMulti;
-        health = health * totalHealthMulti;
+        const totalDamageMulti = (1 + techActiveSkillDmgBonus) * (activeAscensionDmgMulti || 1);
+        const totalHealthMulti = (1 + techActiveSkillHpBonus) * (activeAscensionHpMulti || 1);
+
+        const damage = baseDmg * totalDamageMulti;
+        const health = baseHp * totalHealthMulti;
 
         const mechanics = SKILL_MECHANICS[skill.id] || { count: 1 };
         const totalDamageDisplay = mechanics.damageIsPerHit ? damage * mechanics.count : damage;
@@ -189,6 +217,8 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
             : (mechanics.count > 1 ? damage / mechanics.count : damage);
 
         return {
+            baseDamage: baseDmg,
+            baseHealth: baseHp,
             damage: damagePerHit,
             totalDamage: totalDamageDisplay,
             count: mechanics.count,
@@ -197,7 +227,11 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
             cooldown,
             multi: totalDamageMulti,
             damageBonus: totalDamageMulti - 1,
-            healthBonus: totalHealthMulti - 1
+            healthBonus: totalHealthMulti - 1,
+            details: {
+                damage: { base: baseDmg, techMulti: 1 + techActiveSkillDmgBonus, ascMulti: activeAscensionDmgMulti || 1 },
+                health: { base: baseHp, techMulti: 1 + techActiveSkillHpBonus, ascMulti: activeAscensionHpMulti || 1 }
+            }
         };
     };
 
@@ -229,13 +263,13 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div className="flex flex-col gap-2">
                     <h2 className="text-xl font-bold flex items-center gap-2">
-                        <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="Active Skills" className="w-8 h-8 object-contain" />
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/SkillTabIcon.png`} alt="Active Skills" className="w-8 h-8 object-contain" />
                         {panelTitle}
                     </h2>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
                             onClick={handleAutoOptimize}
                             disabled={!isReady || !skillLibrary || Object.keys(skillLibrary).length < 1}
@@ -245,9 +279,9 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                             AUTO DPS
                         </Button>
                         {previousSkills && (
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
+                            <Button
+                                variant="ghost"
+                                size="sm"
                                 className="h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-fit"
                                 onClick={handleRevert}
                             >
@@ -300,7 +334,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                     const hasDiff = checkDiff(idx);
 
                     return (
-                         <ItemSelectionCard
+                        <ItemSelectionCard
                             key={idx}
                             item={skill}
                             variant={isCompactStats ? 'compact' : 'default'}
@@ -326,7 +360,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                             renderIcon={() => (
                                 spriteInfo ? (
                                     <SpriteSheetIcon
-                                        textureSrc={getAscensionTexturePath('SkillIcons', skillAscensionLevel)}
+                                        textureSrc={getAscensionTexturePath('SkillIcons', skillAscensionLevel, selectedVersion)}
                                         spriteWidth={spriteInfo.config.sprite_size.width}
                                         spriteHeight={spriteInfo.config.sprite_size.height}
                                         sheetWidth={spriteInfo.config.texture_size.width}
@@ -350,7 +384,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                 <div className="w-full flex flex-col gap-1.5 mt-1">
                                     <div className="flex flex-col gap-1 w-full">
                                         {stats.damage > 0 && (
-                                            <div className="bg-red-400/10 rounded p-1 border border-red-400/20 flex flex-col items-center">
+                                            <div className="bg-red-400/10 rounded p-1 border border-red-400/20 flex flex-col items-center group/dmg relative">
                                                 <div className="flex items-center gap-1 text-red-400">
                                                     <span className="text-[10px] font-bold uppercase">Damage</span>
                                                     {stats.count > 1 && <span className="text-[9px] font-bold opacity-80">(x{stats.count})</span>}
@@ -380,10 +414,13 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                                     <span>x{stats.multi.toFixed(2)}</span>
                                                     <span className="text-green-400/80">({((stats.multi - 1) * 100).toFixed(1)}%)</span>
                                                 </div>
+                                                <div className="hidden group-hover/dmg:block">
+                                                    <StatBreakdownTooltip damage={stats.details.damage} />
+                                                </div>
                                             </div>
                                         )}
                                         {stats.health > 0 && (
-                                            <div className="bg-green-400/10 rounded p-1 border border-green-400/20 flex flex-col items-center">
+                                            <div className="bg-green-400/10 rounded p-1 border border-green-400/20 flex flex-col items-center group/heal relative">
                                                 <div className="text-[10px] text-green-400 uppercase font-bold">Healing</div>
                                                 <div className="text-sm font-mono font-bold text-green-400 leading-tight">
                                                     {isCompactStats ? formatNumber(stats.health) : Math.round(stats.health).toLocaleString()}
@@ -391,6 +428,9 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                                 <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center justify-center flex-wrap gap-x-1 gap-y-0 mt-0.5 text-center">
                                                     <span>x{stats.multi.toFixed(2)}</span>
                                                     <span className="text-green-400/80">({((stats.multi - 1) * 100).toFixed(1)}%)</span>
+                                                </div>
+                                                <div className="hidden group-hover/heal:block">
+                                                    <StatBreakdownTooltip health={stats.details.health} />
                                                 </div>
                                             </div>
                                         )}
@@ -450,11 +490,11 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                                     <span className="text-[7px] text-text-muted uppercase">Last</span>
                                                     <span className="font-bold">{lastHit.toFixed(1)}s</span>
                                                 </div>
-                                                <div 
+                                                <div
                                                     className={cn(
                                                         "rounded flex flex-col items-center py-0.5",
                                                         diff < 0 ? "bg-red-400/10 text-red-400" : "bg-accent-primary/10 text-accent-primary"
-                                                    )} 
+                                                    )}
                                                     title={`Needed CDR change: ${((Math.abs(diff) / stats.cooldown) * 100).toFixed(2)}%`}
                                                 >
                                                     <span className="text-[7px] uppercase">To+1</span>

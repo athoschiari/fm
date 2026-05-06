@@ -508,7 +508,8 @@ function mapRewardType(type: string): string {
         'TechPotions': 'Potion',
         'Pet': 'PetKey',
         'ClockWinders': 'MountKey',
-        'Eggshells': 'Eggshell'
+        'Eggshells': 'Eggshell',
+        'GuildPotions': 'GuildPotions'
     };
     return map[type] || 'Star';
 }

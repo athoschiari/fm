@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import {
-    Star, Egg, Key, Shirt, Cat,
-    Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee, Zap, ShoppingCart
+    Star, Egg, Key, Shirt, Cat, Image,
+    Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee, Zap, ShoppingCart, Target
 } from 'lucide-react';
 import { GameIcon } from '../UI/GameIcon';
 import { useProfile } from '../../context/ProfileContext';
@@ -76,13 +76,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Tech Tree', path: '/tech-tree', icon: Cpu },
                 { name: 'Arena', path: '/arena', icon: Swords },
                 { name: 'Guild War', path: '/guild-war', icon: Shield },
+                { name: 'Missions', path: '/wiki/missions', icon: Target },
                 { name: 'Shop', path: '/wiki/shop', icon: ShoppingCart },
-                { name: 'Progress Pass', path: '/wiki/progress-pass', icon: TrendingUp },
+                { name: 'Progress Pass', path: '/wiki/progress-pass', icon: Zap },
+                { name: 'Secondary Stats', path: '/wiki/secondary-stats', icon: TrendingUp },
             ]
         },
         {
             title: 'Info',
             items: [
+                { name: 'Gallery', path: '/gallery', icon: Image },
                 { name: 'Unlocks', path: '/unlocks', icon: Lock },
                 { name: 'Configs', path: '/configs', icon: FileJson },
                 { name: 'FAQ', path: '/faq', icon: HelpCircle },

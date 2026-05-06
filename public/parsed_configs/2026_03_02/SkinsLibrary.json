@@ -32,7 +32,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "SantaSet",
+    "BaseSetId": "SantaSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Armour', 'Idx': 0}": {
@@ -68,7 +68,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "SantaSet",
+    "BaseSetId": "SantaSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Helmet', 'Idx': 1}": {
@@ -104,7 +104,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "SkiSet",
+    "BaseSetId": "SkiSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Armour', 'Idx': 1}": {
@@ -140,7 +140,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "SkiSet",
+    "BaseSetId": "SkiSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Helmet', 'Idx': 2}": {
@@ -176,7 +176,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "SnowmanSet",
+    "BaseSetId": "SnowmanSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Armour', 'Idx': 2}": {
@@ -212,7 +212,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "SnowmanSet",
+    "BaseSetId": "SnowmanSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Helmet', 'Idx': 100}": {
@@ -248,7 +248,7 @@
         "MaxValue": 0.009999999776482582
       }
     ],
-    "SetId": "",
+    "BaseSetId": "",
     "MaxStatCount": 1
   },
   "{'Type': 'Helmet', 'Idx': 101}": {
@@ -284,7 +284,7 @@
         "MaxValue": 0.009999999776482582
       }
     ],
-    "SetId": "",
+    "BaseSetId": "",
     "MaxStatCount": 1
   },
   "{'Type': 'Weapon', 'Idx': 3}": {
@@ -320,7 +320,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "LeprechaunSet",
+    "BaseSetId": "LeprechaunSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Helmet', 'Idx': 3}": {
@@ -356,7 +356,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "LeprechaunSet",
+    "BaseSetId": "LeprechaunSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Armour', 'Idx': 3}": {
@@ -392,7 +392,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "LeprechaunSet",
+    "BaseSetId": "LeprechaunSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Weapon', 'Idx': 4}": {
@@ -428,7 +428,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "FlowerSet",
+    "BaseSetId": "FlowerSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Helmet', 'Idx': 4}": {
@@ -464,7 +464,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "FlowerSet",
+    "BaseSetId": "FlowerSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Armour', 'Idx': 4}": {
@@ -500,7 +500,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "FlowerSet",
+    "BaseSetId": "FlowerSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Weapon', 'Idx': 5}": {
@@ -536,7 +536,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "DruidSet",
+    "BaseSetId": "DruidSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Helmet', 'Idx': 5}": {
@@ -572,7 +572,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "DruidSet",
+    "BaseSetId": "DruidSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Armour', 'Idx': 5}": {
@@ -608,7 +608,7 @@
         "MaxValue": 0.11999999731779099
       }
     ],
-    "SetId": "DruidSet",
+    "BaseSetId": "DruidSet",
     "MaxStatCount": 1
   },
   "{'Type': 'Helmet', 'Idx': 102}": {
@@ -644,7 +644,7 @@
         "MaxValue": 0.009999999776482582
       }
     ],
-    "SetId": "",
+    "BaseSetId": "",
     "MaxStatCount": 1
   },
   "{'Type': 'Helmet', 'Idx': 103}": {
@@ -680,7 +680,7 @@
         "MaxValue": 0.009999999776482582
       }
     ],
-    "SetId": "",
+    "BaseSetId": "",
     "MaxStatCount": 1
   }
 }

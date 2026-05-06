@@ -1,5 +1,6 @@
 import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
 import { Zap as PowerIcon, Plus, Cat, Sword, RotateCcw } from 'lucide-react';
 import { Button } from '../UI/Button';
@@ -26,6 +27,7 @@ interface PetPanelProps {
 
 export function PetPanel({ variant = 'default', title, comparePets }: PetPanelProps) {
     const { profile, updateNestedProfile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const { 
         isComparing, 
         originalPets, 
@@ -109,17 +111,18 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
 
         if (petAscensionLevel > 0 && ascensionConfigsLibrary?.Pets?.AscensionConfigPerLevel) {
             const ascConfigs = ascensionConfigsLibrary.Pets.AscensionConfigPerLevel;
-            for (let i = 0; i < petAscensionLevel && i < ascConfigs.length; i++) {
-                const stats = ascConfigs[i].StatContributions || [];
+            const config = ascConfigs[Math.min(petAscensionLevel - 1, ascConfigs.length - 1)];
+            if (config) {
+                const stats = config.StatContributions || [];
                 for (const s of stats) {
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     const sVal = s.Value;
-                    if (sType === 'Damage') dMulti += sVal;
-                    if (sType === 'Health') hMulti += sVal;
+                    if (sType === 'Damage' || sType === 'AscensionDamage') dMulti = sVal;
+                    if (sType === 'Health' || sType === 'AscensionHealth') hMulti = sVal;
                 }
             }
         }
-        return { ascensionDmgMulti: dMulti, ascensionHpMulti: hMulti };
+        return { ascensionDmgMulti: dMulti || 1, ascensionHpMulti: hMulti || 1 };
     }, [petAscensionLevel, ascensionConfigsLibrary]);
 
     const updatePets = (newPets: PetSlot[]) => {
@@ -282,7 +285,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                     <h2 className="text-xl font-bold flex items-center gap-2">
                         <div className="w-8 h-8 flex items-center justify-center">
                             <SpriteSheetIcon
-                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/Icons.png`}
+                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}Icons.png`}
                                 spriteWidth={256}
                                 spriteHeight={256}
                                 sheetWidth={2048}
@@ -378,15 +381,24 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
 
                     let damage = 0;
                     let health = 0;
+                    let baseDamage = 0;
+                    let baseHealth = 0;
 
                     if (levelInfo?.PetStats?.Stats) {
                         for (const stat of levelInfo.PetStats.Stats) {
                             const val = stat.Value || 0;
+                            const techDmgFactor = 1 + petDamageBonus;
+                            const techHpFactor = 1 + petHealthBonus;
+                            const ascDmgFactor = ascensionDmgMulti || 1;
+                            const ascHpFactor = ascensionHpMulti || 1;
+
                             if (stat.StatNode?.UniqueStat?.StatType === 'Damage') {
-                                damage = val * typeMultipliers.DamageMultiplier * (1 + petDamageBonus + ascensionDmgMulti);
+                                baseDamage = val * typeMultipliers.DamageMultiplier;
+                                damage = baseDamage * techDmgFactor * ascDmgFactor;
                             }
                             if (stat.StatNode?.UniqueStat?.StatType === 'Health') {
-                                health = val * typeMultipliers.HealthMultiplier * (1 + petHealthBonus + ascensionHpMulti);
+                                baseHealth = val * typeMultipliers.HealthMultiplier;
+                                health = baseHealth * techHpFactor * ascHpFactor;
                             }
                         }
                     }
@@ -409,8 +421,14 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             stats={{
                                 damage: damage,
                                 health: health,
-                                damageMulti: 1 + petDamageBonus + ascensionDmgMulti,
-                                healthMulti: 1 + petHealthBonus + ascensionHpMulti,
+                                damageMulti: (1 + petDamageBonus) * (ascensionDmgMulti || 1),
+                                healthMulti: (1 + petHealthBonus) * (ascensionHpMulti || 1),
+                                ascensionDmgMulti,
+                                ascensionHpMulti,
+                                details: {
+                                    damage: { base: baseDamage, techMulti: (1 + petDamageBonus), ascMulti: (ascensionDmgMulti || 1) },
+                                    health: { base: baseHealth, techMulti: (1 + petHealthBonus), ascMulti: (ascensionHpMulti || 1) }
+                                },
                                 isMelee: false
                             }}
                             customStats={(
@@ -426,7 +444,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             renderIcon={() => (
                                 spriteInfo ? (
                                     <SpriteSheetIcon
-                                        textureSrc={getAscensionTexturePath('Pets', petAscensionLevel)}
+                                        textureSrc={getAscensionTexturePath('Pets', petAscensionLevel, selectedVersion)}
                                         spriteWidth={spriteInfo.config.sprite_size.width}
                                         spriteHeight={spriteInfo.config.sprite_size.height}
                                         sheetWidth={spriteInfo.config.texture_size.width}
@@ -458,6 +476,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSelect={handleAdd}
+                petAscensionLevel={petAscensionLevel}
             />
 
             {
@@ -467,6 +486,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                         onClose={() => setEditingPetIdx(null)}
                         onSelect={(pet) => handleEditPet(editingPetIdx, pet)}
                         currentPet={activePets[editingPetIdx]}
+                        petAscensionLevel={petAscensionLevel}
                     />
                 )
             }

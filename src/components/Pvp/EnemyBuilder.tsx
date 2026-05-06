@@ -11,6 +11,7 @@ import { PetSelectorModal } from '../Profile/PetSelectorModal';
 import { MountSelectorModal } from '../Profile/MountSelectorModal';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { getItemImage } from '../../utils/itemAssets';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { AGES } from '../../utils/constants';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useGameData } from '../../hooks/useGameData';
@@ -39,6 +40,7 @@ export function EnemyBuilder() {
     // Game Data & Profile
     const globalStats = useGlobalStats();
     const { profile, profiles } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
@@ -438,7 +440,7 @@ export function EnemyBuilder() {
                     >
                         {spriteMapping?.skills && (
                             <SpriteSheetIcon
-                                textureSrc="./icons/game/SkillIcons.png"
+                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}SkillIcons.png`}
                                 spriteWidth={spriteMapping.skills.sprite_size.width}
                                 spriteHeight={spriteMapping.skills.sprite_size.height}
                                 sheetWidth={spriteMapping.skills.texture_size.width}
@@ -663,7 +665,7 @@ export function EnemyBuilder() {
                                 <div className="absolute inset-0 pointer-events-none" style={{ ...getRarityBgStyle(enemy.weapon.rarity), opacity: 0.1 }} />
                                 <div
                                     className="w-16 h-16 bg-contain bg-center bg-no-repeat relative z-10"
-                                    style={{ backgroundImage: `url(${getItemImageWithFallback(enemy.weapon)})` }}
+                                    style={{ backgroundImage: `url(${getItemImageWithFallback(enemy.weapon, selectedVersion)})` }}
                                 />
                                 <div className="z-10 text-center">
                                     <div className={cn("text-sm font-bold", `text-rarity-${enemy.weapon.rarity.toLowerCase()}`)}>
@@ -885,7 +887,7 @@ export function EnemyBuilder() {
                                                     <div className="relative z-10 w-10 h-10 flex items-center justify-center">
                                                         {spriteMapping?.pets ? (
                                                             <SpriteSheetIcon
-                                                                textureSrc="./icons/game/Pets.png"
+                                                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}Pets.png`}
                                                                 spriteWidth={spriteMapping.pets.sprite_size.width}
                                                                 spriteHeight={spriteMapping.pets.sprite_size.height}
                                                                 sheetWidth={spriteMapping.pets.texture_size.width}
@@ -943,7 +945,7 @@ export function EnemyBuilder() {
                                         <div className="relative z-10 w-12 h-12 flex items-center justify-center">
                                             {spriteMapping?.mounts ? (
                                                 <SpriteSheetIcon
-                                                    textureSrc="./icons/game/MountIcons.png"
+                                                    textureSrc={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}MountIcons.png`}
                                                     spriteWidth={spriteMapping.mounts.sprite_size.width}
                                                     spriteHeight={spriteMapping.mounts.sprite_size.height}
                                                     sheetWidth={spriteMapping.mounts.texture_size.width}
@@ -1204,10 +1206,11 @@ export function EnemyBuilder() {
 }
 
 // Helper until we have proper asset util export
-function getItemImageWithFallback(item: ItemSlot) {
+function getItemImageWithFallback(item: ItemSlot | null, version?: string) {
+    if (!item) return '';
     try {
         const ageName = AGES[item.age] || 'Primitive';
-        return getItemImage(ageName, 'Weapon', item.idx) || '';
+        return getItemImage(ageName, 'Weapon', item.idx, null, version) || '';
     } catch (e) {
         return '';
     }

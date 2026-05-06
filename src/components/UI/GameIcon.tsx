@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { cn } from '../../lib/utils';
 import { useGameData } from '../../hooks/useGameData';
+import { useGameDataContext } from '../../context/GameDataContext';
 
 interface GameIconProps extends React.HTMLAttributes<HTMLElement> {
     name: string; // The icon name
@@ -10,6 +11,10 @@ interface GameIconProps extends React.HTMLAttributes<HTMLElement> {
 
 export function GameIcon({ name, size, className, alt, ...props }: GameIconProps) {
     const { data: iconsMap } = useGameData<any>('IconsMap.json');
+    const { selectedVersion, versions, isLoadingVersions } = useGameDataContext();
+
+    // Use current selected version or default to the latest available one
+    const activeVersion = selectedVersion || versions[0];
 
     // Case insensitive lookup
     const spriteInfo = useMemo(() => {
@@ -22,6 +27,14 @@ export function GameIcon({ name, size, className, alt, ...props }: GameIconProps
         height: size,
     } : {};
 
+    // If we don't have an active version yet, we shouldn't render to avoid broken requests
+    if (!activeVersion) {
+        return <div className={cn("inline-block shrink-0 bg-white/5 animate-pulse rounded", className)} style={style} />;
+    }
+
+    // Base path for Texture2D
+    const textureBase = `${import.meta.env.BASE_URL}Texture2D/${activeVersion}/`;
+
     // If we found a sprite mapping, render a div with background image
     if (spriteInfo) {
         const info = spriteInfo as any;
@@ -29,9 +42,6 @@ export function GameIcon({ name, size, className, alt, ...props }: GameIconProps
         const texH = iconsMap.texture_size?.height || 2048;
         const rect = info.sprite_rect;
 
-        // Calculate percentages specifically for background-position
-        // Formula: pos% = coordinate / (texture_dim - sprite_dim) * 100
-        // This ensures the sprite works responsively with any container size
         const bgSizeX = (texW / rect.width) * 100;
         const bgSizeY = (texH / rect.height) * 100;
 
@@ -40,7 +50,7 @@ export function GameIcon({ name, size, className, alt, ...props }: GameIconProps
 
         const spriteStyle: React.CSSProperties = {
             ...style,
-            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${iconsMap.texture || 'Icons.png'})`,
+            backgroundImage: `url(${textureBase}${encodeURIComponent(iconsMap.texture || 'Icons.png')})`,
             backgroundPosition: `${posX}% ${posY}%`,
             backgroundSize: `${bgSizeX}% ${bgSizeY}%`,
             backgroundRepeat: 'no-repeat',
@@ -59,11 +69,14 @@ export function GameIcon({ name, size, className, alt, ...props }: GameIconProps
 
     // Fallback logic for legacy/static icons
     let src = '';
-    if (name === 'hammer') src = `${import.meta.env.BASE_URL}Texture2D/Hammer.png`;
-    else if (name === 'gem') src = `${import.meta.env.BASE_URL}Texture2D/GemIcon.png`;
-    else if (name === 'coin') src = `${import.meta.env.BASE_URL}icons/coin.png`;
+    const cleanName = name.toLowerCase();
+    const encodedName = encodeURIComponent(name);
+    
+    if (cleanName === 'hammer') src = `${textureBase}Hammer.png`;
+    else if (cleanName === 'gem') src = `${textureBase}GemIcon.png`;
+    else if (cleanName === 'coin') src = `${import.meta.env.BASE_URL}icons/coin.png`;
     else if (name.includes('/') || name.includes('.')) src = name; // Direct path
-    else src = `${import.meta.env.BASE_URL}Texture2D/${name}.png`; // Fallback
+    else src = `${textureBase}${encodedName}.png`; // Fallback
 
     return (
         <img
@@ -72,7 +85,13 @@ export function GameIcon({ name, size, className, alt, ...props }: GameIconProps
             style={style}
             className={cn("object-contain inline-block", className)}
             onError={(e) => {
-                (e.target as HTMLImageElement).style.display = 'none';
+                const img = e.target as HTMLImageElement;
+                // If it fails, try without the version if we were using one
+                if (activeVersion && img.src.includes(`/${activeVersion}/`)) {
+                    img.src = `${import.meta.env.BASE_URL}Texture2D/${encodedName}.png`;
+                } else {
+                    img.style.display = 'none';
+                }
             }}
             {...props as React.ImgHTMLAttributes<HTMLImageElement>}
         />

@@ -78,7 +78,7 @@ export function getAgeBorderStyle(ageIndex: number): React.CSSProperties {
  * Returns inline style object for Age Icons (AgeIcons.png sprite sheet)
  * Uses 4x4 grid (512x512 total, 128x128 per icon)
  */
-export function getAgeIconStyle(ageIndex: number, size: number = 32): React.CSSProperties {
+export function getAgeIconStyle(ageIndex: number, size: number = 32, version?: string): React.CSSProperties {
     // Fix: Swap Multiverse (6) and Quantum (7) as they are inverted in the sprite sheet
     let spriteIndex = ageIndex;
     if (ageIndex === 6) spriteIndex = 7;
@@ -93,8 +93,9 @@ export function getAgeIconStyle(ageIndex: number, size: number = 32): React.CSSP
     const sheetHeight = 512;
     const scale = size / spriteSize;
 
+    const versionPath = version ? `${version}/` : '';
     return {
-        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/AgeIcons.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}AgeIcons.png)`,
         backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
         backgroundSize: `${sheetWidth * scale}px ${sheetHeight * scale}px`,
         width: `${size}px`,
@@ -125,7 +126,7 @@ export const INVENTORY_ICON_INDICES: Record<string, number> = {
 /**
  * Returns inline style object for Inventory Icons (InventoryTextures.png sprite sheet)
  */
-export function getInventoryIconStyle(slotKey: string, size: number = 32): React.CSSProperties | null {
+export function getInventoryIconStyle(slotKey: string, size: number = 32, version?: string): React.CSSProperties | null {
     const iconIndex = INVENTORY_ICON_INDICES[slotKey];
     if (iconIndex === undefined) return null;
 
@@ -136,8 +137,9 @@ export function getInventoryIconStyle(slotKey: string, size: number = 32): React
     const sheetHeight = 512;
     const scale = size / spriteSize;
 
+    const versionPath = version ? `${version}/` : '';
     return {
-        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/InventoryTextures.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}InventoryTextures.png)`,
         backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
         backgroundSize: `${sheetWidth * scale}px ${sheetHeight * scale}px`,
         width: `${size}px`,

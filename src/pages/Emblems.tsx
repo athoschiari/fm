@@ -6,6 +6,7 @@ import { Button } from '../components/UI/Button';
 import { useGameData } from '../hooks/useGameData';
 import { cn } from '../lib/utils';
 import { Download, Shield, RefreshCw } from 'lucide-react';
+import { useGameDataContext } from '../context/GameDataContext';
 
 // Constants
 const EMBLEM_SIZE = 128; // Final output size
@@ -20,6 +21,7 @@ interface GuildEmblemColor {
 
 export default function Emblems() {
     const { data: colorsConfig } = useGameData<Record<string, GuildEmblemColor>>('GuildEmblemColors.json');
+    const { selectedVersion } = useGameDataContext();
 
     const [activeTab, setActiveTab] = useState<'pattern' | 'symbol'>('pattern');
     const [foregroundColorId, setForegroundColorId] = useState<number>(8);
@@ -66,10 +68,13 @@ export default function Emblems() {
         shapesImg.onload = handleLoad;
         iconsImg.onload = handleLoad;
 
-        holderImg.src = `${import.meta.env.BASE_URL}Texture2D/EmblemHolder.png`;
-        shapesImg.src = `${import.meta.env.BASE_URL}Texture2D/EmblemShapes.png`;
-        iconsImg.src = `${import.meta.env.BASE_URL}Texture2D/EmblemIcons.png`;
-    }, []);
+        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
+        const textureBase = `${import.meta.env.BASE_URL}Texture2D/${versionPath}`;
+
+        holderImg.src = `${textureBase}EmblemHolder.png`;
+        shapesImg.src = `${textureBase}EmblemShapes.png`;
+        iconsImg.src = `${textureBase}EmblemIcons.png`;
+    }, [selectedVersion]);
 
     // Initialize defaults
     useEffect(() => {
@@ -301,7 +306,7 @@ export default function Emblems() {
                                             >
                                                 <div className="w-full h-full opacity-60 group-hover:opacity-100 transition-opacity"
                                                     style={{
-                                                        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/EmblemShapes.png)`,
+                                                        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}EmblemShapes.png)`,
                                                         backgroundPosition: `${(i % 4) * (100 / 3)}% ${Math.floor(i / 4) * (100 / 3)}%`,
                                                         backgroundSize: '400% 400%',
                                                     }}
@@ -328,7 +333,7 @@ export default function Emblems() {
                                             >
                                                 <div className="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity"
                                                     style={{
-                                                        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/EmblemIcons.png)`,
+                                                        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}EmblemIcons.png)`,
                                                         backgroundPosition: `${(i % 8) * (100 / 7)}% ${Math.floor(i / 8) * (100 / 7)}%`,
                                                         backgroundSize: '800% 800%'
                                                     }}

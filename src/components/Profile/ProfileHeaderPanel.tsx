@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useProfile } from '../../context/ProfileContext';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
@@ -22,6 +23,7 @@ interface ProfileIconProps {
 }
 
 export function ProfileIcon({ iconIndex, size = 48, className, onClick }: ProfileIconProps) {
+    const { selectedVersion } = useGameDataContext();
     const col = iconIndex % ICONS_PER_ROW;
     const row = Math.floor(iconIndex / ICONS_PER_ROW);
 
@@ -45,7 +47,7 @@ export function ProfileIcon({ iconIndex, size = 48, className, onClick }: Profil
             style={{
                 width: size,
                 height: size,
-                backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/CardIcons.png)`,
+                backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}CardIcons.png)`,
                 backgroundPosition: `-${posX}px -${posY}px`,
                 backgroundSize: `${bgSize}px ${bgSize}px`,
             }}

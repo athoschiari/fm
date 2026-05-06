@@ -1,4 +1,5 @@
 import { useProfile } from '../../context/ProfileContext';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
 import { Bike as MountIcon, Plus, X, Recycle, Bookmark } from 'lucide-react';
 import { MountSlot } from '../../types/Profile';
@@ -15,6 +16,7 @@ import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 
 export function MountPanel() {
     const { profile, updateNestedProfile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const activeMount = profile.mount.active;
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
@@ -77,13 +79,14 @@ export function MountPanel() {
                 const mountAscensionLevel = profile.misc.mountAscensionLevel || 0;
                 if (mountAscensionLevel > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
                     const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
-                    for (let i = 0; i < mountAscensionLevel && i < ascConfigs.length; i++) {
-                        const stats = ascConfigs[i].StatContributions || [];
+                    const config = ascConfigs[Math.min(mountAscensionLevel - 1, ascConfigs.length - 1)];
+                    if (config) {
+                        const stats = config.StatContributions || [];
                         for (const s of stats) {
                             const sType = s.StatNode?.UniqueStat?.StatType;
                             const sVal = s.Value;
-                            if (sType === 'Damage') ascensionDmgMulti += sVal;
-                            if (sType === 'Health') ascensionHpMulti += sVal;
+                            if (sType === 'Damage' || sType === 'AscensionDamage') ascensionDmgMulti = sVal;
+                            if (sType === 'Health' || sType === 'AscensionHealth') ascensionHpMulti = sVal;
                         }
                     }
                 }
@@ -96,16 +99,17 @@ export function MountPanel() {
                         let ascensionBonus = 0;
 
                         // Apply tech tree bonus for Damage/Health
+                        // Apply tech tree bonus for Damage/Health and Ascension multiplier
                         if (statType === 'Damage') {
                             baseDamageMulti = value;
                             techBonus = mountDamageBonus;
-                            ascensionBonus = ascensionDmgMulti;
-                            value = value * (1 + techBonus + ascensionBonus);
+                            ascensionBonus = ascensionDmgMulti || 1;
+                            value = value * (1 + techBonus) * ascensionBonus;
                         } else if (statType === 'Health') {
                             baseHealthMulti = value;
                             techBonus = mountHealthBonus;
-                            ascensionBonus = ascensionHpMulti;
-                            value = value * (1 + techBonus + ascensionBonus);
+                            ascensionBonus = ascensionHpMulti || 1;
+                            value = value * (1 + techBonus) * ascensionBonus;
                         }
 
                         combined.push({
@@ -137,10 +141,19 @@ export function MountPanel() {
             });
         }
 
+        const techDmgFactor = 1 + mountDamageBonus;
+        const techHpFactor = 1 + mountHealthBonus;
+        const ascDmgFactor = ascensionDmgMulti || 1;
+        const ascHpFactor = ascensionHpMulti || 1;
+
         return {
             stats: combined,
-            damageMulti: baseDamageMulti * (1 + mountDamageBonus),
-            healthMulti: baseHealthMulti * (1 + mountHealthBonus)
+            damageMulti: techDmgFactor * ascDmgFactor,
+            healthMulti: techHpFactor * ascHpFactor,
+            details: {
+                damage: { base: baseDamageMulti, techMulti: techDmgFactor, ascMulti: ascDmgFactor },
+                health: { base: baseHealthMulti, techMulti: techHpFactor, ascMulti: ascHpFactor }
+            }
         };
     };
 
@@ -273,7 +286,7 @@ export function MountPanel() {
                             >
                                 {activeSprite ? (
                                     <SpriteSheetIcon
-                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
+                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
                                         spriteWidth={activeSprite.config.sprite_size.width}
                                         spriteHeight={activeSprite.config.sprite_size.height}
                                         sheetWidth={activeSprite.config.texture_size.width}
@@ -309,13 +322,42 @@ export function MountPanel() {
                                 };
 
                                 return (
-                                    <div key={idx} className={cn("flex justify-between items-center text-[10px] font-mono", getStatColor(stat.label))}>
+                                    <div key={idx} className={cn("flex justify-between items-center text-[10px] font-mono relative group/mount-details", getStatColor(stat.label))}>
                                         <span className="opacity-70">{getStatName(stat.label)}</span>
-                                        <span className="font-bold">
-                                            {stat.isMultiplier || isFlat ? '+' : ''}
-                                            {isFlat ? formatValue(stat.value) : (stat.isMultiplier ? stat.value * 100 : stat.value).toFixed(1)}
-                                            {stat.isMultiplier ? '%' : ''}
-                                        </span>
+                                        <div className="flex items-center gap-1">
+                                            <span className="font-bold">
+                                                {stat.isMultiplier || isFlat ? '+' : ''}
+                                                {isFlat ? formatValue(stat.value) : (stat.isMultiplier ? stat.value * 100 : stat.value).toFixed(1)}
+                                                {stat.isMultiplier ? '%' : ''}
+                                            </span>
+                                            
+                                            {isFlat && (stat.label === 'Damage' || stat.label === 'Health') && (
+                                                <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 w-48 bg-black border border-white/10 rounded-lg p-2 shadow-2xl z-50 hidden group-hover/mount-details:block pointer-events-none backdrop-blur-md">
+                                                    <div className="text-[10px] space-y-1">
+                                                        <div className="flex justify-between border-b border-white/5 pb-1 mb-1">
+                                                            <span className="text-text-muted uppercase font-bold">{stat.label} Breakdown</span>
+                                                            <span className={cn("font-bold", getStatColor(stat.label))}>{Math.round(stat.value).toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span className="text-text-muted">Base</span>
+                                                            <span>{Math.round(stat.baseValue).toLocaleString()}</span>
+                                                        </div>
+                                                        {stat.techBonus > 0 && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-text-muted">Tech Tree</span>
+                                                                <span className="text-green-400">x{(1 + stat.techBonus).toFixed(2)}</span>
+                                                            </div>
+                                                        )}
+                                                        {stat.ascensionBonus > 1 && (
+                                                            <div className="flex justify-between">
+                                                                <span className="text-text-muted">Ascension</span>
+                                                                <span className="text-amber-400">x{stat.ascensionBonus.toFixed(2)}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -381,6 +423,7 @@ export function MountPanel() {
                 onClose={() => setIsModalOpen(false)}
                 onSelect={handleSelectMount}
                 currentMount={activeMount}
+                mountAscensionLevel={profile.misc.mountAscensionLevel}
             />
 
             <InputModal

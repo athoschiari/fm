@@ -8,6 +8,7 @@ import { SpriteIcon } from '../UI/SpriteIcon';
 import { Plus, Minus } from 'lucide-react';
 import { AscensionStars } from '../UI/AscensionStars';
 import { getAnvilTexturePath } from '../../utils/ascensionUtils';
+import { useGameDataContext } from '../../context/GameDataContext';
 
 export function MiscPanel() {
     const { profile, updateNestedProfile } = useProfile();
@@ -15,7 +16,7 @@ export function MiscPanel() {
     const { data: forgeData } = useGameData<any>('ForgeUpgradeLibrary.json');
     const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
     const { data: ascData } = useGameData<any>('AscensionConfigsLibrary.json');
-
+    const { selectedVersion } = useGameDataContext();
     // Determine max forge level from config
     // If there are 34 upgrade entries, it means we can reach Level 35
     const maxForgeLevel = forgeData ? Math.max(...Object.keys(forgeData).map(Number)) + 1 : 99;
@@ -52,7 +53,7 @@ export function MiscPanel() {
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold flex items-center gap-2">
-                <img src={`${import.meta.env.BASE_URL}Texture2D/SettingsIcon.png`} alt="Settings" className="w-8 h-8 object-contain" />
+                <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/SettingsIcon.png`} alt="Settings" className="w-8 h-8 object-contain" />
                 Global Settings
             </h2>
 
@@ -61,13 +62,13 @@ export function MiscPanel() {
                 <Card className="p-4 bg-bg-secondary/40 border-border/50">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1">
-                            <img src={getAnvilTexturePath(profile.misc.forgeAscensionLevel || 0)} alt="Forge" className="w-full h-full object-contain" />
+                            <img src={getAnvilTexturePath(profile.misc.forgeAscensionLevel || 0, selectedVersion)} alt="Forge" className="w-full h-full object-contain" />
                         </div>
                         <div className="flex-1">
                             <div className="font-bold">Forge Level</div>
                             <div className="text-xs text-text-muted">Affects enhancement costs</div>
                         </div>
-                        <AscensionStars 
+                        <AscensionStars
                             value={profile.misc.forgeAscensionLevel || 0}
                             onChange={(val) => updateMisc('forgeAscensionLevel', val)}
                         />
@@ -206,7 +207,7 @@ export function MiscPanel() {
                 <Card className="p-4 bg-bg-secondary/40 border-border/50">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 rounded-lg bg-bg-input flex items-center justify-center p-1">
-                            <img src={`${import.meta.env.BASE_URL}Texture2D/HatchBed.png`} alt="Egg Slots" className="w-full h-full object-contain" />
+                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/HatchBed.png`} alt="Egg Slots" className="w-full h-full object-contain" />
                         </div>
                         <div>
                             <div className="font-bold">Egg Slots</div>

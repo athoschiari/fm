@@ -5,6 +5,7 @@
  * Row 2: Druid(H,A), Leprechaun(H,A), Flower(H,A), Unnamed(H 102), Unnamed(H 103)
  * Row 3: Druid(W), Leprechaun(W), Flower(W)
  */
+import { useGameDataContext } from '../context/GameDataContext';
 
 export const SKIN_SPRITE_COLS = 8;
 export const SKIN_SPRITE_ROWS = 8;
@@ -83,8 +84,9 @@ export const getSkinSpritePosition = (skin: { SkinId: SkinId }, mapping?: Record
  */
 export const getSkinSpriteStyle = (skin: { SkinId: SkinId }, mapping?: Record<string, number>): React.CSSProperties => {
     const position = getSkinSpritePosition(skin, mapping);
+    const { selectedVersion } = useGameDataContext();
     return {
-        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/SkinsUiIcons.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/SkinsUiIcons.png)`,
         backgroundSize: '800% 800%',
         backgroundPosition: position || 'center',
         imageRendering: 'pixelated' as const

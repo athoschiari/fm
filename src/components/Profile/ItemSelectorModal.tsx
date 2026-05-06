@@ -4,6 +4,7 @@ import { SecondaryStatInput } from '../UI/SecondaryStatInput';
 import { X, Sword, Heart, Plus, Trash2, Clock, Target, Unlock, Grid, Settings, Bookmark, Shield, Calendar } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { ItemSlot } from '../../types/Profile';
 import { Input } from '../UI/Input';
@@ -98,6 +99,7 @@ type MobileTab = 'age' | 'items' | 'config';
 
 export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, isPvp = false, forgeAscensionLevel }: ItemSelectorModalProps) {
     const { profile, updateNestedProfile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const stats = useGlobalStats();
     const { data: itemLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: secondaryData } = useGameData<any>('SecondaryStatItemUnlockLibrary.json');
@@ -123,8 +125,11 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             for (let i = 0; i < ascLevel && i < configs.length; i++) {
                 const contributions = configs[i].StatContributions || [];
                 for (const stat of contributions) {
-                    total += stat.Value;
-                    break;
+                    const statType = stat.StatNode?.UniqueStat?.StatType;
+                    if (statType === 'Damage' || statType === 'AscensionDamage' || statType === 'Health' || statType === 'AscensionHealth') {
+                        total += (stat.Value + 1) / 100;
+                        break;
+                    }
                 }
             }
         }
@@ -499,7 +504,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 const type = nextStat.StatNode.UniqueStat.StatType;
                 setSkinStatsList([...skinStatsList, {
                     type,
-                    value: nextStat.MinValue // Default to min value
+                    value: 0.01 // Default to 1%
                 }]);
             }
         }
@@ -512,9 +517,8 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             // Find limits for new type and clamp value
             const statDef = possibleStats.find(s => s.StatNode.UniqueStat.StatType === value);
             let val = newStats[index].value;
-            if (statDef) {
-                val = Math.max(statDef.MinValue, Math.min(statDef.MaxValue, val));
-            }
+            // Hardcoded 1% to 100% limits
+            val = Math.max(0.01, Math.min(1.0, val));
             newStats[index] = { ...newStats[index], type: value, value: val };
         } else {
             newStats[index] = { ...newStats[index], [field]: value };
@@ -555,7 +559,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                         const firstStat = skin.PossibleStats[0];
                                         setSkinStatsList([{
                                             type: firstStat.StatNode.UniqueStat.StatType,
-                                            value: firstStat.MinValue
+                                            value: 0.01 // Default to 1%
                                         }]);
                                     } else {
                                         setSkinStatsList([]);
@@ -569,7 +573,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             >
                                 <div
                                     className="w-full h-full"
-                                    style={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
+                                    style={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
                                 />
                             </button>
                         );
@@ -603,12 +607,12 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                             const statDef = possibleStats.find((s: any) => s.StatNode?.UniqueStat?.StatType === stat.type);
                                             const min = statDef?.MinValue || 0;
                                             const max = statDef?.MaxValue || 1;
-                                            
+
                                             const statOptions = possibleStats
                                                 .filter((s: any) => s.StatNode.UniqueStat.StatType === stat.type || !skinStatsList.some(existing => existing.type === s.StatNode.UniqueStat.StatType))
-                                                .map((s: any) => ({ 
-                                                    id: s.StatNode.UniqueStat.StatType, 
-                                                    name: s.StatNode.UniqueStat.StatType 
+                                                .map((s: any) => ({
+                                                    id: s.StatNode.UniqueStat.StatType,
+                                                    name: s.StatNode.UniqueStat.StatType
                                                 }));
 
                                             return (
@@ -620,7 +624,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                     onStatIdChange={(newId) => updateSkinStat(i, 'type', newId, possibleStats)}
                                                     onValueChange={(newVal) => updateSkinStat(i, 'value', newVal / 100, possibleStats)}
                                                     onRemove={() => removeSkinStat(i)}
-                                                    range={{ min, max }}
+                                                    range={{ min: 0.01, max: 1.0 }}
                                                 />
                                             );
                                         })}
@@ -916,7 +920,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             idx = saved.idx;
                             ageForBg = saved.age;
                             const fileSlot = IMAGE_SLOT_MAP[slot] || slot;
-                            imgPath = getItemImage(AGES[saved.age], fileSlot, saved.idx, autoMapping) || "";
+                            imgPath = getItemImage(AGES[saved.age], fileSlot, saved.idx, autoMapping, selectedVersion) || "";
                             itemName = saved.customName || getItemName(AGES[saved.age], fileSlot, saved.idx, autoMapping) || `Item #${idx}`;
                             isSelected = selectedSavedItemIndex === listIdx;
                         } else {
@@ -924,7 +928,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             idx = item.ItemId?.Idx || 0;
                             ageForBg = ageIdx;
                             const fileSlot = IMAGE_SLOT_MAP[slot] || slot;
-                            imgPath = getItemImage(AGES[ageIdx], fileSlot, idx, autoMapping) || "";
+                            imgPath = getItemImage(AGES[ageIdx], fileSlot, idx, autoMapping, selectedVersion) || "";
                             itemName = getItemName(AGES[ageIdx], fileSlot, idx, autoMapping) || `Item #${idx}`;
                             isSelected = selectedItemIdx === idx;
                         }
@@ -992,7 +996,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 <div className="flex items-center justify-between p-4 border-b border-border bg-bg-secondary/20">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
-                            <img src={`${import.meta.env.BASE_URL}Texture2D/IconDivineArmorPaladinarmor.png`} alt="Equipment" className="w-8 h-8 object-contain" />
+                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/IconDivineArmorPaladinarmor.png`} alt="Equipment" className="w-8 h-8 object-contain" />
                         </div>
                         <div>
                             <h3 className="text-xl font-bold">Select {slot}</h3>
@@ -1160,7 +1164,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         {activeList.length > 0 ? (
                             <div className={cn(
                                 "grid gap-2",
-                                ageIdx === -1 
+                                ageIdx === -1
                                     ? "grid-cols-2 lg:grid-cols-3" // Larger cards for saved presets
                                     : "grid-cols-3 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4" // Compact for age list
                             )}>
@@ -1170,7 +1174,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                         const saved = item as ItemSlot & { customName?: string };
                                         const fileSlot = IMAGE_SLOT_MAP[slot] || slot;
                                         const itemName = saved.customName || getItemName(AGES[saved.age], fileSlot, saved.idx, autoMapping) || `Item #${saved.idx}`;
-                                        const imgPath = getItemImage(AGES[saved.age], fileSlot, saved.idx, autoMapping) || "";
+                                        const imgPath = getItemImage(AGES[saved.age], fileSlot, saved.idx, autoMapping, selectedVersion) || "";
 
                                         return (
                                             <ItemSelectionCard
@@ -1184,9 +1188,9 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                 itemImage={imgPath}
                                                 variant="compact"
                                                 stats={getItemStats(
-                                                    saved, 
-                                                    slot, 
-                                                    { itemBalancingLibrary: itemLibrary, itemBalancingConfig, weaponLibrary }, 
+                                                    saved,
+                                                    slot,
+                                                    { itemBalancingLibrary: itemLibrary, itemBalancingConfig, weaponLibrary },
                                                     { techModifiers, forgeAscensionMulti }
                                                 )}
                                                 perfection={getPerfection(saved, secondaryStatLibrary)}
@@ -1213,7 +1217,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                     const idx = item.ItemId?.Idx || 0;
                                     const ageForBg = ageIdx;
                                     const fileSlot = IMAGE_SLOT_MAP[slot] || slot;
-                                    const imgPath = getItemImage(AGES[ageIdx], fileSlot, idx, autoMapping) || "";
+                                    const imgPath = getItemImage(AGES[ageIdx], fileSlot, idx, autoMapping, selectedVersion) || "";
                                     const itemName = getItemName(AGES[ageIdx], fileSlot, idx, autoMapping) || `Item #${idx}`;
                                     const isSelected = selectedItemIdx === idx;
 
@@ -1352,9 +1356,9 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                         Passive Stats ({manualStats.length}/{numSecondarySlots})
                                     </span>
                                     {manualStats.length < numSecondarySlots && (
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
                                             onClick={addStat}
                                             className="h-7 text-xs text-accent-primary hover:bg-accent-primary/10"
                                         >

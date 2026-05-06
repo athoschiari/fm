@@ -286,9 +286,9 @@ export function usePetStats(pet: PetSlot | null) {
                 const stats = ascConfigs[i].StatContributions || [];
                 for (const s of stats) {
                     const sType = s.StatNode?.UniqueStat?.StatType;
-                    const sVal = s.Value;
-                    if (sType === 'Damage') ascensionDmgMulti += sVal;
-                    if (sType === 'Health') ascensionHpMulti += sVal;
+                    const sVal = (s.Value + 1) / 100;
+                    if (sType === 'Damage' || sType === 'AscensionDamage') ascensionDmgMulti += sVal;
+                    if (sType === 'Health' || sType === 'AscensionHealth') ascensionHpMulti += sVal;
                 }
             }
         }
@@ -354,9 +354,9 @@ export function useMountStats(mount: MountSlot | null) {
                 const stats = ascConfigs[i].StatContributions || [];
                 for (const s of stats) {
                     const sType = s.StatNode?.UniqueStat?.StatType;
-                    const sVal = s.Value;
-                    if (sType === 'Damage') ascensionDmgMulti += sVal;
-                    if (sType === 'Health') ascensionHpMulti += sVal;
+                    const sVal = (s.Value + 1) / 100;
+                    if (sType === 'Damage' || sType === 'AscensionDamage') ascensionDmgMulti += sVal;
+                    if (sType === 'Health' || sType === 'AscensionHealth') ascensionHpMulti += sVal;
                 }
             }
         }

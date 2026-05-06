@@ -11,6 +11,7 @@ import { SecondaryStatCard } from '../UI/SecondaryStatCard';
 import { cn, getRarityBgStyle } from '../../lib/utils';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { useProfile } from '../../context/ProfileContext';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { RARITIES } from '../../utils/constants';
 import { getStatName } from '../../utils/statNames';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
@@ -24,6 +25,7 @@ interface PetSelectorModalProps {
     onSelect: (pet: PetSlot | null) => void;
     currentPet?: PetSlot; // Optional: for editing existing pet
     context?: 'profile' | 'pvp';
+    petAscensionLevel?: number;
 }
 
 const STAT_TYPES = [
@@ -42,7 +44,8 @@ const STAT_TYPES = [
     "HealthMulti"
 ];
 
-export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, context = 'profile' }: PetSelectorModalProps) {
+export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, context = 'profile', petAscensionLevel }: PetSelectorModalProps) {
+    const { selectedVersion } = useGameDataContext();
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
     const { data: petBalancing } = useGameData<any>('PetBalancingLibrary.json');
     const { data: petUpgradeLibrary } = useGameData<any>('PetUpgradeLibrary.json');
@@ -97,9 +100,11 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
 
     // Calculate max secondary stats
     const maxSecondaryStats = useMemo(() => {
+        const currentAsc = petAscensionLevel !== undefined ? petAscensionLevel : (profile.misc.petAscensionLevel || 0);
+        if (currentAsc > 0) return 2;
         if (!secondaryUnlockLib || !selectedRarity) return 0;
         return secondaryUnlockLib[selectedRarity]?.NumberOfSecondStats || 0;
-    }, [secondaryUnlockLib, selectedRarity]);
+    }, [secondaryUnlockLib, selectedRarity, profile.misc.petAscensionLevel, petAscensionLevel]);
 
     const maxPetLevel = useMemo(() => {
         if (!petUpgradeLibrary || !selectedRarity) return 100;
@@ -228,7 +233,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
                             <SpriteSheetIcon
-                                textureSrc={getAscensionTexturePath('Eggs', profile.misc.petAscensionLevel || 0)}
+                                textureSrc={getAscensionTexturePath('Eggs', profile.misc.petAscensionLevel || 0, selectedVersion)}
                                 spriteWidth={256}
                                 spriteHeight={256}
                                 sheetWidth={1024}
@@ -358,7 +363,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                 >
                                     <div className="shrink-0 md:bg-black/20 md:p-1 md:rounded">
                                         <SpriteSheetIcon
-                                            textureSrc={getAscensionTexturePath('Eggs', profile.misc.petAscensionLevel || 0)}
+                                            textureSrc={getAscensionTexturePath('Eggs', profile.misc.petAscensionLevel || 0, selectedVersion)}
                                             spriteWidth={256}
                                             spriteHeight={256}
                                             sheetWidth={1024}
@@ -420,7 +425,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                             >
                                                 {petsConfig && (
                                                     <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
+                                                        textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0, selectedVersion)}
                                                         spriteWidth={petsConfig.sprite_size.width}
                                                         spriteHeight={petsConfig.sprite_size.height}
                                                         sheetWidth={petsConfig.texture_size.width}
@@ -487,7 +492,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                     }}
                                                     renderIcon={() => (
                                                         <SpriteSheetIcon
-                                                            textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
+                                                            textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0, selectedVersion)}
                                                             spriteWidth={petsConfig!.sprite_size.width}
                                                             spriteHeight={petsConfig!.sprite_size.height}
                                                             sheetWidth={petsConfig!.texture_size.width}
@@ -525,7 +530,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                     >
                                         {petsConfig && (
                                             <SpriteSheetIcon
-                                                textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0)}
+                                                textureSrc={getAscensionTexturePath('Pets', profile.misc.petAscensionLevel || 0, selectedVersion)}
                                                 spriteWidth={petsConfig.sprite_size.width}
                                                 spriteHeight={petsConfig.sprite_size.height}
                                                 sheetWidth={petsConfig.texture_size.width}

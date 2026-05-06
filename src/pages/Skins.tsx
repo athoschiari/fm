@@ -1,11 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { Shield, Sword, Heart, Zap } from 'lucide-react';
 import { getSkinSpriteStyle } from '../utils/skinSprites';
 import { BreakpointWikiModal } from '../components/Wiki/BreakpointWikiModal';
-import { useState } from 'react';
+import { useGameDataContext } from '../context/GameDataContext';
 
 interface SkinStat {
     StatNode: {
@@ -24,7 +24,7 @@ interface SkinEntry {
         Idx: number;
     };
     PossibleStats: SkinStat[];
-    SetId?: string;
+    BaseSetId?: string;
     MaxStatCount: number;
 }
 
@@ -49,10 +49,12 @@ interface SetEntry {
 }
 
 export default function Skins() {
+    const { selectedVersion } = useGameDataContext();
     const { data: skinsData, loading: loadingSkins } = useGameData<Record<string, SkinEntry>>('SkinsLibrary.json');
     const { data: setsData, loading: loadingSets } = useGameData<Record<string, SetEntry>>('SetsLibrary.json');
     const { data: spriteMapping, loading: loadingMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
+    const { data: upgradeData } = useGameData<Record<string, any>>('SkinUpgradeLibrary.json');
 
     const loading = loadingSkins || loadingSets || loadingMapping;
 
@@ -63,9 +65,9 @@ export default function Skins() {
         const misc: SkinEntry[] = [];
 
         Object.values(skinsData).forEach(skin => {
-            if (skin.SetId && setsData && setsData[skin.SetId]) {
-                if (!sets[skin.SetId]) sets[skin.SetId] = [];
-                sets[skin.SetId].push(skin);
+            if (skin.BaseSetId && setsData && setsData[skin.BaseSetId]) {
+                if (!sets[skin.BaseSetId]) sets[skin.BaseSetId] = [];
+                sets[skin.BaseSetId].push(skin);
             } else {
                 misc.push(skin);
             }
@@ -88,10 +90,10 @@ export default function Skins() {
 
     const weaponTimingLookup = useMemo(() => {
         if (!weaponLibrary) return {} as Record<number, { windup: number, duration: number }>;
-        
+
         // Internal tracking to store the age along with the windup/duration
         const tracking: Record<number, { age: number, windup: number, duration: number }> = {};
-        
+
         Object.entries(weaponLibrary).forEach(([_, data]: [string, any]) => {
             const idx = data.ItemId?.Idx;
             const age = data.ItemId?.Age;
@@ -130,7 +132,7 @@ export default function Skins() {
 
     return (
         <div className="space-y-8 animate-fade-in pb-12">
-            <BreakpointWikiModal 
+            <BreakpointWikiModal
                 isOpen={breakpointModal.isOpen}
                 onClose={() => setBreakpointModal({ isOpen: false })}
                 weaponName={breakpointModal.weapon?.Name || 'Skin'}
@@ -145,6 +147,45 @@ export default function Skins() {
                     Collect skins to complete Sets and unlock powerful bonuses.
                 </p>
             </div>
+
+            {/* Skin Upgrade Stats Display */}
+            {upgradeData && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {Object.entries(upgradeData).map(([type, data]: [string, any]) => (
+                        <Card key={type} className="bg-bg-secondary/40 border-border/50 p-4 space-y-4">
+                            <div className="flex items-center gap-3 border-b border-border/30 pb-3">
+                                <div className="p-2 bg-accent-primary/10 rounded-lg">
+                                    {type === 'Weapon' ? <Sword className="w-5 h-5 text-accent-primary" /> :
+                                     type === 'Helmet' ? <Shield className="w-5 h-5 text-accent-primary" /> :
+                                     <Shield className="w-5 h-5 text-accent-primary opacity-70" />}
+                                </div>
+                                <h3 className="text-lg font-bold text-text-primary uppercase tracking-wider">{type} Upgrades</h3>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-text-muted">Stat Increase / Level</span>
+                                    <span className="text-green-400 font-mono font-bold">
+                                        +{(data.GoodSkinStatIncreasePerLevel * 100).toFixed(1)}%
+                                    </span>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-tighter block mb-1">XP Required per Level</span>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {data.GoodSkinsLevelExperience.map((exp: number, i: number) => (
+                                            <div key={i} className="bg-bg-input/50 rounded p-2 border border-border/20 flex justify-between items-center">
+                                                <span className="text-[10px] text-text-muted font-bold">Lv.{i + 1} → {i + 2}</span>
+                                                <span className="text-xs font-mono font-bold text-accent-secondary">{exp}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            )}
 
             {/* Sets Display */}
             <div className="space-y-6">
@@ -161,11 +202,11 @@ export default function Skins() {
                                     {setIcon && (
                                         <div className="w-16 h-16 rounded-lg border-2 border-border shadow-md overflow-hidden bg-bg-secondary shrink-0 relative">
                                             <div className="absolute inset-0 bg-accent-primary/10"></div>
-                                                <img
-                                                    src={`${import.meta.env.BASE_URL}Texture2D/${setIcon}`}
-                                                    alt={setId}
-                                                    className="w-full h-full object-contain pixelated relative z-10"
-                                                />
+                                            <img
+                                                src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${setIcon}`}
+                                                alt={setId}
+                                                className="w-full h-full object-contain pixelated relative z-10"
+                                            />
                                         </div>
                                     )}
                                     <div>
@@ -201,19 +242,19 @@ export default function Skins() {
 
                             {/* Skins Grid for this Set */}
                             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                    {skins.map((skin) => (
-                                        <SkinCard
-                                            key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
-                                            skin={skin}
-                                            bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
-                                            windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
-                                            duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
-                                            onShowBreakpoints={(w, d) => setBreakpointModal({ 
-                                                isOpen: true, 
-                                                weapon: { Name: `${skin.SetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w } 
-                                            })}
-                                        />
-                                    ))}
+                                {skins.map((skin) => (
+                                    <SkinCard
+                                        key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
+                                        skin={skin}
+                                        bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
+                                        windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
+                                        duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
+                                        onShowBreakpoints={(w, d) => setBreakpointModal({
+                                            isOpen: true,
+                                            weapon: { Name: `${skin.BaseSetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w }
+                                        })}
+                                    />
+                                ))}
                             </div>
                         </div>
                     );
@@ -232,12 +273,12 @@ export default function Skins() {
                             <SkinCard
                                 key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                 skin={skin}
-                                bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
+                                bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
                                 windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
                                 duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
-                                onShowBreakpoints={(w, d) => setBreakpointModal({ 
-                                    isOpen: true, 
-                                    weapon: { Name: `${skin.SetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w } 
+                                onShowBreakpoints={(w, d) => setBreakpointModal({
+                                    isOpen: true,
+                                    weapon: { Name: `${skin.BaseSetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w }
                                 })}
                             />
                         ))}
@@ -248,9 +289,9 @@ export default function Skins() {
     );
 }
 
-function SkinCard({ skin, bgStyle, windup, duration, onShowBreakpoints }: { 
-    skin: SkinEntry, 
-    bgStyle: React.CSSProperties, 
+function SkinCard({ skin, bgStyle, windup, duration, onShowBreakpoints }: {
+    skin: SkinEntry,
+    bgStyle: React.CSSProperties,
     windup?: number,
     duration?: number,
     onShowBreakpoints?: (windup: number, duration: number) => void
@@ -278,7 +319,7 @@ function SkinCard({ skin, bgStyle, windup, duration, onShowBreakpoints }: {
                                 <Zap className="w-3 h-3" />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">Windup: {windup.toFixed(2)}s</span>
                             </div>
-                            <button 
+                            <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     if (windup !== undefined && duration !== undefined) {

@@ -8,8 +8,10 @@ import { Search, Cat, Sword, Heart, Zap, Shield, Star, BookOpen, TrendingUp } fr
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
 import { getAscensionTexturePath } from '../utils/ascensionUtils';
+import { useGameDataContext } from '../context/GameDataContext';
 
 function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity: string; size?: number; className?: string; ascensionLevel?: number }) {
+    const { selectedVersion } = useGameDataContext();
     const rarityIndex: Record<string, number> = {
         'Common': 0, 'Rare': 1, 'Epic': 2,
         'Legendary': 3, 'Ultimate': 4, 'Mythic': 5
@@ -22,7 +24,7 @@ function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity:
     const xPos = (col / 3) * 100;
     const yPos = (row / 3) * 100;
 
-    const texturePath = getAscensionTexturePath('Eggs', ascensionLevel);
+    const texturePath = getAscensionTexturePath('Eggs', ascensionLevel, selectedVersion);
 
     return (
         <div
@@ -45,6 +47,7 @@ import { usePersistentState } from '../hooks/usePersistentState';
 
 export default function Pets() {
     const { profile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const { data: petLibrary, loading: l1 } = useGameData<any>('PetLibrary.json');
     const { data: petUpgrades, loading: l2 } = useGameData<any>('PetUpgradeLibrary.json');
     const { data: petBalancing, loading: l3 } = useGameData<any>('PetBalancingLibrary.json');
@@ -67,9 +70,10 @@ export default function Pets() {
             const configs = ascensionConfigs.Pets.AscensionConfigPerLevel;
             for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
                 for (const s of configs[i].StatContributions || []) {
-                    const val = s.Value;
-                    if (s.StatNode?.UniqueStat?.StatType === 'Damage') dmg += val;
-                    if (s.StatNode?.UniqueStat?.StatType === 'Health') hp += val;
+                    const val = s.Value + 1;
+                    const statType = s.StatNode?.UniqueStat?.StatType;
+                    if (statType === 'Damage' || statType === 'AscensionDamage') dmg += val;
+                    if (statType === 'Health' || statType === 'AscensionHealth') hp += val;
                 }
             }
         }
@@ -151,10 +155,13 @@ export default function Pets() {
 
     const getAscSpriteUrl = () => {
         const baseUrl = import.meta.env.BASE_URL;
-        if (ascensionLevel === 1) return `${baseUrl}Texture2D/MegaPets.png`;
-        if (ascensionLevel === 2) return `${baseUrl}Texture2D/UltraPets.png`;
-        if (ascensionLevel === 3) return `${baseUrl}Texture2D/ApexPets.png`;
-        return `${baseUrl}Texture2D/Pets.png`;
+        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
+        const textureBase = `${baseUrl}Texture2D/${versionPath}`;
+        
+        if (ascensionLevel === 1) return `${textureBase}MegaPets.png`;
+        if (ascensionLevel === 2) return `${textureBase}UltraPets.png`;
+        if (ascensionLevel === 3) return `${textureBase}ApexPets.png`;
+        return `${textureBase}Pets.png`;
     };
 
     // Calculate cumulative experience per rarity

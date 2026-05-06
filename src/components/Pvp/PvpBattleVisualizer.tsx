@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PvpBattleEngine, PvpPlayerStats, Projectile } from '../../utils/PvpBattleEngine';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { Play, Pause, X, Zap, Heart, Sword, Shield, Clock, RotateCcw } from 'lucide-react';
 import { getRarityBgStyle } from '../../lib/utils';
@@ -25,6 +26,7 @@ export function PvpBattleVisualizer({
     player1Name = "Player",
     player2Name = "Enemy"
 }: PvpBattleVisualizerProps) {
+    const { selectedVersion } = useGameDataContext();
     const [engine, setEngine] = useState<PvpBattleEngine | null>(null);
     const [snapshot, setSnapshot] = useState<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -305,7 +307,7 @@ export function PvpBattleVisualizer({
                                     <div key={`p1-buff-${idx}`} className="relative group">
                                         <div className="w-6 h-6 border border-yellow-500 rounded bg-black/50 overflow-hidden relative">
                                             <SpriteSheetIcon
-                                                textureSrc={`${basePath}${mapping.texture}`}
+                                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${mapping.texture}`}
                                                 spriteWidth={mapping.sprite_size.width}
                                                 spriteHeight={mapping.sprite_size.height}
                                                 sheetWidth={mapping.texture_size.width}
@@ -367,7 +369,7 @@ export function PvpBattleVisualizer({
                                     <div key={`p2-buff-${idx}`} className="relative group">
                                         <div className="w-6 h-6 border border-yellow-500 rounded bg-black/50 overflow-hidden relative">
                                             <SpriteSheetIcon
-                                                textureSrc={`${basePath}${mapping.texture}`}
+                                                textureSrc={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${mapping.texture}`}
                                                 spriteWidth={mapping.sprite_size.width}
                                                 spriteHeight={mapping.sprite_size.height}
                                                 sheetWidth={mapping.texture_size.width}
@@ -540,7 +542,7 @@ export function PvpBattleVisualizer({
                                             >
                                                 {(spriteIndex >= 0 && spriteMapping) ? (
                                                     <SpriteSheetIcon
-                                                        textureSrc="./icons/game/SkillIcons.png"
+                                                        textureSrc={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}SkillIcons.png`}
                                                         spriteWidth={spriteMapping.skills.sprite_size.width}
                                                         spriteHeight={spriteMapping.skills.sprite_size.height}
                                                         sheetWidth={spriteMapping.skills.texture_size.width}
@@ -593,7 +595,7 @@ export function PvpBattleVisualizer({
                                             >
                                                 {(spriteIndex >= 0 && spriteMapping) ? (
                                                     <SpriteSheetIcon
-                                                        textureSrc="./icons/game/SkillIcons.png"
+                                                        textureSrc={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}SkillIcons.png`}
                                                         spriteWidth={spriteMapping.skills.sprite_size.width}
                                                         spriteHeight={spriteMapping.skills.sprite_size.height}
                                                         sheetWidth={spriteMapping.skills.texture_size.width}

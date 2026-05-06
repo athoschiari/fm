@@ -1,27 +1,26 @@
-export function getAscensionTexturePath(baseTexture: 'Pets' | 'MountIcons' | 'SkillIcons' | 'Eggs' | 'Icons', ascensionLevel: number): string {
+export function getAscensionTexturePath(baseTexture: 'Pets' | 'MountIcons' | 'SkillIcons' | 'Eggs' | 'Icons', ascensionLevel: number, version?: string): string {
     const baseUrl = import.meta.env.BASE_URL;
+    const versionPath = version ? `${version}/` : '';
+    const textureBase = `${baseUrl}Texture2D/${versionPath}`;
     
     // Icons sheet doesn't have ascended versions, always return standard
-    if (baseTexture === 'Icons') return `${baseUrl}Texture2D/Icons.png`;
+    if (baseTexture === 'Icons') return `${textureBase}Icons.png`;
 
-    if (ascensionLevel === 1) return `${baseUrl}Texture2D/Mega${baseTexture}.png`;
-    if (ascensionLevel === 2) return `${baseUrl}Texture2D/Ultra${baseTexture}.png`;
-    if (ascensionLevel === 3) return `${baseUrl}Texture2D/Apex${baseTexture}.png`;
+    if (ascensionLevel === 1) return `${textureBase}Mega${baseTexture}.png`;
+    if (ascensionLevel === 2) return `${textureBase}Ultra${baseTexture}.png`;
+    if (ascensionLevel === 3) return `${textureBase}Apex${baseTexture}.png`;
     
-    // Fallback for level 0 or other base textures
-    if (baseTexture === 'Eggs') return `${baseUrl}Texture2D/Eggs.png`;
-    if (baseTexture === 'Pets') return `${baseUrl}Texture2D/Pets.png`;
-    if (baseTexture === 'MountIcons') return `${baseUrl}Texture2D/MountIcons.png`;
-    if (baseTexture === 'SkillIcons') return `${baseUrl}Texture2D/SkillIcons.png`;
-    
-    return `${baseUrl}Texture2D/${baseTexture}.png`;
+    return `${textureBase}${baseTexture}.png`;
 }
 
-export function getAnvilTexturePath(ascensionLevel: number): string {
+export function getAnvilTexturePath(ascensionLevel: number, version?: string): string {
     const baseUrl = import.meta.env.BASE_URL;
-    if (ascensionLevel === 1) return `${baseUrl}Texture2D/Anvil _.png`;
-    if (ascensionLevel === 2) return `${baseUrl}Texture2D/Anvil __.png`;
-    if (ascensionLevel === 3) return `${baseUrl}Texture2D/Anvil ___.png`;
+    const versionPath = version ? `${version}/` : '';
+    const textureBase = `${baseUrl}Texture2D/${versionPath}`;
+
+    if (ascensionLevel === 1) return `${textureBase}Anvil _.png`;
+    if (ascensionLevel === 2) return `${textureBase}Anvil __.png`;
+    if (ascensionLevel === 3) return `${textureBase}Anvil ___.png`;
     
-    return `${baseUrl}Texture2D/Anvil.png`;
+    return `${textureBase}Anvil.png`;
 }

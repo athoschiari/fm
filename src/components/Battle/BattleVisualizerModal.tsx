@@ -14,6 +14,7 @@ import { getItemImage } from '../../utils/itemAssets';
 import { AGES, SKILL_MECHANICS } from '../../utils/constants';
 import { getRarityBgStyle } from '../../lib/utils';
 import { useGameData } from '../../hooks/useGameData';
+import { useGameDataContext } from '../../context/GameDataContext';
 
 interface BattleVisualizerModalProps {
     isOpen: boolean;
@@ -46,6 +47,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
     debugConfig,
     onDebugConfigChange
 }) => {
+    const { selectedVersion } = useGameDataContext();
     const [engine, setEngine] = useState<BattleEngine | null>(null);
     const [snapshot, setSnapshot] = useState<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -860,7 +862,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                                 const ageName = AGES[parts[0]];
                                 // 5 is Weapon type id
                                 if (ageName) {
-                                    weaponImage = getItemImage(ageName, 'Weapon', parts[2], autoItemMapping);
+                                    weaponImage = getItemImage(ageName, 'Weapon', parts[2], autoItemMapping, selectedVersion);
                                 }
                             }
                         }

@@ -9,9 +9,11 @@ import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
 
 import { usePersistentState } from '../hooks/usePersistentState';
+import { useGameDataContext } from '../context/GameDataContext';
 
 export default function Skills() {
     const { profile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const { data: skillLibrary, loading: l1 } = useGameData<any>('SkillLibrary.json');
     const { data: skillUpgrades, loading: l1b } = useGameData<any>('SkillUpgradeLibrary.json');
     const { data: passiveLibrary, loading: l1c } = useGameData<any>('SkillPassiveLibrary.json');
@@ -33,15 +35,15 @@ export default function Skills() {
             const configs = ascensionConfigs.Skills.AscensionConfigPerLevel;
             for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
                 for (const s of configs[i].StatContributions || []) {
-                    const val = s.Value;
+                    const val = s.Value + 1;
                     const target = s.StatNode?.StatTarget?.$type;
                     const statType = s.StatNode?.UniqueStat?.StatType;
                     if (target === 'ActiveSkillStatTarget') {
-                        if (statType === 'Damage') activeDmg += val;
-                        if (statType === 'Health') activeHp += val;
+                        if (statType === 'Damage' || statType === 'AscensionDamage') activeDmg += val;
+                        if (statType === 'Health' || statType === 'AscensionHealth') activeHp += val;
                     } else if (target === 'PassiveSkillStatTarget') {
-                        if (statType === 'Damage') passiveDmg += val;
-                        if (statType === 'Health') passiveHp += val;
+                        if (statType === 'Damage' || statType === 'AscensionDamage') passiveDmg += val;
+                        if (statType === 'Health' || statType === 'AscensionHealth') passiveHp += val;
                     }
                 }
             }
@@ -141,10 +143,13 @@ export default function Skills() {
 
     const getAscSkillSpriteUrl = () => {
         const baseUrl = import.meta.env.BASE_URL;
-        if (ascensionLevel === 1) return `${baseUrl}Texture2D/MegaSkillIcons.png`;
-        if (ascensionLevel === 2) return `${baseUrl}Texture2D/UltraSkillIcons.png`;
-        if (ascensionLevel === 3) return `${baseUrl}Texture2D/ApexSkillIcons.png`;
-        return `${baseUrl}Texture2D/SkillIcons.png`;
+        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
+        const textureBase = `${baseUrl}Texture2D/${versionPath}`;
+        
+        if (ascensionLevel === 1) return `${textureBase}MegaSkillIcons.png`;
+        if (ascensionLevel === 2) return `${textureBase}UltraSkillIcons.png`;
+        if (ascensionLevel === 3) return `${textureBase}ApexSkillIcons.png`;
+        return `${textureBase}SkillIcons.png`;
     };
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];

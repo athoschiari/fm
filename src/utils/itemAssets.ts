@@ -254,7 +254,10 @@ export const ITEM_ASSETS = [
     "IconDivineRingNazarring.png",
 ];
 
-export const getAssetPath = (filename: string) => `${import.meta.env.BASE_URL}Texture2D/${filename}`;
+export const getAssetPath = (filename: string, version?: string) => {
+    const versionPath = version ? `${version}/` : '';
+    return `${import.meta.env.BASE_URL}Texture2D/${versionPath}${filename}`;
+};
 
 /**
  * Weapon image order mapping per age (JSON Idx -> Image filename)
@@ -368,7 +371,7 @@ const ITEM_TYPE_MAP: Record<string, number> = {
     'Belt': 7
 };
 
-export const getItemImage = (ageName: string, slotType: string, idx: number, autoMapping?: any): string | null => {
+export const getItemImage = (ageName: string, slotType: string, idx: number, autoMapping?: any, version?: string): string | null => {
     // 1. Try dynamic mapping from JSON (AutoItemMapping)
     if (autoMapping) {
         const ageIndex = AGES.indexOf(ageName);
@@ -378,7 +381,7 @@ export const getItemImage = (ageName: string, slotType: string, idx: number, aut
             const key = `${ageIndex}_${typeId}_${idx}`;
             const mapping = autoMapping[key];
             if (mapping && mapping.SpriteName) {
-                return getAssetPath(mapping.SpriteName + '.png');
+                return getAssetPath(mapping.SpriteName + '.png', version);
             }
         }
     }
@@ -390,7 +393,7 @@ export const getItemImage = (ageName: string, slotType: string, idx: number, aut
     if (slotType === 'Weapon') {
         const weaponList = WEAPON_ORDER_MAP[cleanAge];
         if (weaponList && weaponList[idx]) {
-            return getAssetPath(weaponList[idx]);
+            return getAssetPath(weaponList[idx], version);
         }
         return null;
     }
@@ -420,7 +423,7 @@ export const getItemImage = (ageName: string, slotType: string, idx: number, aut
     slotAssets.sort();
 
     if (slotAssets[idx]) {
-        return getAssetPath(slotAssets[idx]);
+        return getAssetPath(slotAssets[idx], version);
     }
 
     return null;

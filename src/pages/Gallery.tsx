@@ -1,0 +1,346 @@
+import { useState, useMemo, useEffect } from 'react';
+import { Card } from '../components/UI/Card';
+import { Input } from '../components/UI/Input';
+import { Button } from '../components/UI/Button';
+import { Search, Image as ImageIcon, Download, X, Maximize2, ExternalLink, Columns, Layers, Hash } from 'lucide-react';
+import { cn } from '../lib/utils';
+import { useGameDataContext } from '../context/GameDataContext';
+
+type DiffStatus = 'added' | 'removed' | 'changed' | null;
+
+export default function Gallery() {
+    const { versions, selectedVersion } = useGameDataContext();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [textures, setTextures] = useState<string[]>([]);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [compareVersion, setCompareVersion] = useState<string | null>(null);
+    const [showOnlyChanges, setShowOnlyChanges] = useState(false);
+    const [md5Manifest, setMd5Manifest] = useState<Record<string, Record<string, string>>>({});
+
+    useEffect(() => {
+        async function fetchManifests() {
+            setLoading(true);
+
+            // Fetch Texture list
+            try {
+                const res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/TextureManifest.json`);
+                if (res.ok) {
+                    const contentType = res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const data = await res.json();
+                        setTextures(data);
+                    } else {
+                        console.warn("TextureManifest.json returned non-JSON content", contentType);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load TextureManifest.json", e);
+            }
+
+            // Try to fetch MD5 Manifest if it exists
+            try {
+                const md5Res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/TextureMD5Manifest.json`);
+                if (md5Res.ok) {
+                    const contentType = md5Res.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        const data = await md5Res.json();
+                        setMd5Manifest(data);
+                    }
+                }
+            } catch (e) {
+                console.debug("TextureMD5Manifest.json not found or invalid", e);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchManifests();
+    }, []);
+
+    const activeVersion = selectedVersion || versions[0];
+
+    const filteredTextures = useMemo(() => {
+        let list = textures;
+        if (searchTerm) {
+            const lower = searchTerm.toLowerCase();
+            list = list.filter(t => t.toLowerCase().includes(lower));
+        }
+
+        // Se abbiamo i manifest per la versione attiva
+        if (md5Manifest[activeVersion]) {
+            if (showOnlyChanges && compareVersion && md5Manifest[compareVersion]) {
+                // Filtra solo le differenze (aggiunte, rimosse o modificate)
+                list = list.filter(t => {
+                    const hashA = md5Manifest[activeVersion][t];
+                    const hashB = md5Manifest[compareVersion][t];
+                    return hashA !== hashB;
+                });
+            } else {
+                // Comportamento normale: mostra solo le texture presenti nella versione attiva
+                list = list.filter(t => !!md5Manifest[activeVersion][t]);
+            }
+        }
+
+        return list;
+    }, [searchTerm, textures, showOnlyChanges, compareVersion, md5Manifest, activeVersion]);
+
+    const handleDownload = (filename: string, version: string) => {
+        const url = `${import.meta.env.BASE_URL}Texture2D/${version}/${filename}`;
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    if (loading || !activeVersion) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-primary"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 animate-fade-in pb-12">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-black bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent uppercase tracking-tight">
+                        Texture Gallery
+                    </h1>
+                    <p className="text-text-secondary mt-1 text-sm font-medium">
+                        Browse and compare game assets across different versions.
+                    </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative w-full md:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+                        <Input
+                            placeholder="Search textures..."
+                            className="pl-9 h-10"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="flex items-center bg-bg-secondary/40 p-1 rounded-lg border border-border">
+                        <select
+                            value={compareVersion || ''}
+                            onChange={(e) => {
+                                setCompareVersion(e.target.value || null);
+                                if (!e.target.value) setShowOnlyChanges(false);
+                            }}
+                            className="bg-transparent text-xs font-bold text-text-secondary px-2 py-1 outline-none cursor-pointer hover:text-white transition-colors"
+                        >
+                            <option value="">Compare Version...</option>
+                            {/* Filtriamo mostrando solo le versioni diverse da activeVersion E che hanno il manifest md5 */}
+                            {versions
+                                .filter(v => v !== activeVersion && md5Manifest[v] && Object.keys(md5Manifest[v]).length > 0)
+                                .map(v => (
+                                    <option key={v} value={v}>{v}</option>
+                                ))}
+                        </select>
+                        {compareVersion && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowOnlyChanges(!showOnlyChanges)}
+                                className={cn(
+                                    "h-7 px-2 text-[10px] font-black uppercase tracking-widest gap-1.5",
+                                    showOnlyChanges ? "text-accent-primary bg-accent-primary/10" : "text-text-muted"
+                                )}
+                            >
+                                <Hash size={12} />
+                                Diff Only
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+                {filteredTextures.map((texture) => {
+                    const hashA = md5Manifest[activeVersion]?.[texture];
+                    const hashB = compareVersion ? md5Manifest[compareVersion]?.[texture] : null;
+
+                    let diffStatus: DiffStatus = null;
+                    if (compareVersion && hashA !== hashB) {
+                        if (hashA && !hashB) diffStatus = 'added';
+                        else if (!hashA && hashB) diffStatus = 'removed';
+                        else diffStatus = 'changed';
+                    }
+
+                    // Se l'immagine è rimossa, usiamo la source della compareVersion altrimenti usa l'activeVersion
+                    const previewVersion = diffStatus === 'removed' && compareVersion ? compareVersion : activeVersion;
+
+                    return (
+                        <Card
+                            key={texture}
+                            className={cn(
+                                "group relative flex flex-col p-2 bg-bg-secondary/40 border-border/50 hover:border-accent-primary/50 transition-all cursor-pointer overflow-hidden",
+                                diffStatus === 'changed' && "border-yellow-500/50 ring-1 ring-yellow-500/20",
+                                diffStatus === 'added' && "border-green-500/50 ring-1 ring-green-500/20",
+                                diffStatus === 'removed' && "border-red-500/50 ring-1 ring-red-500/20 opacity-80 hover:opacity-100"
+                            )}
+                            onClick={() => setSelectedImage(texture)}
+                        >
+                            <div className="aspect-square rounded-md overflow-hidden bg-bg-primary/50 flex items-center justify-center p-2 relative">
+                                <img
+                                    src={`${import.meta.env.BASE_URL}Texture2D/${previewVersion}/${encodeURIComponent(texture)}`}
+                                    alt={texture}
+                                    loading="lazy"
+                                    className="max-w-full max-h-full object-contain pixelated transition-transform group-hover:scale-110"
+                                    onError={(e) => {
+                                        const img = e.target as HTMLImageElement;
+                                        if (img.src.includes(`/${previewVersion}/`)) {
+                                            img.src = `${import.meta.env.BASE_URL}Texture2D/${encodeURIComponent(texture)}`;
+                                        } else {
+                                            img.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cG9seWdvbiBwb2ludHM9IjIxIDE1IDE2IDEwIDUgMjEgMjEgMjEgMjEiLz48L3N2Zz4=';
+                                        }
+                                    }}
+                                />
+                                {diffStatus && (
+                                    <div className={cn(
+                                        "absolute top-1 right-1 text-[8px] font-black px-1 rounded shadow-lg uppercase",
+                                        diffStatus === 'added' ? "bg-green-500 text-black" :
+                                            diffStatus === 'removed' ? "bg-red-500 text-white" :
+                                                "bg-yellow-500 text-black"
+                                    )}>
+                                        {diffStatus}
+                                    </div>
+                                )}
+                            </div>
+                            <div className={cn("mt-2 text-[10px] font-medium truncate px-1", diffStatus === 'removed' ? "text-red-400/80 line-through" : "text-text-muted")} title={texture}>
+                                {texture}
+                            </div>
+
+                            {/* Hover Overlay */}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                <div className="flex gap-2">
+                                    <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full" onClick={(e) => { e.stopPropagation(); setSelectedImage(texture); }}>
+                                        <Maximize2 size={14} />
+                                    </Button>
+                                    <Button size="icon" variant="primary" className="h-8 w-8 rounded-full" onClick={(e) => { e.stopPropagation(); handleDownload(texture, previewVersion); }}>
+                                        <Download size={14} />
+                                    </Button>
+                                </div>
+                                <span className="text-[10px] font-black text-white uppercase tracking-widest px-2 text-center truncate w-full">
+                                    {texture}
+                                </span>
+                            </div>
+                        </Card>
+                    );
+                })}
+            </div>
+
+            {/* Modal for detail view / comparison */}
+            {selectedImage && (
+                <div style={{ margin: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/90 animate-fade-in backdrop-blur-sm" onClick={() => setSelectedImage(null)}>
+                    <button
+                        className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors p-2 z-[60]"
+                        onClick={() => setSelectedImage(null)}
+                    >
+                        <X size={32} />
+                    </button>
+
+                    <div className="w-full max-w-6xl flex flex-col gap-6" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-2xl font-black text-white uppercase tracking-tight">{selectedImage}</h2>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-xs font-bold text-text-muted uppercase">Version: {activeVersion}</span>
+                                    {compareVersion && <span className="text-xs font-bold text-accent-primary uppercase">vs {compareVersion}</span>}
+                                </div>
+                            </div>
+                            {md5Manifest[activeVersion]?.[selectedImage] && (
+                                <Button
+                                    variant="primary"
+                                    className="font-black uppercase tracking-widest gap-2"
+                                    onClick={() => handleDownload(selectedImage, activeVersion)}
+                                >
+                                    <Download size={18} />
+                                    Download Primary
+                                </Button>
+                            )}
+                        </div>
+
+                        <div className={cn(
+                            "grid gap-6",
+                            compareVersion ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
+                        )}>
+                            <Card className={cn(
+                                "p-4 bg-bg-secondary/40 border-border/50 flex flex-col items-center gap-4",
+                                !md5Manifest[activeVersion]?.[selectedImage] && "opacity-50"
+                            )}>
+                                <div className="text-[10px] font-black text-text-muted uppercase tracking-widest bg-bg-input px-2 py-1 rounded">
+                                    Version: {activeVersion}
+                                </div>
+                                <div className="flex-1 w-full aspect-square flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-auto p-4 border border-border/20">
+                                    {md5Manifest[activeVersion]?.[selectedImage] ? (
+                                        <img
+                                            src={`${import.meta.env.BASE_URL}Texture2D/${activeVersion}/${selectedImage}`}
+                                            className=" pixelated"
+                                            alt={selectedImage}
+                                        />
+                                    ) : (
+                                        <span className="text-text-muted text-sm font-bold uppercase tracking-widest">Not in this version</span>
+                                    )}
+                                </div>
+                                {md5Manifest[activeVersion]?.[selectedImage] && (
+                                    <div className="font-mono text-[10px] text-text-muted bg-black/20 px-2 py-1 rounded flex items-center gap-2">
+                                        <Hash size={10} /> {md5Manifest[activeVersion][selectedImage]}
+                                    </div>
+                                )}
+                            </Card>
+
+                            {compareVersion && (
+                                <Card className={cn(
+                                    "p-4 bg-bg-secondary/40 border-border/50 flex flex-col items-center gap-4 relative",
+                                    !md5Manifest[compareVersion]?.[selectedImage] && "opacity-50"
+                                )}>
+                                    <div className="text-[10px] font-black text-accent-primary uppercase tracking-widest bg-accent-primary/10 px-2 py-1 rounded">
+                                        Comparison: {compareVersion}
+                                    </div>
+                                    <div className="flex-1 w-full aspect-square flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-auto p-4 border border-border/20">
+                                        {md5Manifest[compareVersion]?.[selectedImage] ? (
+                                            <img
+                                                src={`${import.meta.env.BASE_URL}Texture2D/${compareVersion}/${selectedImage}`}
+                                                className="pixelated"
+                                                alt={`${selectedImage} comp`}
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                }}
+                                            />
+                                        ) : (
+                                            <span className="text-text-muted text-sm font-bold uppercase tracking-widest">Not in this version</span>
+                                        )}
+                                    </div>
+                                    {md5Manifest[compareVersion]?.[selectedImage] && (
+                                        <div className="font-mono text-[10px] text-text-muted bg-black/20 px-2 py-1 rounded flex items-center gap-2">
+                                            <Hash size={10} /> {md5Manifest[compareVersion][selectedImage]}
+                                        </div>
+                                    )}
+
+                                    {/* Etichette differenze modale */}
+                                    {md5Manifest[activeVersion]?.[selectedImage] !== md5Manifest[compareVersion]?.[selectedImage] && (
+                                        <div className={cn(
+                                            "absolute top-4 right-4 text-[10px] font-black px-2 py-1 rounded shadow-xl uppercase",
+                                            md5Manifest[activeVersion]?.[selectedImage] && !md5Manifest[compareVersion]?.[selectedImage] ? "bg-green-500 text-black" :
+                                                !md5Manifest[activeVersion]?.[selectedImage] && md5Manifest[compareVersion]?.[selectedImage] ? "bg-red-500 text-white" :
+                                                    "bg-yellow-500 text-black"
+                                        )}>
+                                            {md5Manifest[activeVersion]?.[selectedImage] && !md5Manifest[compareVersion]?.[selectedImage] ? "Added" :
+                                                !md5Manifest[activeVersion]?.[selectedImage] && md5Manifest[compareVersion]?.[selectedImage] ? "Removed" :
+                                                    "Difference Detected"}
+                                        </div>
+                                    )}
+                                </Card>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

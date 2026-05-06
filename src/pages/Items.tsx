@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { getItemImage } from '../utils/itemAssets';
 import { useGameData } from '../hooks/useGameData';
 import { useProfile } from '../context/ProfileContext';
+import { useGameDataContext } from '../context/GameDataContext';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { Sword, Zap, Activity } from 'lucide-react';
@@ -17,6 +18,7 @@ const SLOTS = ['Weapon', 'Helmet', 'Armour', 'Gloves', 'Shoes', 'Necklace', 'Rin
 
 export default function Items() {
     const { profile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const { data: itemLibrary, loading: loadingItemLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: secondaryParams, loading: loadingSecondaryParams } = useGameData<any>('SecondaryStatItemUnlockLibrary.json');
     const { data: autoMapping, loading: loadingAutoMapping } = useGameData<any>('AutoItemMapping.json');
@@ -58,11 +60,12 @@ export default function Items() {
             const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
             // The config values are per level, we sum them up to get the cumulative multiplier increment
             for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
-                // We pick the first stat contribution (they are usually the same for HP/Dmg in Forge)
-                // (Value + 1) / 100 converts game value (e.g. 49) to multiplier increment (e.g. 0.5)
-                const contrib = configs[i].StatContributions?.[0];
-                if (contrib) {
-                    total += (contrib.Value + 1) / 100;
+                for (const stat of configs[i].StatContributions || []) {
+                    const statType = stat.StatNode?.UniqueStat?.StatType;
+                    if (statType === 'Damage' || statType === 'AscensionDamage' || statType === 'Health' || statType === 'AscensionHealth') {
+                        total += (stat.Value + 1) / 100;
+                        break;
+                    }
                 }
             }
         }
@@ -142,7 +145,7 @@ export default function Items() {
                             {/* Placeholder for Age Image */}
                             {/* Age Sprite Icon */}
                             <div
-                                style={getAgeIconStyle(idx, 48)}
+                                style={getAgeIconStyle(idx, 48, selectedVersion)}
                                 className={cn(
                                     "shrink-0 rounded bg-white/10",
                                     selectedAgeIdx === idx ? "opacity-100" : "opacity-40 grayscale"
@@ -239,9 +242,9 @@ export default function Items() {
                                             className="w-16 h-16 rounded-lg border border-border flex items-center justify-center mb-3 group-hover:border-accent-primary transition-colors shrink-0"
                                             style={getAgeBgStyle(selectedAgeIdx)}
                                         >
-                                            {getItemImage(AGES[selectedAgeIdx], selectedSlot, item.ItemId?.Idx, autoMapping) ? (
+                                            {getItemImage(AGES[selectedAgeIdx], selectedSlot, item.ItemId?.Idx, autoMapping, selectedVersion) ? (
                                                 <img
-                                                    src={getItemImage(AGES[selectedAgeIdx], selectedSlot, item.ItemId?.Idx, autoMapping)!}
+                                                    src={getItemImage(AGES[selectedAgeIdx], selectedSlot, item.ItemId?.Idx, autoMapping, selectedVersion)!}
                                                     alt={item.Name}
                                                     className="w-12 h-12 object-contain"
                                                 />

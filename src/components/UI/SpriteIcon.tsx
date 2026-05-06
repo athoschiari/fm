@@ -1,8 +1,9 @@
 
 import { cn } from '../../lib/utils';
+import { useGameDataContext } from '../../context/GameDataContext';
 
-// Sprite Sheet Configuration
-const SPRITE_SHEET_URL = `${import.meta.env.BASE_URL}Texture2D/Icons.png`;
+// Sprite Sheet Configuration - Now uses version from context
+const getSpriteSheetUrl = (version?: string) => `${import.meta.env.BASE_URL}Texture2D/${version ? `${version}/` : ''}Icons.png`;
 const TEXTURE_WIDTH = 2048;
 const TEXTURE_HEIGHT = 2048;
 const SPRITE_SIZE = 256; // Standard size of one sprite in the sheet
@@ -51,6 +52,7 @@ interface SpriteIconProps {
 }
 
 export function SpriteIcon({ name, size = 24, className }: SpriteIconProps) {
+    const { selectedVersion } = useGameDataContext();
     const mapping = SPRITE_MAPPING[name as keyof typeof SPRITE_MAPPING];
 
     if (!mapping) {
@@ -87,7 +89,7 @@ export function SpriteIcon({ name, size = 24, className }: SpriteIconProps) {
             style={{
                 width: size,
                 height: size,
-                backgroundImage: `url(${SPRITE_SHEET_URL})`,
+                backgroundImage: `url(${getSpriteSheetUrl(selectedVersion)})`,
                 backgroundPosition: `${bgX}px ${bgY}px`,
                 backgroundSize: `${bgWidth}px ${bgHeight}px`,
                 backgroundRepeat: 'no-repeat',

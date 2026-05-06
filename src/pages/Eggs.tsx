@@ -7,12 +7,15 @@ import { Calculator, Plus, Egg, Info, Minus, RefreshCcw } from 'lucide-react';
 import { useProfile } from '../context/ProfileContext';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { getAscensionTexturePath } from '../utils/ascensionUtils';
+import { useGameDataContext } from '../context/GameDataContext';
 
 function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity: string; size?: number; className?: string; ascensionLevel?: number }) {
+
     const rarityIndex: Record<string, number> = {
         'Common': 0, 'Rare': 1, 'Epic': 2,
         'Legendary': 3, 'Ultimate': 4, 'Mythic': 5
     };
+    const { selectedVersion } = useGameDataContext();
 
     const idx = rarityIndex[rarity] ?? 0;
     const col = idx % 4;
@@ -22,7 +25,7 @@ function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity:
     const xPos = (col / 3) * 100;
     const yPos = (row / 3) * 100;
 
-    const texturePath = getAscensionTexturePath('Eggs', ascensionLevel);
+    const texturePath = getAscensionTexturePath('Eggs', ascensionLevel, selectedVersion);
 
     return (
         <div
@@ -51,6 +54,7 @@ export default function Eggs() {
         hatchValues,
         warPoints
     } = useEggsCalculator();
+    const { selectedVersion } = useGameDataContext();
 
     const eggSummon = useEggSummonCalculator();
 
@@ -264,10 +268,10 @@ export default function Eggs() {
                                     {/* Ascension Toggle */}
                                     <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-3">
                                         <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase">
-                                        <img src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-4 h-4 object-contain" />
-                                        Simulate Ascension
-                                    </div>
+                                            <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase">
+                                                <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}AscensionStar.png`} alt="Star" className="w-4 h-4 object-contain" />
+                                                Simulate Ascension
+                                            </div>
                                             <label className="relative inline-flex items-center cursor-pointer">
                                                 <input
                                                     type="checkbox"
@@ -301,13 +305,13 @@ export default function Eggs() {
                                         {eggSummon.results.summonsToMax && (
                                             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                                                    <img src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-6 h-6 object-contain" />
+                                                    <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}AscensionStar.png`} alt="Star" className="w-6 h-6 object-contain" />
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="text-xs font-bold text-amber-400 uppercase">Max Level Milestone</div>
                                                     <div className="text-[11px] text-text-secondary leading-relaxed">
                                                         You reach <span className="text-white font-bold">Max Level</span> in <span className="text-amber-400 font-bold">{eggSummon.results.summonsToMax.toLocaleString()} summons</span> ({(eggSummon.results.summonsToMax * eggSummon.results.finalCost).toLocaleString()} shells).
-                                                        The remaining <span className="text-white font-bold">{((eggSummon.results.totalSummons - eggSummon.results.summonsToMax) * eggSummon.results.finalCost).toLocaleString()}</span> shells progress 
+                                                        The remaining <span className="text-white font-bold">{((eggSummon.results.totalSummons - eggSummon.results.summonsToMax) * eggSummon.results.finalCost).toLocaleString()}</span> shells progress
                                                         into <span className="text-amber-400 font-bold">{eggSummon.results.simulateAscension ? `Ascension ${eggSummon.results.endAscensionLevel}` : 'Max Level'}</span>.
                                                     </div>
                                                 </div>
@@ -373,7 +377,7 @@ export default function Eggs() {
                                                             <span className="font-mono font-bold text-accent-primary leading-none">
                                                                 {item.count.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                                             </span>
-                                                            
+
                                                             {eggSummon.results?.simulateAscension && eggSummon.results?.phases && eggSummon.results?.phases.length > 1 && (
                                                                 <div className="flex flex-wrap gap-1 justify-end max-w-[150px] mt-1">
                                                                     {(item.phaseCounts || []).map((p, pIdx) => (
@@ -483,7 +487,7 @@ export default function Eggs() {
                                         <label className="text-sm font-bold text-text-secondary uppercase">Slots Available</label>
                                         <div className="relative group">
                                             <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                <img src={`${import.meta.env.BASE_URL}Texture2D/HatchBed.png`} alt="Bed" className="w-6 h-6 object-contain opacity-70 group-focus-within:opacity-100 transition-opacity" />
+                                                <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}HatchBed.png`} alt="Bed" className="w-6 h-6 object-contain opacity-70 group-focus-within:opacity-100 transition-opacity" />
                                             </div>
                                             <input
                                                 type="number"
@@ -643,7 +647,7 @@ export default function Eggs() {
                                                             {/* Slot Header */}
                                                             <div className="bg-black/20 p-3 border-b border-border/50 flex justify-between items-center">
                                                                 <div className="font-bold text-text-secondary flex items-center gap-2">
-                                                                    <img src={`${import.meta.env.BASE_URL}Texture2D/HatchBed.png`} alt="Bed" className="w-4 h-4 opacity-70" />
+                                                                    <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}HatchBed.png`} alt="Bed" className="w-4 h-4 opacity-70" />
                                                                     Slot {slotIdx + 1}
                                                                 </div>
                                                                 <div className="flex flex-col items-end">

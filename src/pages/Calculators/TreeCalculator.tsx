@@ -14,6 +14,8 @@ import { ConfirmModal } from '../../components/UI/ConfirmModal';
 import { InputModal } from '../../components/UI/InputModal';
 import { isWarPointDay } from '../../utils/guildWarUtils';
 import { UserProfile } from '../../types/Profile';
+import { useGameDataContext } from '../../context/GameDataContext';
+
 
 function SortableItem({ id, children }: { id: string; children: (props: { listeners: any; isDragging: boolean }) => React.ReactNode }) {
     const {
@@ -56,8 +58,8 @@ interface ScheduleItemProps {
     isEditMode?: boolean;
 }
 
-const ScheduleItem = React.memo(({ 
-    entry, idx, now, treeMapping, isDragging, listeners, 
+const ScheduleItem = React.memo(({
+    entry, idx, now, treeMapping, isDragging, listeners,
     onMarkDone, onAddDelay, onRemove, formatScheduleTime, formatTime, getSpriteStyle,
     onShiftPlan, isEditMode
 }: ScheduleItemProps) => {
@@ -146,7 +148,7 @@ const ScheduleItem = React.memo(({
                             )}
                         </div>
                     </div>
-                    
+
                     <div className="flex flex-col items-end">
                         <div className={cn("text-xs font-black flex items-center gap-1", isStopWar ? "text-accent-primary shadow-glow-sm" : "text-white/60")}>
                             +{entry.points.toLocaleString()} pts
@@ -178,7 +180,7 @@ const ScheduleItem = React.memo(({
                 {/* Running Progress Bar Overlay */}
                 {isRunning && (
                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 overflow-hidden">
-                        <div 
+                        <div
                             className="h-full bg-accent-primary shadow-glow transition-all duration-1000"
                             style={{ width: `${Math.min(100, Math.max(0, ((now.getTime() - entry.startDate.getTime()) / (entry.endDate.getTime() - entry.startDate.getTime())) * 100))}%` }}
                         />
@@ -194,41 +196,41 @@ const ScheduleItem = React.memo(({
                         <span className="text-[8px] font-black text-accent-primary uppercase tracking-tighter">Sync Progress</span>
                         <span className="text-[9px] text-text-muted">Set actual time remaining:</span>
                     </div>
-                    
+
                     <div className="flex items-center gap-1.5 ml-auto">
                         <div className="flex items-center gap-1 bg-black/40 border border-white/10 rounded px-2 py-1">
                             <div className="flex flex-col items-center">
                                 <label className="text-[7px] text-text-muted uppercase font-bold">Days</label>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     id={`rem-d-${idx}`}
-                                    className="w-7 bg-transparent text-center text-xs font-mono font-bold text-white outline-none" 
+                                    className="w-7 bg-transparent text-center text-xs font-mono font-bold text-white outline-none"
                                     defaultValue={Math.floor((entry.endDate.getTime() - now.getTime()) / 86400000)}
                                 />
                             </div>
                             <span className="text-text-muted opacity-30">:</span>
                             <div className="flex flex-col items-center">
                                 <label className="text-[7px] text-text-muted uppercase font-bold">Hrs</label>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     id={`rem-h-${idx}`}
-                                    className="w-7 bg-transparent text-center text-xs font-mono font-bold text-white outline-none" 
+                                    className="w-7 bg-transparent text-center text-xs font-mono font-bold text-white outline-none"
                                     defaultValue={Math.floor(((entry.endDate.getTime() - now.getTime()) % 86400000) / 3600000)}
                                 />
                             </div>
                             <span className="text-text-muted opacity-30">:</span>
                             <div className="flex flex-col items-center">
                                 <label className="text-[7px] text-text-muted uppercase font-bold">Min</label>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     id={`rem-m-${idx}`}
-                                    className="w-7 bg-transparent text-center text-xs font-mono font-bold text-white outline-none" 
+                                    className="w-7 bg-transparent text-center text-xs font-mono font-bold text-white outline-none"
                                     defaultValue={Math.floor(((entry.endDate.getTime() - now.getTime()) % 3600000) / 60000)}
                                 />
                             </div>
                         </div>
 
-                        <button 
+                        <button
                             onClick={() => {
                                 const d = parseInt((document.getElementById(`rem-d-${idx}`) as HTMLInputElement).value) || 0;
                                 const h = parseInt((document.getElementById(`rem-h-${idx}`) as HTMLInputElement).value) || 0;
@@ -257,10 +259,10 @@ const ScheduleItem = React.memo(({
     );
 });
 
-const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: { 
-    planner: any, 
-    profile: any, 
-    updateNestedProfile: (category: keyof UserProfile, data: any) => void 
+const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
+    planner: any,
+    profile: any,
+    updateNestedProfile: (category: keyof UserProfile, data: any) => void
 }) => {
     // Local Auto-planner state - isolated from parent to avoid lag
     const [autoPriorities, setAutoPriorities] = useState<Set<string>>(new Set(['war_points']));
@@ -309,8 +311,8 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
                                     }}
                                     className={cn(
                                         "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg border text-[10px] font-bold transition-all",
-                                        isActive 
-                                            ? "border-accent-secondary bg-accent-secondary/10 text-accent-secondary" 
+                                        isActive
+                                            ? "border-accent-secondary bg-accent-secondary/10 text-accent-secondary"
                                             : "border-white/5 bg-bg-primary/30 text-text-muted hover:border-white/20"
                                     )}
                                 >
@@ -407,7 +409,7 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
                         <Clock size={12} className="text-accent-secondary" />
                         Schedule Optimization
                     </label>
-                    
+
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                             <label className="text-[9px] text-text-muted uppercase">Sleep Start</label>
@@ -477,11 +479,11 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
                             autoAllowedTrees
                         );
                         // Persist settings
-                        updateNestedProfile('misc', { 
+                        updateNestedProfile('misc', {
                             techPotions: autoPotionBudget,
                             plannerMaxSteps: autoNumSteps,
-                            plannerSleepStart: autoSleepStart, 
-                            plannerSleepEnd: autoSleepEnd, 
+                            plannerSleepStart: autoSleepStart,
+                            plannerSleepEnd: autoSleepEnd,
                             plannerMaxWait: autoMaxWait,
                             plannerMinWaitBetweenNodes: autoMinWait
                         });
@@ -590,11 +592,11 @@ export default function TreeCalculator() {
             const initial = [...optimization.actions];
             // Apply default Longest Sort (stable bubble sort)
             let changed = true;
-            while(changed) {
+            while (changed) {
                 changed = false;
-                for(let i=0; i < initial.length - 1; i++) {
-                    if (initial[i].duration < initial[i+1].duration && !isPrerequisite(initial[i], initial[i+1])) {
-                        [initial[i], initial[i+1]] = [initial[i+1], initial[i]];
+                for (let i = 0; i < initial.length - 1; i++) {
+                    if (initial[i].duration < initial[i + 1].duration && !isPrerequisite(initial[i], initial[i + 1])) {
+                        [initial[i], initial[i + 1]] = [initial[i + 1], initial[i]];
                         changed = true;
                     }
                 }
@@ -614,7 +616,7 @@ export default function TreeCalculator() {
         return orderedActions.map(action => {
             const currentStartTime = accumulatedTimeSeconds;
             const currentEndTime = currentStartTime + action.duration;
-            
+
             let recalculatedGemCost = 0;
             if (currentEndTime > baseTimeLimitSeconds && profile.misc.useGemsInCalculators) {
                 const overlap = Math.min(action.duration, currentEndTime - Math.max(currentStartTime, baseTimeLimitSeconds));
@@ -623,7 +625,7 @@ export default function TreeCalculator() {
 
             const skipSeconds = recalculatedGemCost ? recalculatedGemCost / gemSkipCostPerSecond : 0;
             const effectiveDuration = Math.max(0, action.duration - skipSeconds);
-            
+
             // Recalculate if it lands on a war day based on NEW completion time after reordering/gems
             const endObj = new Date(startTimestamp + (accumulatedTimeSeconds + effectiveDuration) * 1000);
             const isWarDayCurrent = isWarPointDay(endObj, 'tech');
@@ -649,10 +651,10 @@ export default function TreeCalculator() {
         }
         // 2. Parent node requirements
         if (target.fromLevel === 0 || target.fromLevel === 1) { // Only level 1 can have external requirements
-             const nodeMapping = treeMapping?.trees?.[target.tree]?.nodes?.find((n: any) => n.id === target.nodeId);
-             if (nodeMapping?.requirements?.includes(potentialReq.nodeId) && target.tree === potentialReq.tree && potentialReq.toLevel === 1) {
-                 return true;
-             }
+            const nodeMapping = treeMapping?.trees?.[target.tree]?.nodes?.find((n: any) => n.id === target.nodeId);
+            if (nodeMapping?.requirements?.includes(potentialReq.nodeId) && target.tree === potentialReq.tree && potentialReq.toLevel === 1) {
+                return true;
+            }
         }
         return false;
     };
@@ -664,41 +666,41 @@ export default function TreeCalculator() {
 
     const canMoveDown = (idx: number) => {
         if (idx >= actionsWithGemCosts.length - 1) return false;
-        return !isPrerequisite(actionsWithGemCosts[idx], actionsWithGemCosts[idx+1]);
+        return !isPrerequisite(actionsWithGemCosts[idx], actionsWithGemCosts[idx + 1]);
     };
 
     const moveUp = (idx: number) => {
         if (!canMoveUp(idx)) return;
         const next = [...orderedActions];
-        [next[idx], next[idx-1]] = [next[idx-1], next[idx]];
+        [next[idx], next[idx - 1]] = [next[idx - 1], next[idx]];
         setOrderedActions(next);
     };
 
     const moveDown = (idx: number) => {
         if (!canMoveDown(idx)) return;
         const next = [...orderedActions];
-        [next[idx], next[idx+1]] = [next[idx+1], next[idx]];
+        [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
         setOrderedActions(next);
     };
 
     const sortByDuration = () => {
         const nextDir = sortDirection === 'desc' ? 'asc' : 'desc';
         const next = [...orderedActions];
-        
+
         // Stable prerequisite-aware bubble sort
         let changed = true;
-        while(changed) {
+        while (changed) {
             changed = false;
-            for(let i=0; i < next.length - 1; i++) {
+            for (let i = 0; i < next.length - 1; i++) {
                 const currentVal = next[i].duration;
-                const nextVal = next[i+1].duration;
-                
+                const nextVal = next[i + 1].duration;
+
                 const factor = nextDir === 'desc' ? -1 : 1;
                 const shouldSwap = (currentVal - nextVal) * factor > 0;
 
                 // Swap if order is wrong AND next is NOT a prerequisite of current
-                if (shouldSwap && !isPrerequisite(next[i], next[i+1])) {
-                    [next[i], next[i+1]] = [next[i+1], next[i]];
+                if (shouldSwap && !isPrerequisite(next[i], next[i + 1])) {
+                    [next[i], next[i + 1]] = [next[i + 1], next[i]];
                     changed = true;
                 }
             }
@@ -747,7 +749,7 @@ export default function TreeCalculator() {
     const isSelectable = (idx: number) => {
         const action = actionsWithGemCosts[idx];
         // Check all items BEFORE it in current order that might be prerequisites
-        for(let i=0; i < idx; i++) {
+        for (let i = 0; i < idx; i++) {
             if (isPrerequisite(actionsWithGemCosts[i], action) && !selectedIds.has(getActionId(actionsWithGemCosts[i]))) {
                 return false;
             }
@@ -759,7 +761,7 @@ export default function TreeCalculator() {
         const action = actionsWithGemCosts[idx];
         const id = getActionId(action);
         const next = new Set(selectedIds);
-        
+
         if (next.has(id)) {
             // Uncheck cascading dependents
             const uncheckRecursive = (currentIdx: number) => {
@@ -767,9 +769,9 @@ export default function TreeCalculator() {
                 const currentId = getActionId(currentAction);
                 if (!next.has(currentId)) return;
                 next.delete(currentId);
-                
+
                 // Find things after it that depend on it
-                for(let i = currentIdx + 1; i < actionsWithGemCosts.length; i++) {
+                for (let i = currentIdx + 1; i < actionsWithGemCosts.length; i++) {
                     if (isPrerequisite(currentAction, actionsWithGemCosts[i])) {
                         uncheckRecursive(i);
                     }
@@ -796,19 +798,19 @@ export default function TreeCalculator() {
         setShowConfirmModal(false);
         setPendingUpgrades([]);
     };
-
+    const { selectedVersion } = useGameDataContext();
     const formatTime = (totalSeconds: number) => {
         const d = Math.floor(totalSeconds / 86400);
         const h = Math.floor((totalSeconds % 86400) / 3600);
         const m = Math.floor((totalSeconds % 3600) / 60);
         const s = Math.floor(totalSeconds % 60);
-        
+
         const parts = [];
         if (d > 0) parts.push(`${d}d`);
         if (h > 0 || d > 0) parts.push(`${h}h`);
         if (m > 0 || h > 0 || d > 0) parts.push(`${m}m`);
         parts.push(`${s}s`);
-        
+
         return parts.join(' ');
     };
 
@@ -824,7 +826,7 @@ export default function TreeCalculator() {
         const cssY = sheetH - y - height;
 
         return {
-            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/TechTreeIcons.png)`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/TechTreeIcons.png)`,
             backgroundPosition: `-${x * scale}px -${cssY * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             backgroundRepeat: 'no-repeat' as const,
@@ -864,7 +866,7 @@ export default function TreeCalculator() {
             {/* Header */}
             <div className="text-center space-y-2 mb-6">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent inline-flex items-center gap-3">
-                    <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="Tech Tree" className="w-10 h-10 object-contain" />
+                    <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/SkillTabIcon.png`} alt="Tech Tree" className="w-10 h-10 object-contain" />
                     Tree Calculator
                 </h1>
                 <p className="text-text-secondary">Maximize your Guild War points via optimal tech upgrades.</p>
@@ -897,60 +899,529 @@ export default function TreeCalculator() {
             </div>
 
             {activeTab === 'optimizer' && (
-            <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-6 items-start">
-                {/* INPUTS */}
-                <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <SpriteIcon name="Timer" size={20} className="text-text-tertiary" />
-                            Optimization Constraints
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* SCHEDULE GROUP */}
-                        <div className="space-y-4 p-4 bg-bg-primary/30 rounded-xl border border-white/5">
-                            <h3 className="text-[10px] font-bold text-accent-primary uppercase tracking-widest flex items-center gap-2 mb-2">
-                                <Calendar size={14} />
-                                Race Schedule
-                            </h3>
-                            
-                            <div className="grid grid-cols-1 gap-4">
-                                {/* Start Time */}
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-[10px] font-bold text-text-secondary uppercase">Start Time</label>
-                                        <div className="flex items-center gap-3">
-                                            <button 
+                <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-6 items-start">
+                    {/* INPUTS */}
+                    <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <SpriteIcon name="Timer" size={20} className="text-text-tertiary" />
+                                Optimization Constraints
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {/* SCHEDULE GROUP */}
+                            <div className="space-y-4 p-4 bg-bg-primary/30 rounded-xl border border-white/5">
+                                <h3 className="text-[10px] font-bold text-accent-primary uppercase tracking-widest flex items-center gap-2 mb-2">
+                                    <Calendar size={14} />
+                                    Race Schedule
+                                </h3>
+
+                                <div className="grid grid-cols-1 gap-4">
+                                    {/* Start Time */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[10px] font-bold text-text-secondary uppercase">Start Time</label>
+                                            <div className="flex items-center gap-3">
+                                                <button
+                                                    onClick={() => {
+                                                        const now = new Date();
+                                                        now.setSeconds(0, 0);
+                                                        setStartTime(toLocalDateTimeString(now));
+                                                    }}
+                                                    className="text-[9px] font-bold text-accent-primary hover:underline uppercase"
+                                                >
+                                                    Now
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        const target = new Date();
+                                                        target.setHours(0, 0, 0, 0);
+                                                        if (target < new Date()) {
+                                                            target.setDate(target.getDate() + 1);
+                                                        }
+                                                        setStartTime(toLocalDateTimeString(target));
+                                                    }}
+                                                    className="text-[9px] font-bold text-accent-secondary hover:underline uppercase"
+                                                >
+                                                    0.00
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 bg-bg-input border border-border rounded-lg px-3 py-2.5 group focus-within:border-accent-primary transition-colors min-h-[48px]">
+                                            <Clock size={18} className="text-text-tertiary group-focus-within:text-accent-primary opacity-50 shrink-0" />
+                                            <input
+                                                type="datetime-local"
+                                                value={startTime}
+                                                onChange={(e) => setStartTime(e.target.value)}
+                                                onFocus={(e) => (e.target as HTMLInputElement).showPicker()}
+                                                onClick={(e) => (e.target as HTMLInputElement).showPicker()}
+                                                step="60"
+                                                className="w-full bg-transparent border-none text-white text-[15px] outline-none"
+                                                style={{ colorScheme: 'dark' }}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* End Time */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[10px] font-bold text-text-secondary uppercase">End Time</label>
+                                            <button
                                                 onClick={() => {
-                                                    const now = new Date();
-                                                    now.setSeconds(0, 0);
-                                                    setStartTime(toLocalDateTimeString(now));
+                                                    const start = new Date(startTime);
+                                                    const target = new Date(start);
+                                                    target.setHours(23, 59, 0, 0);
+
+                                                    // If start is already past 23:59 of that day, go to the next day
+                                                    if (start.getTime() >= target.getTime()) {
+                                                        target.setDate(target.getDate() + 1);
+                                                    }
+
+                                                    handleEndTimeChange(toLocalDateTimeString(target));
                                                 }}
                                                 className="text-[9px] font-bold text-accent-primary hover:underline uppercase"
                                             >
-                                                Now
-                                            </button>
-                                            <button 
-                                                onClick={() => {
-                                                    const target = new Date();
-                                                    target.setHours(0, 0, 0, 0);
-                                                    if (target < new Date()) {
-                                                        target.setDate(target.getDate() + 1);
-                                                    }
-                                                    setStartTime(toLocalDateTimeString(target));
-                                                }}
-                                                className="text-[9px] font-bold text-accent-secondary hover:underline uppercase"
-                                            >
-                                                0.00
+                                                Set 23:59
                                             </button>
                                         </div>
+                                        <div className="flex items-center gap-3 bg-bg-input border border-border rounded-lg px-3 py-2.5 group focus-within:border-accent-primary transition-colors min-h-[48px]">
+                                            <CheckCircle2 size={18} className="text-text-tertiary group-focus-within:text-accent-primary opacity-50 shrink-0" />
+                                            <input
+                                                type="datetime-local"
+                                                value={endTime}
+                                                onChange={(e) => handleEndTimeChange(e.target.value)}
+                                                onFocus={(e) => (e.target as HTMLInputElement).showPicker()}
+                                                onClick={(e) => (e.target as HTMLInputElement).showPicker()}
+                                                step="60"
+                                                className="w-full bg-transparent border-none text-white text-[15px] outline-none"
+                                                style={{ colorScheme: 'dark' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Duration Display/Input */}
+                                <div className="space-y-2 pt-2 border-t border-white/5">
+                                    <label className="text-[10px] font-bold text-text-secondary uppercase flex items-center gap-2">
+                                        <Timer size={12} />
+                                        Duration (Time Limit)
+                                    </label>
+                                    <div className="flex gap-3">
+                                        {/* Hours */}
+                                        <div className="relative group flex-1">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                className="w-full bg-bg-input border border-border rounded-lg py-2 px-3 text-white font-mono text-sm font-bold focus:border-accent-primary outline-none transition-colors"
+                                                value={Math.floor(timeLimitHours)}
+                                                onChange={(e) => {
+                                                    const h = parseInt(e.target.value) || 0;
+                                                    const m = Math.round((timeLimitHours - Math.floor(timeLimitHours)) * 60);
+                                                    setTimeLimitHours(h + (m / 60));
+                                                }}
+                                                placeholder="0"
+                                            />
+                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-text-muted pointer-events-none">h</span>
+                                        </div>
+
+                                        {/* Minutes */}
+                                        <div className="relative group flex-1">
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="59"
+                                                className="w-full bg-bg-input border border-border rounded-lg py-2 px-3 text-white font-mono text-sm font-bold focus:border-accent-primary outline-none transition-colors"
+                                                value={Math.round((timeLimitHours - Math.floor(timeLimitHours)) * 60)}
+                                                onChange={(e) => {
+                                                    const m = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
+                                                    const h = Math.floor(timeLimitHours);
+                                                    setTimeLimitHours(h + (m / 60));
+                                                }}
+                                                placeholder="0"
+                                            />
+                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-text-muted pointer-events-none">m</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Potion Input */}
+                            <div className="space-y-3">
+                                <label className="text-xs font-bold text-text-secondary uppercase flex items-center gap-2">
+                                    <SpriteIcon name="Potion" size={16} />
+                                    Available Potions
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-primary transition-colors pointer-events-none">
+                                        <SpriteIcon name="Potion" size={24} className="opacity-50" />
+                                    </div>
+                                    <input
+                                        type="number"
+                                        value={potions}
+                                        onChange={(e) => setPotions(Number(e.target.value))}
+                                        className="w-full bg-bg-input border border-border rounded-xl py-4 pl-12 pr-4 text-white font-mono text-xl font-bold focus:border-accent-primary outline-none transition-colors"
+                                        placeholder="0"
+                                        min="0"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Gem Speedup */}
+                            <div className="space-y-3 pt-4 border-t border-white/5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <SpriteIcon name="GemSquare" size={16} />
+                                        <span className="text-xs font-bold text-text-secondary uppercase">Gem Time Skips</span>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only peer"
+                                            checked={profile.misc.useGemsInCalculators}
+                                            onChange={(e) => updateNestedProfile('misc', { useGemsInCalculators: e.target.checked })}
+                                        />
+                                        <div className="w-9 h-5 bg-bg-input peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent-primary"></div>
+                                    </label>
+                                </div>
+
+                                {profile.misc.useGemsInCalculators && (
+                                    <div className="relative group animate-in fade-in slide-in-from-top-2">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-primary transition-colors pointer-events-none">
+                                            <SpriteIcon name="GemSquare" size={20} className="opacity-50" />
+                                        </div>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            className="w-full bg-bg-input border border-border rounded-xl py-3 pl-12 pr-4 text-white font-mono text-lg font-bold focus:border-accent-primary outline-none transition-colors"
+                                            value={profile.misc.gemCount}
+                                            onChange={(e) => updateNestedProfile('misc', { gemCount: Math.max(0, parseInt(e.target.value) || 0) })}
+                                            placeholder=" Gems"
+                                        />
+                                        {optimization && (
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-mono text-text-secondary">
+                                                <span className={(optimization.totalGemsUsed || 0) > profile.misc.gemCount ? "text-error" : "text-accent-primary"}>
+                                                    {optimization.totalGemsUsed}
+                                                </span>
+                                                <span className="mx-1">/</span>
+                                                <span>{profile.misc.gemCount}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-4 bg-accent-primary/5 rounded-lg border border-accent-primary/20 flex gap-3 items-start">
+                                <Info size={16} className="text-accent-primary shrink-0 mt-0.5" />
+                                <p className="text-[11px] text-text-secondary leading-relaxed">
+                                    Use the arrows on the right to reorder upgrades based on your schedule. Reordering is blocked if it violates game prerequisites.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* RESULTS */}
+                    <Card className="h-full p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20 relative overflow-hidden flex flex-col">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-accent-primary">
+                                <RefreshCcw className="w-5 h-5" />
+                                Optimization Results
+                            </CardTitle>
+                        </CardHeader>
+
+                        <CardContent className="space-y-6 relative z-10 flex-1 flex flex-col min-h-0">
+                            {optimization && actionsWithGemCosts.length > 0 ? (
+                                <>
+                                    {/* Stats Summary */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 lg:gap-4">
+                                        <div className="p-4 bg-bg-primary rounded-xl border border-accent-primary/20 md:col-span-2 shadow-lg shadow-accent-primary/5">
+                                            <div className="text-[10px] text-accent-primary font-black uppercase tracking-widest mb-1 flex items-center justify-between">
+                                                <span>War Points (Completion)</span>
+                                                <Trophy size={14} />
+                                            </div>
+                                            <div className="flex items-baseline gap-2">
+                                                <div className="text-3xl font-black text-white">
+                                                    {Math.floor(selectedWarPoints).toLocaleString()}
+                                                </div>
+                                                {selectedWarPoints < (optimization.totalWarPoints || 0) && (
+                                                    <div className="text-[10px] text-text-muted font-bold">
+                                                        / {Math.floor(optimization.totalWarPoints || 0).toLocaleString()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="text-[9px] text-text-muted mt-1">
+                                                Tree Points: {Math.floor(selectedPoints).toLocaleString()}
+                                                {selectedPoints < optimization.totalPoints && (
+                                                    <span> / {Math.floor(optimization.totalPoints).toLocaleString()}</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-bg-tertiary/50 p-4 rounded-xl border border-white/5 flex flex-col justify-center">
+                                            <div className="text-[10px] text-text-muted uppercase font-bold mb-1 flex items-center gap-1">
+                                                <Timer size={10} />
+                                                Time Used
+                                            </div>
+                                            <div className="text-lg font-mono font-bold text-white leading-none">
+                                                {formatTime(optimization.timeUsed * 3600)}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-bg-tertiary/50 p-4 rounded-xl border border-white/5 flex flex-col justify-center">
+                                            <div className="text-[10px] text-text-muted uppercase font-bold mb-1 flex items-center gap-1">
+                                                <SpriteIcon name="Potion" size={12} />
+                                                Potions
+                                            </div>
+                                            <div className="text-lg font-mono font-bold text-accent-secondary leading-none">
+                                                {Math.floor(optimization.potionsUsed).toLocaleString()}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Plan */}
+                                    <div className="space-y-3 flex-1 flex flex-col min-h-0">
+                                        <div className="flex justify-between items-center text-xs font-bold text-text-secondary uppercase border-b border-white/5 pb-2">
+                                            <div className="flex items-center gap-3">
+                                                <span>Recommended Upgrade Path</span>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={copyToClipboard}
+                                                        className="flex items-center gap-1.5 px-2 py-0.5 bg-accent-primary/5 hover:bg-accent-primary/10 text-accent-primary rounded transition-colors"
+                                                        title="Copy schedule to clipboard"
+                                                    >
+                                                        <Copy size={12} />
+                                                        Copy
+                                                    </button>
+                                                    <button
+                                                        onClick={sortByDuration}
+                                                        className="flex items-center gap-1.5 px-2 py-0.5 bg-accent-secondary/10 hover:bg-accent-secondary/20 text-accent-secondary rounded transition-colors"
+                                                        title={`Sort by Duration (${sortDirection === 'desc' ? 'Next: Ascending' : 'Next: Descending'})`}
+                                                    >
+                                                        <ArrowUpDown size={12} className={cn(sortDirection === 'asc' ? "rotate-180" : "", "transition-transform duration-300")} />
+                                                        {sortDirection === 'desc' ? 'Duration (Longest)' : 'Duration (Shortest)'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    const allIds = actionsWithGemCosts.map(getActionId);
+                                                    if (selectedIds.size === actionsWithGemCosts.length) setSelectedIds(new Set());
+                                                    else setSelectedIds(new Set(allIds));
+                                                }}
+                                                className="text-accent-primary hover:underline lowercase bg-accent-primary/5 px-2 py-0.5 rounded transition-colors"
+                                            >
+                                                {selectedIds.size === actionsWithGemCosts.length ? 'Desel All' : 'Select All'}
+                                            </button>
+                                        </div>
+                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                            <SortableContext items={orderedActions.map(getActionId)} strategy={verticalListSortingStrategy}>
+                                                <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                                                    {(() => {
+                                                        let currentAccumulated = 0;
+                                                        const baseTimeLimitSeconds = timeLimitHours * 3600;
+
+                                                        return orderedActions.map((action, idx) => {
+                                                            let recalculatedGemCost = 0;
+                                                            const currentStartTimeSec = currentAccumulated;
+                                                            const currentEndTime = currentStartTimeSec + action.duration;
+
+                                                            if (currentEndTime > baseTimeLimitSeconds && profile.misc.useGemsInCalculators) {
+                                                                const overlap = Math.min(action.duration, currentEndTime - Math.max(currentStartTimeSec, baseTimeLimitSeconds));
+                                                                recalculatedGemCost = Math.ceil(overlap * gemSkipCostPerSecond);
+                                                            }
+
+                                                            const skipSeconds = recalculatedGemCost ? recalculatedGemCost / gemSkipCostPerSecond : 0;
+                                                            const effectiveDuration = Math.max(0, action.duration - skipSeconds);
+
+                                                            const startObj = new Date(new Date(startTime).getTime() + currentAccumulated * 1000);
+                                                            const endObj = new Date(startObj.getTime() + effectiveDuration * 1000);
+
+                                                            currentAccumulated += effectiveDuration;
+
+                                                            const isDifferentDay = startObj.getDate() !== endObj.getDate();
+                                                            const id = getActionId(action);
+                                                            // Recalculate war day based on actual completion time (after reordering)
+                                                            const isWarDayNow = isWarPointDay(endObj, 'tech');
+
+                                                            return (
+                                                                <SortableItem key={id} id={id}>
+                                                                    {({ listeners, isDragging }) => (
+                                                                        <div
+                                                                            className={cn(
+                                                                                "flex gap-3 p-3 rounded bg-bg-tertiary/50 border border-white/5 transition-all relative group",
+                                                                                isDragging && "shadow-2xl shadow-accent-primary/20 ring-2 ring-accent-primary/30",
+                                                                                selectedIds.has(id)
+                                                                                    ? "border-accent-primary/40 bg-accent-primary/5"
+                                                                                    : isSelectable(idx)
+                                                                                        ? "opacity-80 border-white/10"
+                                                                                        : "opacity-30 grayscale bg-black/40"
+                                                                            )}
+                                                                        >
+                                                                            {/* Drag Handle */}
+                                                                            <div
+                                                                                {...listeners}
+                                                                                className="flex items-center cursor-grab active:cursor-grabbing text-text-muted/30 hover:text-accent-primary/50 transition-colors touch-none"
+                                                                            >
+                                                                                <GripVertical size={20} />
+                                                                            </div>
+
+                                                                            <div className="flex flex-col items-center shrink-0 w-8">
+                                                                                <div className={cn(
+                                                                                    "text-[10px] font-bold w-full text-center py-0.5 rounded border mb-2 transition-colors",
+                                                                                    selectedIds.has(id)
+                                                                                        ? "text-accent-primary bg-accent-primary/10 border-accent-primary/20"
+                                                                                        : "text-text-muted bg-white/5 border-white/5"
+                                                                                )}>
+                                                                                    #{idx + 1}
+                                                                                </div>
+                                                                                <div
+                                                                                    onClick={() => toggleSelection(idx)}
+                                                                                    className="w-10 h-10 shrink-0 rounded-lg overflow-hidden border border-white/5 bg-black/20 relative cursor-pointer"
+                                                                                >
+                                                                                    {getSpriteStyle(action) ? (
+                                                                                        <div style={getSpriteStyle(action)!} className="w-full h-full" />
+                                                                                    ) : (
+                                                                                        <div className="w-full h-full flex items-center justify-center">
+                                                                                            <Cpu size={20} className="text-text-muted" />
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <div className="flex-1 min-w-0" onClick={() => toggleSelection(idx)}>
+                                                                                <div className="flex justify-between items-start mb-1 cursor-pointer">
+                                                                                    <span className="text-sm font-bold text-white truncate pr-2">
+                                                                                        {action.nodeName}
+                                                                                    </span>
+                                                                                    <div className="flex items-center gap-2 text-right">
+                                                                                        <div className="flex flex-col items-end">
+                                                                                            <div className="flex items-center gap-1 text-[9px] font-bold text-accent-primary uppercase">
+                                                                                                <Clock size={8} /> {formatScheduleTime(startObj)}
+                                                                                            </div>
+                                                                                            <div className="flex items-center gap-1 text-[9px] font-bold text-text-muted uppercase">
+                                                                                                <CheckCircle2 size={8} /> {formatScheduleTime(endObj)}
+                                                                                                {isDifferentDay && <span className="text-[8px] text-accent-secondary ml-0.5">+{endObj.getDate() - startObj.getDate()}d</span>}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <div className={cn(
+                                                                                            "w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0",
+                                                                                            selectedIds.has(id) ? "bg-accent-primary border-accent-primary" : "border-white/20"
+                                                                                        )}>
+                                                                                            {selectedIds.has(id) && <CheckCircle2 size={12} className="text-bg-primary" />}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-2 text-[10px] text-text-muted mb-2 cursor-pointer">
+                                                                                    <span className="bg-white/5 px-1.5 rounded">Lv.{action.fromLevel} → Lv.{action.toLevel}</span>
+                                                                                    <span>•</span>
+                                                                                    <span className="text-accent-primary/80">{action.tree}</span>
+                                                                                    <span className="ml-auto font-mono text-accent-secondary">Tier {action.tier + 1}</span>
+                                                                                </div>
+                                                                                <div className="flex justify-between items-center text-[11px] font-mono border-t border-white/5 pt-2">
+                                                                                    <div className="flex items-center gap-3">
+                                                                                        <div className={cn("flex items-center gap-1", recalculatedGemCost > 0 ? "text-accent-primary" : "")}>
+                                                                                            <Timer size={10} className="opacity-50" />
+                                                                                            {formatTime(effectiveDuration)}
+                                                                                            {recalculatedGemCost > 0 && <span className="text-[8px] opacity-70 underline">Gems used</span>}
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-1">
+                                                                                            <SpriteIcon name="Potion" size={10} />
+                                                                                            {action.cost}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <div className={cn("font-bold flex items-center gap-1", isWarDayNow ? "text-accent-primary" : "text-text-muted")}>
+                                                                                        +{action.points.toLocaleString()} pts
+                                                                                        {isWarDayNow && <span className="text-[7px] bg-accent-primary/20 text-accent-primary px-1 py-0.5 rounded font-black uppercase">WAR</span>}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Manual Controls */}
+                                                                            <div className="flex flex-col gap-1 shrink-0 justify-center">
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); moveUp(idx); }}
+                                                                                    disabled={!canMoveUp(idx)}
+                                                                                    className="p-1 hover:bg-white/10 rounded disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                                                                                >
+                                                                                    <ChevronUp size={16} className="text-accent-primary" />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); moveDown(idx); }}
+                                                                                    disabled={!canMoveDown(idx)}
+                                                                                    className="p-1 hover:bg-white/10 rounded disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
+                                                                                >
+                                                                                    <ChevronDown size={16} className="text-accent-primary" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </SortableItem>
+                                                            );
+                                                        });
+                                                    })()}
+                                                </div>
+                                            </SortableContext>
+                                        </DndContext>
+
+                                        <button
+                                            onClick={handleApply}
+                                            disabled={selectedIds.size === 0}
+                                            className="w-full py-4 bg-accent-primary text-bg-primary font-black uppercase tracking-tighter rounded-xl hover:bg-accent-primary/90 disabled:opacity-50 disabled:grayscale transition-all shadow-xl shadow-accent-primary/10 mt-2 flex items-center justify-center gap-2 group"
+                                        >
+                                            <CheckCircle size={20} className="group-hover:scale-110 transition-transform" />
+                                            Apply Selected Upgrades
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3 text-center px-6">
+                                    <Info className="w-10 h-10 opacity-20" />
+                                    <div>
+                                        <p className="font-bold">No upgrades found</p>
+                                        <p className="text-sm opacity-60 mt-1">Increase your time limit or potions budget to see the optimal upgrade path.</p>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+
+                        <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
+                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/SkillTabIcon.png`} alt="" className="w-64 h-64 object-contain grayscale" />
+                        </div>
+                    </Card>
+                </div>
+            )}
+
+            {/* ========== PLANNER TAB ========== */}
+            {activeTab === 'planner' && (
+                <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-6 items-start">
+                    {/* LEFT: Planner Controls */}
+                    <div className="space-y-6">
+                        {/* Start Date */}
+                        <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Calendar size={20} className="text-text-tertiary" />
+                                    Plan Settings
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-bold text-text-secondary uppercase">Start Date</label>
+                                        <button
+                                            onClick={() => {
+                                                const now = new Date();
+                                                now.setSeconds(0, 0);
+                                                planner.setPlanStartDate(toLocalDateTimeString(now));
+                                            }}
+                                            className="text-[9px] font-bold text-accent-primary hover:underline uppercase"
+                                        >Now</button>
                                     </div>
                                     <div className="flex items-center gap-3 bg-bg-input border border-border rounded-lg px-3 py-2.5 group focus-within:border-accent-primary transition-colors min-h-[48px]">
                                         <Clock size={18} className="text-text-tertiary group-focus-within:text-accent-primary opacity-50 shrink-0" />
                                         <input
                                             type="datetime-local"
-                                            value={startTime}
-                                            onChange={(e) => setStartTime(e.target.value)}
+                                            value={planner.planStartDate}
+                                            onChange={(e) => planner.setPlanStartDate(e.target.value)}
                                             onFocus={(e) => (e.target as HTMLInputElement).showPicker()}
                                             onClick={(e) => (e.target as HTMLInputElement).showPicker()}
                                             step="60"
@@ -960,861 +1431,392 @@ export default function TreeCalculator() {
                                     </div>
                                 </div>
 
-                                {/* End Time */}
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-[10px] font-bold text-text-secondary uppercase">End Time</label>
-                                        <button 
-                                            onClick={() => {
-                                                const start = new Date(startTime);
-                                                const target = new Date(start);
-                                                target.setHours(23, 59, 0, 0);
-                                                
-                                                // If start is already past 23:59 of that day, go to the next day
-                                                if (start.getTime() >= target.getTime()) {
-                                                    target.setDate(target.getDate() + 1);
-                                                }
-                                                
-                                                handleEndTimeChange(toLocalDateTimeString(target));
-                                            }}
-                                            className="text-[9px] font-bold text-accent-primary hover:underline uppercase"
-                                        >
-                                            Set 23:59
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center gap-3 bg-bg-input border border-border rounded-lg px-3 py-2.5 group focus-within:border-accent-primary transition-colors min-h-[48px]">
-                                        <CheckCircle2 size={18} className="text-text-tertiary group-focus-within:text-accent-primary opacity-50 shrink-0" />
-                                        <input
-                                            type="datetime-local"
-                                            value={endTime}
-                                            onChange={(e) => handleEndTimeChange(e.target.value)}
-                                            onFocus={(e) => (e.target as HTMLInputElement).showPicker()}
-                                            onClick={(e) => (e.target as HTMLInputElement).showPicker()}
-                                            step="60"
-                                            className="w-full bg-transparent border-none text-white text-[15px] outline-none"
-                                            style={{ colorScheme: 'dark' }}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Duration Display/Input */}
-                            <div className="space-y-2 pt-2 border-t border-white/5">
-                                <label className="text-[10px] font-bold text-text-secondary uppercase flex items-center gap-2">
-                                    <Timer size={12} />
-                                    Duration (Time Limit)
-                                </label>
-                                <div className="flex gap-3">
-                                    {/* Hours */}
-                                    <div className="relative group flex-1">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            className="w-full bg-bg-input border border-border rounded-lg py-2 px-3 text-white font-mono text-sm font-bold focus:border-accent-primary outline-none transition-colors"
-                                            value={Math.floor(timeLimitHours)}
-                                            onChange={(e) => {
-                                                const h = parseInt(e.target.value) || 0;
-                                                const m = Math.round((timeLimitHours - Math.floor(timeLimitHours)) * 60);
-                                                setTimeLimitHours(h + (m / 60));
-                                            }}
-                                            placeholder="0"
-                                        />
-                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-text-muted pointer-events-none">h</span>
-                                    </div>
-
-                                    {/* Minutes */}
-                                    <div className="relative group flex-1">
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="59"
-                                            className="w-full bg-bg-input border border-border rounded-lg py-2 px-3 text-white font-mono text-sm font-bold focus:border-accent-primary outline-none transition-colors"
-                                            value={Math.round((timeLimitHours - Math.floor(timeLimitHours)) * 60)}
-                                            onChange={(e) => {
-                                                const m = Math.min(59, Math.max(0, parseInt(e.target.value) || 0));
-                                                const h = Math.floor(timeLimitHours);
-                                                setTimeLimitHours(h + (m / 60));
-                                            }}
-                                            placeholder="0"
-                                        />
-                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-text-muted pointer-events-none">m</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Potion Input */}
-                        <div className="space-y-3">
-                            <label className="text-xs font-bold text-text-secondary uppercase flex items-center gap-2">
-                                <SpriteIcon name="Potion" size={16} />
-                                Available Potions
-                            </label>
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-primary transition-colors pointer-events-none">
-                                    <SpriteIcon name="Potion" size={24} className="opacity-50" />
-                                </div>
-                                <input
-                                    type="number"
-                                    value={potions}
-                                    onChange={(e) => setPotions(Number(e.target.value))}
-                                    className="w-full bg-bg-input border border-border rounded-xl py-4 pl-12 pr-4 text-white font-mono text-xl font-bold focus:border-accent-primary outline-none transition-colors"
-                                    placeholder="0"
-                                    min="0"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Gem Speedup */}
-                        <div className="space-y-3 pt-4 border-t border-white/5">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <SpriteIcon name="GemSquare" size={16} />
-                                    <span className="text-xs font-bold text-text-secondary uppercase">Gem Time Skips</span>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="sr-only peer"
-                                        checked={profile.misc.useGemsInCalculators}
-                                        onChange={(e) => updateNestedProfile('misc', { useGemsInCalculators: e.target.checked })}
-                                    />
-                                    <div className="w-9 h-5 bg-bg-input peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent-primary"></div>
-                                </label>
-                            </div>
-
-                            {profile.misc.useGemsInCalculators && (
-                                <div className="relative group animate-in fade-in slide-in-from-top-2">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-accent-primary transition-colors pointer-events-none">
-                                        <SpriteIcon name="GemSquare" size={20} className="opacity-50" />
-                                    </div>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        className="w-full bg-bg-input border border-border rounded-xl py-3 pl-12 pr-4 text-white font-mono text-lg font-bold focus:border-accent-primary outline-none transition-colors"
-                                        value={profile.misc.gemCount}
-                                        onChange={(e) => updateNestedProfile('misc', { gemCount: Math.max(0, parseInt(e.target.value) || 0) })}
-                                        placeholder=" Gems"
-                                    />
-                                    {optimization && (
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-mono text-text-secondary">
-                                            <span className={(optimization.totalGemsUsed || 0) > profile.misc.gemCount ? "text-error" : "text-accent-primary"}>
-                                                {optimization.totalGemsUsed}
-                                            </span>
-                                            <span className="mx-1">/</span>
-                                            <span>{profile.misc.gemCount}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="p-4 bg-accent-primary/5 rounded-lg border border-accent-primary/20 flex gap-3 items-start">
-                            <Info size={16} className="text-accent-primary shrink-0 mt-0.5" />
-                            <p className="text-[11px] text-text-secondary leading-relaxed">
-                                Use the arrows on the right to reorder upgrades based on your schedule. Reordering is blocked if it violates game prerequisites.
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* RESULTS */}
-                <Card className="h-full p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20 relative overflow-hidden flex flex-col">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-accent-primary">
-                            <RefreshCcw className="w-5 h-5" />
-                            Optimization Results
-                        </CardTitle>
-                    </CardHeader>
-
-                    <CardContent className="space-y-6 relative z-10 flex-1 flex flex-col min-h-0">
-                        {optimization && actionsWithGemCosts.length > 0 ? (
-                            <>
-                                {/* Stats Summary */}
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 lg:gap-4">
-                                    <div className="p-4 bg-bg-primary rounded-xl border border-accent-primary/20 md:col-span-2 shadow-lg shadow-accent-primary/5">
-                                        <div className="text-[10px] text-accent-primary font-black uppercase tracking-widest mb-1 flex items-center justify-between">
-                                            <span>War Points (Completion)</span>
-                                            <Trophy size={14} />
-                                        </div>
-                                        <div className="flex items-baseline gap-2">
-                                            <div className="text-3xl font-black text-white">
-                                                {Math.floor(selectedWarPoints).toLocaleString()}
-                                            </div>
-                                            {selectedWarPoints < (optimization.totalWarPoints || 0) && (
-                                                <div className="text-[10px] text-text-muted font-bold">
-                                                    / {Math.floor(optimization.totalWarPoints || 0).toLocaleString()}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="text-[9px] text-text-muted mt-1">
-                                            Tree Points: {Math.floor(selectedPoints).toLocaleString()}
-                                            {selectedPoints < optimization.totalPoints && (
-                                                <span> / {Math.floor(optimization.totalPoints).toLocaleString()}</span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="bg-bg-tertiary/50 p-4 rounded-xl border border-white/5 flex flex-col justify-center">
-                                        <div className="text-[10px] text-text-muted uppercase font-bold mb-1 flex items-center gap-1">
-                                            <Timer size={10} />
-                                            Time Used
-                                        </div>
-                                        <div className="text-lg font-mono font-bold text-white leading-none">
-                                            {formatTime(optimization.timeUsed * 3600)}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-bg-tertiary/50 p-4 rounded-xl border border-white/5 flex flex-col justify-center">
-                                        <div className="text-[10px] text-text-muted uppercase font-bold mb-1 flex items-center gap-1">
-                                            <SpriteIcon name="Potion" size={12} />
-                                            Potions
-                                        </div>
-                                        <div className="text-lg font-mono font-bold text-accent-secondary leading-none">
-                                            {Math.floor(optimization.potionsUsed).toLocaleString()}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Action Plan */}
-                                <div className="space-y-3 flex-1 flex flex-col min-h-0">
-                                    <div className="flex justify-between items-center text-xs font-bold text-text-secondary uppercase border-b border-white/5 pb-2">
-                                        <div className="flex items-center gap-3">
-                                            <span>Recommended Upgrade Path</span>
-                                            <div className="flex items-center gap-2">
-                                                <button 
-                                                    onClick={copyToClipboard}
-                                                    className="flex items-center gap-1.5 px-2 py-0.5 bg-accent-primary/5 hover:bg-accent-primary/10 text-accent-primary rounded transition-colors"
-                                                    title="Copy schedule to clipboard"
-                                                >
-                                                    <Copy size={12} />
-                                                    Copy
-                                                </button>
-                                                <button 
-                                                    onClick={sortByDuration}
-                                                    className="flex items-center gap-1.5 px-2 py-0.5 bg-accent-secondary/10 hover:bg-accent-secondary/20 text-accent-secondary rounded transition-colors"
-                                                    title={`Sort by Duration (${sortDirection === 'desc' ? 'Next: Ascending' : 'Next: Descending'})`}
-                                                >
-                                                    <ArrowUpDown size={12} className={cn(sortDirection === 'asc' ? "rotate-180" : "", "transition-transform duration-300")} />
-                                                    {sortDirection === 'desc' ? 'Duration (Longest)' : 'Duration (Shortest)'}
-                                                </button>
+                                {/* Summary */}
+                                <div className="grid grid-cols-3 gap-2 pt-2">
+                                    <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-white/5 shadow-inner flex flex-col justify-center">
+                                        <div className="text-[10px] text-text-muted uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest">Points</div>
+                                        <div className="flex flex-col items-center">
+                                            <div className="text-xl font-black text-white leading-none mb-0.5">{planner.summary.totalPoints.toLocaleString()}</div>
+                                            <div className="text-[10px] font-black text-accent-primary flex items-center gap-1 bg-accent-primary/10 px-1.5 py-0.5 rounded-full border border-accent-primary/20" title="Points earned during Guild War days">
+                                                <Trophy size={10} /> {planner.summary.totalWarPoints.toLocaleString()} War
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => {
-                                                const allIds = actionsWithGemCosts.map(getActionId);
-                                                if (selectedIds.size === actionsWithGemCosts.length) setSelectedIds(new Set());
-                                                else setSelectedIds(new Set(allIds));
-                                            }}
-                                            className="text-accent-primary hover:underline lowercase bg-accent-primary/5 px-2 py-0.5 rounded transition-colors"
-                                        >
-                                            {selectedIds.size === actionsWithGemCosts.length ? 'Desel All' : 'Select All'}
-                                        </button>
                                     </div>
-                                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                        <SortableContext items={orderedActions.map(getActionId)} strategy={verticalListSortingStrategy}>
-                                            <div className="space-y-2 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                                                {(() => {
-                                                    let currentAccumulated = 0;
-                                                    const baseTimeLimitSeconds = timeLimitHours * 3600;
+                                    <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-accent-primary/10 shadow-glow-sm shadow-accent-primary/5">
+                                        <div className="text-[10px] text-accent-primary uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest"><Timer size={10} />Time</div>
+                                        <div className="text-xl font-black text-white drop-shadow-sm leading-none">
+                                            {(() => {
+                                                const totalSecs = planner.summary.totalTime;
+                                                const d = Math.floor(totalSecs / 86400);
+                                                const h = Math.floor((totalSecs % 86400) / 3600);
+                                                const m = Math.floor((totalSecs % 3600) / 60);
+                                                return (
+                                                    <div className="flex flex-col items-center">
+                                                        <span>{d > 0 ? `${d}d ${h}h` : `${h}h`}</span>
+                                                        <span className="text-[10px] opacity-60 font-bold">{m}m</span>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+                                    <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-white/5 shadow-inner">
+                                        <div className="text-[10px] text-text-muted uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest"><SpriteIcon name="Potion" size={10} className="text-accent-secondary" />Potions</div>
+                                        <div className="text-xl font-black text-accent-secondary drop-shadow-sm leading-none mb-1">{planner.summary.totalPotions.toLocaleString()}</div>
+                                    </div>
+                                </div>
 
-                                                    return orderedActions.map((action, idx) => {
-                                                        let recalculatedGemCost = 0;
-                                                        const currentStartTimeSec = currentAccumulated;
-                                                        const currentEndTime = currentStartTimeSec + action.duration;
-                                                        
-                                                        if (currentEndTime > baseTimeLimitSeconds && profile.misc.useGemsInCalculators) {
-                                                            const overlap = Math.min(action.duration, currentEndTime - Math.max(currentStartTimeSec, baseTimeLimitSeconds));
-                                                            recalculatedGemCost = Math.ceil(overlap * gemSkipCostPerSecond);
-                                                        }
-
-                                                        const skipSeconds = recalculatedGemCost ? recalculatedGemCost / gemSkipCostPerSecond : 0;
-                                                        const effectiveDuration = Math.max(0, action.duration - skipSeconds);
-                                                        
-                                                        const startObj = new Date(new Date(startTime).getTime() + currentAccumulated * 1000);
-                                                        const endObj = new Date(startObj.getTime() + effectiveDuration * 1000);
-                                                        
-                                                        currentAccumulated += effectiveDuration;
-
-                                                        const isDifferentDay = startObj.getDate() !== endObj.getDate();
-                                                        const id = getActionId(action);
-                                                        // Recalculate war day based on actual completion time (after reordering)
-                                                        const isWarDayNow = isWarPointDay(endObj, 'tech');
-
-                                                        return (
-                                                            <SortableItem key={id} id={id}>
-                                                                {({ listeners, isDragging }) => (
-                                                                    <div
-                                                                        className={cn(
-                                                                            "flex gap-3 p-3 rounded bg-bg-tertiary/50 border border-white/5 transition-all relative group",
-                                                                            isDragging && "shadow-2xl shadow-accent-primary/20 ring-2 ring-accent-primary/30",
-                                                                            selectedIds.has(id)
-                                                                                ? "border-accent-primary/40 bg-accent-primary/5"
-                                                                                : isSelectable(idx)
-                                                                                    ? "opacity-80 border-white/10"
-                                                                                    : "opacity-30 grayscale bg-black/40"
-                                                                        )}
-                                                                    >
-                                                                        {/* Drag Handle */}
-                                                                        <div 
-                                                                            {...listeners} 
-                                                                            className="flex items-center cursor-grab active:cursor-grabbing text-text-muted/30 hover:text-accent-primary/50 transition-colors touch-none"
-                                                                        >
-                                                                            <GripVertical size={20} />
-                                                                        </div>
-
-                                                                        <div className="flex flex-col items-center shrink-0 w-8">
-                                                                            <div className={cn(
-                                                                                "text-[10px] font-bold w-full text-center py-0.5 rounded border mb-2 transition-colors",
-                                                                                selectedIds.has(id)
-                                                                                    ? "text-accent-primary bg-accent-primary/10 border-accent-primary/20"
-                                                                                    : "text-text-muted bg-white/5 border-white/5"
-                                                                            )}>
-                                                                                #{idx + 1}
-                                                                            </div>
-                                                                            <div 
-                                                                                onClick={() => toggleSelection(idx)}
-                                                                                className="w-10 h-10 shrink-0 rounded-lg overflow-hidden border border-white/5 bg-black/20 relative cursor-pointer"
-                                                                            >
-                                                                                {getSpriteStyle(action) ? (
-                                                                                    <div style={getSpriteStyle(action)!} className="w-full h-full" />
-                                                                                ) : (
-                                                                                    <div className="w-full h-full flex items-center justify-center">
-                                                                                        <Cpu size={20} className="text-text-muted" />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                        
-                                                                        <div className="flex-1 min-w-0" onClick={() => toggleSelection(idx)}>
-                                                                            <div className="flex justify-between items-start mb-1 cursor-pointer">
-                                                                                <span className="text-sm font-bold text-white truncate pr-2">
-                                                                                    {action.nodeName}
-                                                                                </span>
-                                                                                <div className="flex items-center gap-2 text-right">
-                                                                                    <div className="flex flex-col items-end">
-                                                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-accent-primary uppercase">
-                                                                                            <Clock size={8} /> {formatScheduleTime(startObj)}
-                                                                                        </div>
-                                                                                        <div className="flex items-center gap-1 text-[9px] font-bold text-text-muted uppercase">
-                                                                                            <CheckCircle2 size={8} /> {formatScheduleTime(endObj)}
-                                                                                            {isDifferentDay && <span className="text-[8px] text-accent-secondary ml-0.5">+{endObj.getDate() - startObj.getDate()}d</span>}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div className={cn(
-                                                                                        "w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0",
-                                                                                        selectedIds.has(id) ? "bg-accent-primary border-accent-primary" : "border-white/20"
-                                                                                    )}>
-                                                                                        {selectedIds.has(id) && <CheckCircle2 size={12} className="text-bg-primary" />}
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="flex items-center gap-2 text-[10px] text-text-muted mb-2 cursor-pointer">
-                                                                                <span className="bg-white/5 px-1.5 rounded">Lv.{action.fromLevel} → Lv.{action.toLevel}</span>
-                                                                                <span>•</span>
-                                                                                <span className="text-accent-primary/80">{action.tree}</span>
-                                                                                <span className="ml-auto font-mono text-accent-secondary">Tier {action.tier + 1}</span>
-                                                                            </div>
-                                                                            <div className="flex justify-between items-center text-[11px] font-mono border-t border-white/5 pt-2">
-                                                                                <div className="flex items-center gap-3">
-                                                                                    <div className={cn("flex items-center gap-1", recalculatedGemCost > 0 ? "text-accent-primary" : "")}>
-                                                                                        <Timer size={10} className="opacity-50" />
-                                                                                        {formatTime(effectiveDuration)}
-                                                                                        {recalculatedGemCost > 0 && <span className="text-[8px] opacity-70 underline">Gems used</span>}
-                                                                                    </div>
-                                                                                    <div className="flex items-center gap-1">
-                                                                                        <SpriteIcon name="Potion" size={10} />
-                                                                                        {action.cost}
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div className={cn("font-bold flex items-center gap-1", isWarDayNow ? "text-accent-primary" : "text-text-muted")}>
-                                                                                    +{action.points.toLocaleString()} pts
-                                                                                    {isWarDayNow && <span className="text-[7px] bg-accent-primary/20 text-accent-primary px-1 py-0.5 rounded font-black uppercase">WAR</span>}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {/* Manual Controls */}
-                                                                        <div className="flex flex-col gap-1 shrink-0 justify-center">
-                                                                            <button 
-                                                                                onClick={(e) => { e.stopPropagation(); moveUp(idx); }}
-                                                                                disabled={!canMoveUp(idx)}
-                                                                                className="p-1 hover:bg-white/10 rounded disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
-                                                                            >
-                                                                                <ChevronUp size={16} className="text-accent-primary" />
-                                                                            </button>
-                                                                            <button 
-                                                                                onClick={(e) => { e.stopPropagation(); moveDown(idx); }}
-                                                                                disabled={!canMoveDown(idx)}
-                                                                                className="p-1 hover:bg-white/10 rounded disabled:opacity-20 disabled:hover:bg-transparent transition-colors"
-                                                                            >
-                                                                                <ChevronDown size={16} className="text-accent-primary" />
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </SortableItem>
-                                                        );
-                                                    });
-                                                })()}
+                                <div className="bg-accent-primary/5 rounded-xl p-2 text-center border border-accent-primary/20 flex items-center justify-between px-4">
+                                    <div className="text-[10px] text-text-secondary font-black uppercase tracking-widest">Total upgrades</div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-sm font-black text-white">{planner.summary.nodeCount} nodes</div>
+                                        {planner.summary.delayCount > 0 && (
+                                            <div className="text-[10px] font-bold text-yellow-400 opacity-80 flex items-center gap-1 border-l border-white/10 pl-2">
+                                                <Pause size={10} /> {planner.summary.delayCount} delays
                                             </div>
-                                        </SortableContext>
-                                    </DndContext>
+                                        )}
+                                    </div>
+                                </div>
 
+                                {planner.schedule.length > 0 && (
+                                    <div className="text-[10px] text-text-muted text-center pt-1 border-t border-white/5">
+                                        Completion: <span className="text-white font-bold ml-1">{planner.summary.completionDate.toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' })} {planner.summary.completionDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                )}
+
+                                {planner.planQueue.length > 0 && (
                                     <button
-                                        onClick={handleApply}
-                                        disabled={selectedIds.size === 0}
-                                        className="w-full py-4 bg-accent-primary text-bg-primary font-black uppercase tracking-tighter rounded-xl hover:bg-accent-primary/90 disabled:opacity-50 disabled:grayscale transition-all shadow-xl shadow-accent-primary/10 mt-2 flex items-center justify-center gap-2 group"
+                                        onClick={() => planner.clearQueue()}
+                                        className="w-full py-2 text-xs font-bold text-red-400 border border-red-400/20 bg-red-400/5 rounded-lg hover:bg-red-400/10 transition-colors flex items-center justify-center gap-2"
                                     >
-                                        <CheckCircle size={20} className="group-hover:scale-110 transition-transform" />
-                                        Apply Selected Upgrades
+                                        <Trash2 size={12} />
+                                        Clear All Steps
+                                    </button>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Auto-Planner */}
+                        <AutoPlannerControls
+                            planner={planner}
+                            profile={profile}
+                            updateNestedProfile={updateNestedProfile}
+                        />
+
+                        {/* Node Picker */}
+                        <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Plus size={20} className="text-text-tertiary" />
+                                    Add Upgrade
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                {/* Search */}
+                                <div className="relative">
+                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search nodes..."
+                                        value={plannerSearch}
+                                        onChange={(e) => setPlannerSearch(e.target.value)}
+                                        className="w-full bg-bg-input border border-border rounded-lg py-2 pl-9 pr-3 text-sm text-white placeholder:text-text-muted focus:border-accent-primary outline-none transition-colors"
+                                    />
+                                </div>
+
+                                {/* Tree Filter & Add Delay */}
+                                <div className="flex gap-1">
+                                    <div className="flex bg-bg-input rounded-lg p-1 border border-border gap-0.5 flex-1">
+                                        {['all', 'Forge', 'Power', 'SkillsPetTech'].map(t => (
+                                            <button key={t} onClick={() => setPlannerTreeFilter(t)}
+                                                className={cn("flex-1 py-1 text-[10px] font-bold rounded transition-all",
+                                                    plannerTreeFilter === t ? "bg-accent-primary text-black" : "text-text-muted hover:text-text-primary"
+                                                )}
+                                            >{t === 'all' ? 'All' : t === 'SkillsPetTech' ? 'SPT' : t}</button>
+                                        ))}
+                                    </div>
+                                    <button
+                                        onClick={() => planner.appendDelay(60)}
+                                        className="px-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/20 transition-all flex items-center gap-1.5 text-[10px] font-bold group"
+                                        title="Add manual 1h delay"
+                                    >
+                                        <Pause size={12} className="group-hover:scale-110 transition-transform" />
+                                        Delay
                                     </button>
                                 </div>
-                            </>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3 text-center px-6">
-                                <Info className="w-10 h-10 opacity-20" />
-                                <div>
-                                    <p className="font-bold">No upgrades found</p>
-                                    <p className="text-sm opacity-60 mt-1">Increase your time limit or potions budget to see the optimal upgrade path.</p>
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
 
-                    <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
-                        <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="" className="w-64 h-64 object-contain grayscale" />
+                                {/* Node List */}
+                                <div className="max-h-[400px] overflow-y-auto pr-1 custom-scrollbar space-y-1">
+                                    {planner.availableNodes
+                                        .filter(n => plannerTreeFilter === 'all' || n.tree === plannerTreeFilter)
+                                        .filter(n => !plannerSearch || n.nodeType.toLowerCase().includes(plannerSearch.toLowerCase()))
+                                        .sort((a, b) => a.tier - b.tier || a.nodeType.localeCompare(b.nodeType))
+                                        .map(node => (
+                                            <button
+                                                key={`${node.tree}-${node.nodeId}-${node.nextLevel}`}
+                                                onClick={() => planner.addStep(node)}
+                                                className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-bg-tertiary/30 border border-white/5 hover:border-accent-primary/30 hover:bg-accent-primary/5 transition-all text-left group"
+                                            >
+                                                <div className="w-8 h-8 shrink-0 rounded overflow-hidden border border-white/5 bg-black/20">
+                                                    {node.sprite_rect && treeMapping ? (
+                                                        <div style={getSpriteStyle({ sprite_rect: node.sprite_rect }, 32) || undefined} className="w-full h-full" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center"><Cpu size={16} className="text-text-muted" /></div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="text-xs font-bold text-white truncate">{node.nodeType}</div>
+                                                    <div className="flex items-center gap-2 text-[9px] text-text-muted">
+                                                        <span className="text-accent-primary/70">{node.tree === 'SkillsPetTech' ? 'SPT' : node.tree}</span>
+                                                        <span>T{node.tier + 1}</span>
+                                                        <span>Lv.{node.currentLevel}→{node.nextLevel}/{node.maxLevel}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="shrink-0 text-right">
+                                                    <div className="text-[10px] font-mono text-accent-secondary">+{node.points.toLocaleString()}</div>
+                                                    <div className="text-[9px] text-text-muted">{formatTime(node.duration)}</div>
+                                                </div>
+                                                <Plus size={14} className="text-text-muted group-hover:text-accent-primary transition-colors shrink-0" />
+                                            </button>
+                                        ))
+                                    }
+                                    {planner.availableNodes.filter(n => plannerTreeFilter === 'all' || n.tree === plannerTreeFilter).filter(n => !plannerSearch || n.nodeType.toLowerCase().includes(plannerSearch.toLowerCase())).length === 0 && (
+                                        <div className="text-center text-text-muted text-xs py-8 opacity-60">No available upgrades</div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
-                </Card>
-            </div>
-            )}
 
-            {/* ========== PLANNER TAB ========== */}
-            {activeTab === 'planner' && (
-            <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-6 items-start">
-                {/* LEFT: Planner Controls */}
-                <div className="space-y-6">
-                    {/* Start Date */}
-                    <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Calendar size={20} className="text-text-tertiary" />
-                                Plan Settings
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-[10px] font-bold text-text-secondary uppercase">Start Date</label>
-                                    <button
-                                        onClick={() => {
-                                            const now = new Date();
-                                            now.setSeconds(0, 0);
-                                            planner.setPlanStartDate(toLocalDateTimeString(now));
-                                        }}
-                                        className="text-[9px] font-bold text-accent-primary hover:underline uppercase"
-                                    >Now</button>
-                                </div>
-                                <div className="flex items-center gap-3 bg-bg-input border border-border rounded-lg px-3 py-2.5 group focus-within:border-accent-primary transition-colors min-h-[48px]">
-                                    <Clock size={18} className="text-text-tertiary group-focus-within:text-accent-primary opacity-50 shrink-0" />
-                                    <input
-                                        type="datetime-local"
-                                        value={planner.planStartDate}
-                                        onChange={(e) => planner.setPlanStartDate(e.target.value)}
-                                        onFocus={(e) => (e.target as HTMLInputElement).showPicker()}
-                                        onClick={(e) => (e.target as HTMLInputElement).showPicker()}
-                                        step="60"
-                                        className="w-full bg-transparent border-none text-white text-[15px] outline-none"
-                                        style={{ colorScheme: 'dark' }}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Summary */}
-                            <div className="grid grid-cols-3 gap-2 pt-2">
-                                <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-white/5 shadow-inner flex flex-col justify-center">
-                                    <div className="text-[10px] text-text-muted uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest">Points</div>
-                                    <div className="flex flex-col items-center">
-                                        <div className="text-xl font-black text-white leading-none mb-0.5">{planner.summary.totalPoints.toLocaleString()}</div>
-                                        <div className="text-[10px] font-black text-accent-primary flex items-center gap-1 bg-accent-primary/10 px-1.5 py-0.5 rounded-full border border-accent-primary/20" title="Points earned during Guild War days">
-                                            <Trophy size={10} /> {planner.summary.totalWarPoints.toLocaleString()} War
-                                        </div>
+                    {/* RIGHT: Schedule Queue */}
+                    <Card className="h-full p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20 relative overflow-hidden flex flex-col">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                            <CardTitle className="flex items-center gap-2 text-accent-primary">
+                                <Calendar className="w-5 h-5" />
+                                <div className="flex flex-col">
+                                    <span>Upgrade Schedule</span>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-[10px] text-text-muted font-normal lowercase tracking-tight">
+                                            {planner.schedule.length} steps: {planner.schedule.filter(e => e.step.type === 'node').length} nodes, {planner.schedule.filter(e => e.step.type === 'delay').length} delays
+                                        </span>
+                                        {planner.planMetadata?.isAuto ? (
+                                            <span className="text-[8px] font-black bg-green-500/20 text-green-400 px-1 rounded uppercase tracking-tighter" title="Auto-generated using optimizer">Auto-Optimized</span>
+                                        ) : (
+                                            <span className="text-[8px] font-black bg-white/10 text-text-muted px-1 rounded uppercase tracking-tighter">Manual Plan</span>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-accent-primary/10 shadow-glow-sm shadow-accent-primary/5">
-                                    <div className="text-[10px] text-accent-primary uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest"><Timer size={10} />Time</div>
-                                    <div className="text-xl font-black text-white drop-shadow-sm leading-none">
-                                        {(() => {
-                                            const totalSecs = planner.summary.totalTime;
-                                            const d = Math.floor(totalSecs / 86400);
-                                            const h = Math.floor((totalSecs % 86400) / 3600);
-                                            const m = Math.floor((totalSecs % 3600) / 60);
-                                            return (
-                                                <div className="flex flex-col items-center">
-                                                    <span>{d > 0 ? `${d}d ${h}h` : `${h}h`}</span>
-                                                    <span className="text-[10px] opacity-60 font-bold">{m}m</span>
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-                                </div>
-                                <div className="bg-bg-primary/50 rounded-xl p-3 text-center border border-white/5 shadow-inner">
-                                    <div className="text-[10px] text-text-muted uppercase font-black mb-1 flex items-center justify-center gap-1 tracking-widest"><SpriteIcon name="Potion" size={10} className="text-accent-secondary" />Potions</div>
-                                    <div className="text-xl font-black text-accent-secondary drop-shadow-sm leading-none mb-1">{planner.summary.totalPotions.toLocaleString()}</div>
-                                </div>
-                            </div>
-
-                            <div className="bg-accent-primary/5 rounded-xl p-2 text-center border border-accent-primary/20 flex items-center justify-between px-4">
-                                <div className="text-[10px] text-text-secondary font-black uppercase tracking-widest">Total upgrades</div>
-                                <div className="flex items-center gap-2">
-                                    <div className="text-sm font-black text-white">{planner.summary.nodeCount} nodes</div>
-                                    {planner.summary.delayCount > 0 && (
-                                        <div className="text-[10px] font-bold text-yellow-400 opacity-80 flex items-center gap-1 border-l border-white/10 pl-2">
-                                            <Pause size={10} /> {planner.summary.delayCount} delays
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {planner.schedule.length > 0 && (
-                                <div className="text-[10px] text-text-muted text-center pt-1 border-t border-white/5">
-                                    Completion: <span className="text-white font-bold ml-1">{planner.summary.completionDate.toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' })} {planner.summary.completionDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
-                                </div>
-                            )}
-
-                            {planner.planQueue.length > 0 && (
-                                <button
-                                    onClick={() => planner.clearQueue()}
-                                    className="w-full py-2 text-xs font-bold text-red-400 border border-red-400/20 bg-red-400/5 rounded-lg hover:bg-red-400/10 transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Trash2 size={12} />
-                                    Clear All Steps
-                                </button>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Auto-Planner */}
-                    <AutoPlannerControls 
-                        planner={planner} 
-                        profile={profile} 
-                        updateNestedProfile={updateNestedProfile} 
-                    />
-
-                    {/* Node Picker */}
-                    <Card className="p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Plus size={20} className="text-text-tertiary" />
-                                Add Upgrade
                             </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            {/* Search */}
-                            <div className="relative">
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-                                <input
-                                    type="text"
-                                    placeholder="Search nodes..."
-                                    value={plannerSearch}
-                                    onChange={(e) => setPlannerSearch(e.target.value)}
-                                    className="w-full bg-bg-input border border-border rounded-lg py-2 pl-9 pr-3 text-sm text-white placeholder:text-text-muted focus:border-accent-primary outline-none transition-colors"
-                                />
-                            </div>
-
-                            {/* Tree Filter & Add Delay */}
-                            <div className="flex gap-1">
-                                <div className="flex bg-bg-input rounded-lg p-1 border border-border gap-0.5 flex-1">
-                                    {['all', 'Forge', 'Power', 'SkillsPetTech'].map(t => (
-                                        <button key={t} onClick={() => setPlannerTreeFilter(t)}
-                                            className={cn("flex-1 py-1 text-[10px] font-bold rounded transition-all",
-                                                plannerTreeFilter === t ? "bg-accent-primary text-black" : "text-text-muted hover:text-text-primary"
-                                            )}
-                                        >{t === 'all' ? 'All' : t === 'SkillsPetTech' ? 'SPT' : t}</button>
-                                    ))}
-                                </div>
-                                <button
-                                    onClick={() => planner.appendDelay(60)}
-                                    className="px-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 rounded-lg hover:bg-yellow-500/20 transition-all flex items-center gap-1.5 text-[10px] font-bold group"
-                                    title="Add manual 1h delay"
-                                >
-                                    <Pause size={12} className="group-hover:scale-110 transition-transform" />
-                                    Delay
-                                </button>
-                            </div>
-
-                            {/* Node List */}
-                            <div className="max-h-[400px] overflow-y-auto pr-1 custom-scrollbar space-y-1">
-                                {planner.availableNodes
-                                    .filter(n => plannerTreeFilter === 'all' || n.tree === plannerTreeFilter)
-                                    .filter(n => !plannerSearch || n.nodeType.toLowerCase().includes(plannerSearch.toLowerCase()))
-                                    .sort((a, b) => a.tier - b.tier || a.nodeType.localeCompare(b.nodeType))
-                                    .map(node => (
-                                        <button
-                                            key={`${node.tree}-${node.nodeId}-${node.nextLevel}`}
-                                            onClick={() => planner.addStep(node)}
-                                            className="w-full flex items-center gap-3 p-2.5 rounded-lg bg-bg-tertiary/30 border border-white/5 hover:border-accent-primary/30 hover:bg-accent-primary/5 transition-all text-left group"
-                                        >
-                                            <div className="w-8 h-8 shrink-0 rounded overflow-hidden border border-white/5 bg-black/20">
-                                                {node.sprite_rect && treeMapping ? (
-                                                    <div style={getSpriteStyle({ sprite_rect: node.sprite_rect }, 32) || undefined} className="w-full h-full" />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center"><Cpu size={16} className="text-text-muted" /></div>
-                                                )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-xs font-bold text-white truncate">{node.nodeType}</div>
-                                                <div className="flex items-center gap-2 text-[9px] text-text-muted">
-                                                    <span className="text-accent-primary/70">{node.tree === 'SkillsPetTech' ? 'SPT' : node.tree}</span>
-                                                    <span>T{node.tier + 1}</span>
-                                                    <span>Lv.{node.currentLevel}→{node.nextLevel}/{node.maxLevel}</span>
-                                                </div>
-                                            </div>
-                                            <div className="shrink-0 text-right">
-                                                <div className="text-[10px] font-mono text-accent-secondary">+{node.points.toLocaleString()}</div>
-                                                <div className="text-[9px] text-text-muted">{formatTime(node.duration)}</div>
-                                            </div>
-                                            <Plus size={14} className="text-text-muted group-hover:text-accent-primary transition-colors shrink-0" />
-                                        </button>
-                                    ))
-                                }
-                                {planner.availableNodes.filter(n => plannerTreeFilter === 'all' || n.tree === plannerTreeFilter).filter(n => !plannerSearch || n.nodeType.toLowerCase().includes(plannerSearch.toLowerCase())).length === 0 && (
-                                    <div className="text-center text-text-muted text-xs py-8 opacity-60">No available upgrades</div>
+                            <button
+                                onClick={() => setIsPlannerEditMode(!isPlannerEditMode)}
+                                className={cn(
+                                    "flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold shadow-sm",
+                                    isPlannerEditMode
+                                        ? "bg-accent-primary/20 border-accent-primary text-accent-primary"
+                                        : "bg-bg-primary/50 border-white/10 text-text-muted hover:border-white/20"
                                 )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                            >
+                                {isPlannerEditMode ? <Unlock size={14} /> : <Lock size={14} />}
+                                {isPlannerEditMode ? "Unlock Edit" : "Lock View"}
+                            </button>
+                        </CardHeader>
+                        <CardContent className="space-y-3 relative z-10 flex-1 flex flex-col min-h-0">
+                            {planner.schedule.length > 0 ? (
+                                <div className="flex-1 flex flex-col min-h-0">
+                                    {isPlannerEditMode ? (
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCorners}
+                                            onDragStart={(event) => {
+                                                const { active } = event;
+                                                setActiveId(active.id as string);
+                                            }}
+                                            onDragEnd={(event) => {
+                                                const { active, over } = event;
+                                                setActiveId(null);
+                                                if (!over || active.id === over.id) return;
+                                                const oldIdx = planner.planQueue.findIndex((s) => s.id === active.id);
+                                                const newIdx = planner.planQueue.findIndex((s) => s.id === over.id);
+                                                if (oldIdx !== -1 && newIdx !== -1) planner.moveStep(oldIdx, newIdx);
+                                            }}
+                                            onDragCancel={() => setActiveId(null)}
+                                        >
+                                            <SortableContext items={planner.planQueue.map(s => s.id)} strategy={verticalListSortingStrategy}>
+                                                <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-10">
+                                                    {planner.schedule.map((entry, idx) => {
+                                                        const isFirstInWarBlock = entry.isWarDay && (idx === 0 || !planner.schedule[idx - 1].isWarDay);
+                                                        const isLastInWarBlock = entry.isWarDay && (idx === planner.schedule.length - 1 || !planner.schedule[idx + 1].isWarDay);
 
-                {/* RIGHT: Schedule Queue */}
-                <Card className="h-full p-6 bg-gradient-to-r from-bg-secondary via-bg-secondary/80 to-bg-secondary border-accent-primary/20 relative overflow-hidden flex flex-col">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                        <CardTitle className="flex items-center gap-2 text-accent-primary">
-                            <Calendar className="w-5 h-5" />
-                            <div className="flex flex-col">
-                                <span>Upgrade Schedule</span>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[10px] text-text-muted font-normal lowercase tracking-tight">
-                                        {planner.schedule.length} steps: {planner.schedule.filter(e => e.step.type === 'node').length} nodes, {planner.schedule.filter(e => e.step.type === 'delay').length} delays
-                                    </span>
-                                    {planner.planMetadata?.isAuto ? (
-                                        <span className="text-[8px] font-black bg-green-500/20 text-green-400 px-1 rounded uppercase tracking-tighter" title="Auto-generated using optimizer">Auto-Optimized</span>
-                                    ) : (
-                                        <span className="text-[8px] font-black bg-white/10 text-text-muted px-1 rounded uppercase tracking-tighter">Manual Plan</span>
-                                    )}
-                                </div>
-                            </div>
-                        </CardTitle>
-                        <button
-                            onClick={() => setIsPlannerEditMode(!isPlannerEditMode)}
-                            className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all text-xs font-bold shadow-sm",
-                                isPlannerEditMode 
-                                    ? "bg-accent-primary/20 border-accent-primary text-accent-primary" 
-                                    : "bg-bg-primary/50 border-white/10 text-text-muted hover:border-white/20"
-                            )}
-                        >
-                            {isPlannerEditMode ? <Unlock size={14} /> : <Lock size={14} />}
-                            {isPlannerEditMode ? "Unlock Edit" : "Lock View"}
-                        </button>
-                    </CardHeader>
-                    <CardContent className="space-y-3 relative z-10 flex-1 flex flex-col min-h-0">
-                        {planner.schedule.length > 0 ? (
-                            <div className="flex-1 flex flex-col min-h-0">
-                                {isPlannerEditMode ? (
-                                    <DndContext 
-                                        sensors={sensors} 
-                                        collisionDetection={closestCorners} 
-                                        onDragStart={(event) => {
-                                            const { active } = event;
-                                            setActiveId(active.id as string);
-                                        }}
-                                        onDragEnd={(event) => {
-                                            const { active, over } = event;
-                                            setActiveId(null);
-                                            if (!over || active.id === over.id) return;
-                                            const oldIdx = planner.planQueue.findIndex((s) => s.id === active.id);
-                                            const newIdx = planner.planQueue.findIndex((s) => s.id === over.id);
-                                            if (oldIdx !== -1 && newIdx !== -1) planner.moveStep(oldIdx, newIdx);
-                                        }}
-                                        onDragCancel={() => setActiveId(null)}
-                                    >
-                                        <SortableContext items={planner.planQueue.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                                            <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-10">
-                                                {planner.schedule.map((entry, idx) => {
-                                                    const isFirstInWarBlock = entry.isWarDay && (idx === 0 || !planner.schedule[idx - 1].isWarDay);
-                                                    const isLastInWarBlock = entry.isWarDay && (idx === planner.schedule.length - 1 || !planner.schedule[idx + 1].isWarDay);
-                                                    
-                                                    return (
-                                                        <div key={`plan-container-${idx}`} className="relative">
-                                                            {/* NOW Marker */}
-                                                            {(() => {
-                                                                const isFirstFuture = now < entry.startDate && (idx === 0 || now >= (planner.schedule[idx-1]?.endDate || new Date(0)));
-                                                                const isOverdue = now > entry.endDate && idx === planner.schedule.length - 1;
-                                                                
-                                                                if (isFirstFuture || isOverdue) {
-                                                                    return (
-                                                                        <div className="absolute -top-1 left-0 right-0 z-20 flex items-center gap-2 pointer-events-none">
-                                                                            <div className="h-0.5 flex-1 bg-accent-primary shadow-glow shadow-accent-primary/50" />
-                                                                            <span className="text-[9px] font-black bg-accent-primary text-black px-1.5 py-0.5 rounded shadow-glow shrink-0 animate-pulse">NOW</span>
-                                                                            <div className="h-0.5 w-4 bg-accent-primary shadow-glow shadow-accent-primary/50" />
-                                                                        </div>
-                                                                    );
-                                                                }
-                                                                return null;
-                                                            })()}
+                                                        return (
+                                                            <div key={`plan-container-${idx}`} className="relative">
+                                                                {/* NOW Marker */}
+                                                                {(() => {
+                                                                    const isFirstFuture = now < entry.startDate && (idx === 0 || now >= (planner.schedule[idx - 1]?.endDate || new Date(0)));
+                                                                    const isOverdue = now > entry.endDate && idx === planner.schedule.length - 1;
 
-                                                            {isFirstInWarBlock && (
-                                                                <div className="flex items-center gap-2 py-2 px-1 mt-2 first:mt-0">
-                                                                    <Trophy size={14} className="text-accent-primary animate-pulse" />
-                                                                    <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">Guild War Event Period</span>
-                                                                    <div className="h-px flex-1 bg-gradient-to-r from-accent-primary/50 to-transparent" />
-                                                                </div>
-                                                            )}
-                                                            
-                                                            <SortableItem key={entry.step.id} id={entry.step.id}>
-                                                                {(props) => (
-                                                                    <ScheduleItem 
-                                                                        entry={entry}
-                                                                        idx={idx}
-                                                                        now={now}
-                                                                        treeMapping={treeMapping}
-                                                                        {...props}
-                                                                        onMarkDone={setPlannerConfirmDone}
-                                                                        onAddDelay={(idx) => {
-                                                                            setDelayModalIdx(idx);
-                                                                            setDelayModalValue('60');
-                                                                        }}
-                                                                        onRemove={planner.removeStep}
-                                                                        formatScheduleTime={formatScheduleTime}
-                                                                        formatTime={formatTime}
-                                                                        getSpriteStyle={getSpriteStyle}
-                                                                        onShiftPlan={handleShiftPlan}
-                                                        isEditMode={isPlannerEditMode}
-                                                                    />
+                                                                    if (isFirstFuture || isOverdue) {
+                                                                        return (
+                                                                            <div className="absolute -top-1 left-0 right-0 z-20 flex items-center gap-2 pointer-events-none">
+                                                                                <div className="h-0.5 flex-1 bg-accent-primary shadow-glow shadow-accent-primary/50" />
+                                                                                <span className="text-[9px] font-black bg-accent-primary text-black px-1.5 py-0.5 rounded shadow-glow shrink-0 animate-pulse">NOW</span>
+                                                                                <div className="h-0.5 w-4 bg-accent-primary shadow-glow shadow-accent-primary/50" />
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                    return null;
+                                                                })()}
+
+                                                                {isFirstInWarBlock && (
+                                                                    <div className="flex items-center gap-2 py-2 px-1 mt-2 first:mt-0">
+                                                                        <Trophy size={14} className="text-accent-primary animate-pulse" />
+                                                                        <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">Guild War Event Period</span>
+                                                                        <div className="h-px flex-1 bg-gradient-to-r from-accent-primary/50 to-transparent" />
+                                                                    </div>
                                                                 )}
-                                                            </SortableItem>
 
-                                                            {isLastInWarBlock && (
-                                                                <div className="flex justify-end pr-1 pb-2">
-                                                                    <div className="h-px w-24 bg-gradient-to-l from-accent-primary/30 to-transparent" />
-                                                                </div>
-                                                            )}
+                                                                <SortableItem key={entry.step.id} id={entry.step.id}>
+                                                                    {(props) => (
+                                                                        <ScheduleItem
+                                                                            entry={entry}
+                                                                            idx={idx}
+                                                                            now={now}
+                                                                            treeMapping={treeMapping}
+                                                                            {...props}
+                                                                            onMarkDone={setPlannerConfirmDone}
+                                                                            onAddDelay={(idx) => {
+                                                                                setDelayModalIdx(idx);
+                                                                                setDelayModalValue('60');
+                                                                            }}
+                                                                            onRemove={planner.removeStep}
+                                                                            formatScheduleTime={formatScheduleTime}
+                                                                            formatTime={formatTime}
+                                                                            getSpriteStyle={getSpriteStyle}
+                                                                            onShiftPlan={handleShiftPlan}
+                                                                            isEditMode={isPlannerEditMode}
+                                                                        />
+                                                                    )}
+                                                                </SortableItem>
+
+                                                                {isLastInWarBlock && (
+                                                                    <div className="flex justify-end pr-1 pb-2">
+                                                                        <div className="h-px w-24 bg-gradient-to-l from-accent-primary/30 to-transparent" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </SortableContext>
+
+                                            <DragOverlay dropAnimation={{
+                                                sideEffects: defaultDropAnimationSideEffects({
+                                                    styles: {
+                                                        active: {
+                                                            opacity: '0.5',
+                                                        },
+                                                    },
+                                                }),
+                                            }}>
+                                                {activeId ? (() => {
+                                                    const activeEntry = planner.schedule.find(e => e.step.id === activeId);
+                                                    if (!activeEntry) return null;
+                                                    return (
+                                                        <div className="scale-105 opacity-90">
+                                                            <ScheduleItem
+                                                                entry={activeEntry}
+                                                                idx={planner.schedule.indexOf(activeEntry)}
+                                                                now={now}
+                                                                treeMapping={treeMapping}
+                                                                isDragging={true}
+                                                                onMarkDone={() => { }}
+                                                                onAddDelay={() => { }}
+                                                                onRemove={() => { }}
+                                                                formatScheduleTime={formatScheduleTime}
+                                                                formatTime={formatTime}
+                                                                getSpriteStyle={getSpriteStyle}
+                                                            />
                                                         </div>
                                                     );
-                                                })}
-                                            </div>
-                                        </SortableContext>
-                                        
-                                        <DragOverlay dropAnimation={{
-                                            sideEffects: defaultDropAnimationSideEffects({
-                                                styles: {
-                                                    active: {
-                                                        opacity: '0.5',
-                                                    },
-                                                },
-                                            }),
-                                        }}>
-                                            {activeId ? (() => {
-                                                const activeEntry = planner.schedule.find(e => e.step.id === activeId);
-                                                if (!activeEntry) return null;
+                                                })() : null}
+                                            </DragOverlay>
+                                        </DndContext>
+                                    ) : (
+                                        <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-10">
+                                            {planner.schedule.map((entry, idx) => {
+                                                const isFirstInWarBlock = entry.isWarDay && (idx === 0 || !planner.schedule[idx - 1].isWarDay);
+                                                const isLastInWarBlock = entry.isWarDay && (idx === planner.schedule.length - 1 || !planner.schedule[idx + 1].isWarDay);
+
                                                 return (
-                                                    <div className="scale-105 opacity-90">
-                                                        <ScheduleItem 
-                                                            entry={activeEntry}
-                                                            idx={planner.schedule.indexOf(activeEntry)}
+                                                    <div key={`plan-container-${idx}`} className="relative">
+                                                        {/* NOW Marker */}
+                                                        {(() => {
+                                                            const isFirstFuture = now < entry.startDate && (idx === 0 || now >= (planner.schedule[idx - 1]?.endDate || new Date(0)));
+                                                            const isOverdue = now > entry.endDate && idx === planner.schedule.length - 1;
+
+                                                            if (isFirstFuture || isOverdue) {
+                                                                return (
+                                                                    <div className="absolute -top-1 left-0 right-0 z-20 flex items-center gap-2 pointer-events-none">
+                                                                        <div className="h-0.5 flex-1 bg-accent-primary shadow-glow shadow-accent-primary/50" />
+                                                                        <span className="text-[9px] font-black bg-accent-primary text-black px-1.5 py-0.5 rounded shadow-glow shrink-0 animate-pulse">NOW</span>
+                                                                        <div className="h-0.5 w-4 bg-accent-primary shadow-glow shadow-accent-primary/50" />
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        })()}
+
+                                                        {isFirstInWarBlock && (
+                                                            <div className="flex items-center gap-2 py-2 px-1 mt-2 first:mt-0">
+                                                                <Trophy size={14} className="text-accent-primary animate-pulse" />
+                                                                <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">Guild War Event Period</span>
+                                                                <div className="h-px flex-1 bg-gradient-to-r from-accent-primary/50 to-transparent" />
+                                                            </div>
+                                                        )}
+
+                                                        <ScheduleItem
+                                                            entry={entry}
+                                                            idx={idx}
                                                             now={now}
                                                             treeMapping={treeMapping}
-                                                            isDragging={true}
-                                                            onMarkDone={() => {}}
-                                                            onAddDelay={() => {}}
-                                                            onRemove={() => {}}
+                                                            onMarkDone={setPlannerConfirmDone}
+                                                            onAddDelay={(idx) => {
+                                                                setDelayModalIdx(idx);
+                                                                setDelayModalValue('60');
+                                                            }}
+                                                            onRemove={planner.removeStep}
                                                             formatScheduleTime={formatScheduleTime}
                                                             formatTime={formatTime}
                                                             getSpriteStyle={getSpriteStyle}
+                                                            onShiftPlan={handleShiftPlan}
+                                                            isEditMode={isPlannerEditMode}
                                                         />
+
+                                                        {isLastInWarBlock && (
+                                                            <div className="flex justify-end pr-1 pb-2">
+                                                                <div className="h-px w-24 bg-gradient-to-l from-accent-primary/30 to-transparent" />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
-                                            })() : null}
-                                        </DragOverlay>
-                                    </DndContext>
-                                ) : (
-                                    <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1 pb-10">
-                                        {planner.schedule.map((entry, idx) => {
-                                            const isFirstInWarBlock = entry.isWarDay && (idx === 0 || !planner.schedule[idx - 1].isWarDay);
-                                            const isLastInWarBlock = entry.isWarDay && (idx === planner.schedule.length - 1 || !planner.schedule[idx + 1].isWarDay);
-                                            
-                                            return (
-                                                <div key={`plan-container-${idx}`} className="relative">
-                                                    {/* NOW Marker */}
-                                                    {(() => {
-                                                        const isFirstFuture = now < entry.startDate && (idx === 0 || now >= (planner.schedule[idx-1]?.endDate || new Date(0)));
-                                                        const isOverdue = now > entry.endDate && idx === planner.schedule.length - 1;
-                                                        
-                                                        if (isFirstFuture || isOverdue) {
-                                                            return (
-                                                                <div className="absolute -top-1 left-0 right-0 z-20 flex items-center gap-2 pointer-events-none">
-                                                                    <div className="h-0.5 flex-1 bg-accent-primary shadow-glow shadow-accent-primary/50" />
-                                                                    <span className="text-[9px] font-black bg-accent-primary text-black px-1.5 py-0.5 rounded shadow-glow shrink-0 animate-pulse">NOW</span>
-                                                                    <div className="h-0.5 w-4 bg-accent-primary shadow-glow shadow-accent-primary/50" />
-                                                                </div>
-                                                            );
-                                                        }
-                                                        return null;
-                                                    })()}
-
-                                                    {isFirstInWarBlock && (
-                                                                <div className="flex items-center gap-2 py-2 px-1 mt-2 first:mt-0">
-                                                                    <Trophy size={14} className="text-accent-primary animate-pulse" />
-                                                                    <span className="text-[10px] font-black text-accent-primary uppercase tracking-widest">Guild War Event Period</span>
-                                                                    <div className="h-px flex-1 bg-gradient-to-r from-accent-primary/50 to-transparent" />
-                                                                </div>
-                                                            )}
-                                                    
-                                                    <ScheduleItem 
-                                                        entry={entry}
-                                                        idx={idx}
-                                                        now={now}
-                                                        treeMapping={treeMapping}
-                                                        onMarkDone={setPlannerConfirmDone}
-                                                        onAddDelay={(idx) => {
-                                                            setDelayModalIdx(idx);
-                                                            setDelayModalValue('60');
-                                                        }}
-                                                        onRemove={planner.removeStep}
-                                                         formatScheduleTime={formatScheduleTime}
-                                                        formatTime={formatTime}
-                                                        getSpriteStyle={getSpriteStyle}
-                                                        onShiftPlan={handleShiftPlan}
-                                                        isEditMode={isPlannerEditMode}
-                                                    />
-
-                                                    {isLastInWarBlock && (
-                                                                <div className="flex justify-end pr-1 pb-2">
-                                                                    <div className="h-px w-24 bg-gradient-to-l from-accent-primary/30 to-transparent" />
-                                                                </div>
-                                                            )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3 text-center px-6">
-                                <Info className="w-10 h-10 opacity-20" />
-                                <div>
-                                    <p className="font-bold">No upgrades queued</p>
-                                    <p className="text-sm opacity-60 mt-1">Use the node picker on the left to add upgrades to your plan.</p>
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        )}
-                    </CardContent>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-64 text-text-muted gap-3 text-center px-6">
+                                    <Info className="w-10 h-10 opacity-20" />
+                                    <div>
+                                        <p className="font-bold">No upgrades queued</p>
+                                        <p className="text-sm opacity-60 mt-1">Use the node picker on the left to add upgrades to your plan.</p>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
 
-                    <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
-                        <img src={`${import.meta.env.BASE_URL}Texture2D/SkillTabIcon.png`} alt="" className="w-64 h-64 object-contain grayscale" />
-                    </div>
-                </Card>
-            </div>
+                        <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none">
+                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/SkillTabIcon.png`} alt="" className="w-64 h-64 object-contain grayscale" />
+                        </div>
+                    </Card>
+                </div>
             )}
 
             <ConfirmModal

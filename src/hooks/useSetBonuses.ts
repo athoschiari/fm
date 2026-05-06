@@ -7,7 +7,7 @@ interface SkinEntry {
         Type: string;
         Idx: number;
     };
-    SetId?: string;
+    BaseSetId?: string;
 }
 
 interface SetBonus {
@@ -74,8 +74,8 @@ export function useSetBonuses(items: UserProfile['items']) {
                 s => s.SkinId.Type === jsonType && s.SkinId.Idx === item.skin?.idx
             );
 
-            if (skinEntry?.SetId) {
-                equippedSetCounts[skinEntry.SetId] = (equippedSetCounts[skinEntry.SetId] || 0) + 1;
+            if (skinEntry?.BaseSetId) {
+                equippedSetCounts[skinEntry.BaseSetId] = (equippedSetCounts[skinEntry.BaseSetId] || 0) + 1;
             }
         });
 

@@ -14,6 +14,7 @@ import { getStatName } from '../../utils/statNames';
 import { useProfile } from '../../context/ProfileContext';
 import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
+import { useGameDataContext } from '../../context/GameDataContext';
 
 type MobileTab = 'rarity' | 'mounts' | 'config';
 
@@ -23,6 +24,7 @@ interface MountSelectorModalProps {
     onSelect: (rarity: string | null, id?: number, level?: number, secondaryStats?: { statId: string; value: number }[]) => void;
     context?: 'profile' | 'pvp';
     currentMount?: MountSlot | null;
+    mountAscensionLevel?: number;
 }
 
 const STAT_TYPES = [
@@ -31,12 +33,14 @@ const STAT_TYPES = [
     'AttackSpeed', 'SkillDamageMulti', 'SkillCooldownMulti', 'HealthMulti'
 ];
 
-export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, context = 'profile' }: MountSelectorModalProps) {
+export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, context = 'profile', mountAscensionLevel }: MountSelectorModalProps) {
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { data: mountUpgradeLib } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { profile, updateNestedProfile } = useProfile();
     const { data: petUnlockLib } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
+    const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
+    const { selectedVersion } = useGameDataContext();
 
     const [activeTab, setActiveTab] = useState<'library' | 'saved'>('library');
     const [mobileTab, setMobileTab] = useState<MobileTab>('mounts');
@@ -68,9 +72,11 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
     }, [isOpen, currentMount, context]);
 
     const maxSlots = useMemo(() => {
+        const currentAsc = mountAscensionLevel !== undefined ? mountAscensionLevel : (profile.misc.mountAscensionLevel || 0);
+        if (currentAsc > 0) return 2;
         if (!petUnlockLib || !selectedRarity) return 0;
         return petUnlockLib[selectedRarity]?.NumberOfSecondStats || 0;
-    }, [petUnlockLib, selectedRarity]);
+    }, [petUnlockLib, selectedRarity, profile.misc.mountAscensionLevel, mountAscensionLevel]);
 
     const maxMountLevel = useMemo(() => {
         if (!mountUpgradeLib || !selectedRarity) return 100;
@@ -180,7 +186,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-accent-primary/10 rounded-lg">
                             <SpriteSheetIcon
-                                textureSrc={getAscensionTexturePath('MountIcons', 0)}
+                                textureSrc={getAscensionTexturePath('MountIcons', 0, selectedVersion)}
                                 spriteWidth={256}
                                 spriteHeight={256}
                                 sheetWidth={1024}
@@ -357,7 +363,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                             <div className="w-full h-full rounded-lg overflow-hidden flex items-center justify-center transition-transform group-hover:scale-110" style={getRarityBgStyle(selectedRarity)}>
                                                 {mountsConfig && (
                                                     <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
+                                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
                                                         spriteWidth={mountsConfig.sprite_size.width}
                                                         spriteHeight={mountsConfig.sprite_size.height}
                                                         sheetWidth={mountsConfig.texture_size.width}
@@ -414,7 +420,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                         }}
                                                         renderIcon={() => (
                                                             <SpriteSheetIcon
-                                                                textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
+                                                                textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
                                                                 spriteWidth={mountsConfig!.sprite_size.width}
                                                                 spriteHeight={mountsConfig!.sprite_size.height}
                                                                 sheetWidth={mountsConfig!.texture_size.width}
@@ -450,7 +456,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                         >
                                             {mountsConfig && (
                                                 <SpriteSheetIcon
-                                                    textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0)}
+                                                    textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
                                                     spriteWidth={mountsConfig.sprite_size.width}
                                                     spriteHeight={mountsConfig.sprite_size.height}
                                                     sheetWidth={mountsConfig.texture_size.width}
@@ -477,17 +483,35 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                         <div key={idx} className="flex justify-between items-center text-xs">
                                                             <span className="text-text-muted">{getStatName(stat.StatNode?.UniqueStat?.StatType || '')}</span>
                                                             <span className="text-accent-primary font-mono font-bold">
-                                                                {(() => {
-                                                                    const val = stat.Value;
-                                                                    const type = stat.StatNode?.UniqueStat?.StatType;
-                                                                    if (type === 'Damage' || type === 'Health') {
-                                                                        if (val >= 1000000) return `+${(val / 1000000).toFixed(2)}M`;
-                                                                        if (val >= 1000) return `+${(val / 1000).toFixed(2)}K`;
-                                                                        return `+${val.toFixed(0)}`;
-                                                                    }
-                                                                    return `+${(val * 100).toFixed(2)}%`;
-                                                                })()}
-                                                            </span>
+                                                                 {(() => {
+                                                                     const val = stat.Value;
+                                                                     const type = stat.StatNode?.UniqueStat?.StatType;
+                                                                     const currentAsc = mountAscensionLevel !== undefined ? mountAscensionLevel : (profile.misc.mountAscensionLevel || 0);
+                                                                     
+                                                                     let ascensionBonus = 0;
+                                                                     if (currentAsc > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
+                                                                         const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
+                                                                         for (let i = 0; i < currentAsc && i < ascConfigs.length; i++) {
+                                                                             const stats = ascConfigs[i].StatContributions || [];
+                                                                             for (const s of stats) {
+                                                                                 const sType = s.StatNode?.UniqueStat?.StatType;
+                                                                                 if (sType === type || (type === 'Damage' && sType === 'AscensionDamage') || (type === 'Health' && sType === 'AscensionHealth')) {
+                                                                                     ascensionBonus += (s.Value + 1);
+                                                                                 }
+                                                                             }
+                                                                         }
+                                                                     }
+
+                                                                     const finalVal = type === 'Damage' || type === 'Health' ? val * (1 + ascensionBonus) : val;
+
+                                                                     if (type === 'Damage' || type === 'Health') {
+                                                                         if (finalVal >= 1000000) return `+${(finalVal / 1000000).toFixed(2)}M`;
+                                                                         if (finalVal >= 1000) return `+${(finalVal / 1000).toFixed(2)}K`;
+                                                                         return `+${finalVal.toFixed(0)}`;
+                                                                     }
+                                                                     return `+${(finalVal * 100).toFixed(2)}%`;
+                                                                 })()}
+                                                             </span>
                                                         </div>
                                                     ))}
                                                 </div>

@@ -4,8 +4,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Ca
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { Info, Trophy, Zap, Minus, Plus, RefreshCcw } from 'lucide-react';
 import { isWarPointDay } from '../../utils/guildWarUtils';
+import { useGameDataContext } from '../../context/GameDataContext';
 
 export default function SkillCalculator() {
+    const { selectedVersion } = useGameDataContext();
     const { profile, updateNestedProfile } = useProfile();
     const {
         level, setLevel,
@@ -164,7 +166,7 @@ export default function SkillCalculator() {
                             <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase">
-                                        <img src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-4 h-4 object-contain" />
+                                        <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}AscensionStar.png`} alt="Star" className="w-4 h-4 object-contain" />
                                         Simulate Ascension
                                     </div>
                                     <label className="relative inline-flex items-center cursor-pointer">
@@ -228,7 +230,7 @@ export default function SkillCalculator() {
                                 {results.summonsToMax && (
                                     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center shrink-0">
-                                            <img src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} alt="Star" className="w-6 h-6 object-contain" />
+                                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}AscensionStar.png`} alt="Star" className="w-6 h-6 object-contain" />
                                         </div>
                                         <div className="flex-1">
                                             <div className="text-xs font-bold text-amber-400 uppercase">Max Level Milestone</div>

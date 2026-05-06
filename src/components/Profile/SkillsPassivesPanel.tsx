@@ -1,5 +1,6 @@
 import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { useGameData } from '../../hooks/useGameData';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
@@ -24,6 +25,7 @@ const RARITIES = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'] a
 
 export function SkillsPassivesPanel() {
     const { profile, updateNestedProfile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const { isCompactStats } = useComparison();
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
     const { data: skillPassiveLibrary } = useGameData<any>('SkillPassiveLibrary.json');
@@ -47,15 +49,16 @@ export function SkillsPassivesPanel() {
 
         if (skillAscensionLevel > 0 && ascensionConfigsLibrary?.Skills?.AscensionConfigPerLevel) {
             const ascConfigs = ascensionConfigsLibrary.Skills.AscensionConfigPerLevel;
-            for (let i = 0; i < skillAscensionLevel && i < ascConfigs.length; i++) {
-                const stats = ascConfigs[i].StatContributions || [];
+            const config = ascConfigs[Math.min(skillAscensionLevel - 1, ascConfigs.length - 1)];
+            if (config) {
+                const stats = config.StatContributions || [];
                 for (const s of stats) {
-                    const sType = s.StatNode?.UniqueStat?.StatType;
                     const sTarget = s.StatNode?.StatTarget?.$type;
                     if (sTarget === 'PassiveSkillStatTarget') {
+                        const sType = s.StatNode?.UniqueStat?.StatType;
                         const sVal = s.Value;
-                        if (sType === 'Damage') dMulti += sVal;
-                        if (sType === 'Health') hMulti += sVal;
+                        if (sType === 'Damage' || sType === 'AscensionDamage') dMulti = sVal;
+                        if (sType === 'Health' || sType === 'AscensionHealth') hMulti = sVal;
                     }
                 }
             }
@@ -139,8 +142,8 @@ export function SkillsPassivesPanel() {
             if (statType === 'Health') baseHealth += stat.Value || 0;
         }
 
-        const damage = Math.floor(baseDamage * (1 + skillPassiveDamageBonus + ascensionDmgMulti));
-        const health = Math.floor(baseHealth * (1 + skillPassiveHealthBonus + ascensionHpMulti));
+        const damage = Math.floor(baseDamage * (1 + skillPassiveDamageBonus) * (ascensionDmgMulti || 1));
+        const health = Math.floor(baseHealth * (1 + skillPassiveHealthBonus) * (ascensionHpMulti || 1));
         const baseCooldown = skillData.Cooldown || 0;
         const cooldown = baseCooldown * Math.max(0.1, 1 - skillCooldownReduction);
 
@@ -161,21 +164,21 @@ export function SkillsPassivesPanel() {
     const totals = useMemo(() => {
         let totalBaseDmg = 0, totalBaseHp = 0;
         let totalDmg = 0, totalHp = 0;
-        let ascensionActiveSkillDmgMulti = 0;
-        let ascensionActiveSkillHpMulti = 0;
+        let ascActiveDmgMulti = 1;
+        let ascActiveHpMulti = 1;
 
         const skillAscensionLevel = profile.misc.skillAscensionLevel || 0;
         if (skillAscensionLevel > 0 && ascensionConfigsLibrary?.Skills?.AscensionConfigPerLevel) {
             const ascConfigs = ascensionConfigsLibrary.Skills.AscensionConfigPerLevel;
-            for (let i = 0; i < skillAscensionLevel && i < ascConfigs.length; i++) {
-                const stats = ascConfigs[i].StatContributions || [];
+            const config = ascConfigs[Math.min(skillAscensionLevel - 1, ascConfigs.length - 1)];
+            if (config) {
+                const stats = config.StatContributions || [];
                 for (const s of stats) {
-                    const sType = s.StatNode?.UniqueStat?.StatType;
                     const sTarget = s.StatNode?.StatTarget?.$type;
-                    const sVal = s.Value;
+                    const sType = s.StatNode?.UniqueStat?.StatType;
                     if (sTarget === 'ActiveSkillStatTarget') {
-                        if (sType === 'Damage') ascensionActiveSkillDmgMulti += sVal;
-                        if (sType === 'Health') ascensionActiveSkillHpMulti += sVal;
+                        if (sType === 'Damage' || sType === 'AscensionDamage') ascActiveDmgMulti = s.Value;
+                        if (sType === 'Health' || sType === 'AscensionHealth') ascActiveHpMulti = s.Value;
                     }
                 }
             }
@@ -200,10 +203,10 @@ export function SkillsPassivesPanel() {
             healthBonus: skillPassiveHealthBonus,
             ascensionDmgMulti,
             ascensionHpMulti,
-            activeDamageMulti: 1 + ascensionActiveSkillDmgMulti + (techModifiers['ActiveSkillDamage'] || 0),
-            activeHealthMulti: 1 + ascensionActiveSkillHpMulti + (techModifiers['ActiveSkillHealth'] || 0)
+            activeDamageMulti: (1 + (techModifiers['ActiveSkillDamage'] || 0)) * (ascActiveDmgMulti || 1),
+            activeHealthMulti: (1 + (techModifiers['ActiveSkillHealth'] || 0)) * (ascActiveHpMulti || 1)
         };
-    }, [passives, skillPassiveLibrary, skillLibrary, skillPassiveDamageBonus, skillPassiveHealthBonus, ascensionDmgMulti, ascensionHpMulti, profile.misc.skillAscensionLevel]);
+    }, [passives, skillPassiveLibrary, skillLibrary, skillPassiveDamageBonus, skillPassiveHealthBonus, ascensionDmgMulti, ascensionHpMulti, profile.misc.skillAscensionLevel, techModifiers]);
 
     const toggleRarity = (rarity: string) => {
         setActiveRarity(prev => prev === rarity ? null : rarity);
@@ -270,7 +273,7 @@ export function SkillsPassivesPanel() {
                     <div className="font-mono font-bold text-red-400 text-lg">
                         +{formatCompactNumber(totals.damage)}
                         {(totals.damageBonus > 0 || totals.ascensionDmgMulti > 0) && (
-                            <span className="text-green-400 text-xs ml-1">(+{( (totals.damageBonus + totals.ascensionDmgMulti) * 100).toFixed(0)}%)</span>
+                            <span className="text-green-400 text-xs ml-1">(+{( ((1 + skillPassiveDamageBonus) * (ascensionDmgMulti || 1) - 1) * 100).toFixed(0)}%)</span>
                         )}
                     </div>
                 </div>
@@ -336,7 +339,7 @@ export function SkillsPassivesPanel() {
                                                     >
                                                         {spriteInfo ? (
                                                             <SpriteSheetIcon
-                                                                textureSrc={getAscensionTexturePath('SkillIcons', profile.misc.skillAscensionLevel || 0)}
+                                                                textureSrc={getAscensionTexturePath('SkillIcons', profile.misc.skillAscensionLevel || 0, selectedVersion)}
                                                                 spriteWidth={spriteInfo.config.sprite_size.width}
                                                                 spriteHeight={spriteInfo.config.sprite_size.height}
                                                                 sheetWidth={spriteInfo.config.texture_size.width}
@@ -354,8 +357,20 @@ export function SkillsPassivesPanel() {
                                                     health: stats.health,
                                                     damageLabel: "P. DMG",
                                                     healthLabel: "P. HP",
-                                                    damageMulti: 1 + stats.damageBonus + stats.ascensionDmgMulti,
-                                                    healthMulti: 1 + stats.healthBonus + stats.ascensionHpMulti
+                                                    damageMulti: (1 + stats.damageBonus) * (stats.ascensionDmgMulti || 1),
+                                                    healthMulti: (1 + stats.healthBonus) * (stats.ascensionHpMulti || 1),
+                                                    details: {
+                                                        damage: { 
+                                                            base: stats.baseDamage,
+                                                            techMulti: 1 + stats.damageBonus,
+                                                            ascMulti: stats.ascensionDmgMulti || 1
+                                                        },
+                                                        health: { 
+                                                            base: stats.baseHealth,
+                                                            techMulti: 1 + stats.healthBonus,
+                                                            ascMulti: stats.ascensionHpMulti || 1
+                                                        }
+                                                    }
                                                 } : {
                                                     damage: 0,
                                                     health: 0,

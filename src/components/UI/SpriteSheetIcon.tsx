@@ -85,11 +85,12 @@ export const SpriteSheetIcon: React.FC<SpriteSheetIconProps> = ({
 
     return (
         <div
-            className={cn("inline-block bg-no-repeat overflow-hidden", className)}
+            className={cn("inline-block bg-no-repeat overflow-hidden shrink-0", className)}
             style={{
                 backgroundImage: `url(${textureSrc})`,
                 backgroundPosition: `${bgPosX} ${bgPosY}`,
                 backgroundSize: `${bgSizeX} ${bgSizeY}`,
+                aspectRatio: `${spriteWidth} / ${spriteHeight}`,
                 imageRendering: 'pixelated' // Optional: for sharp pixel art
             }}
             role="img"

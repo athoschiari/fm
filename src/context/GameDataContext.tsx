@@ -28,20 +28,40 @@ export function GameDataProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         async function fetchVersions() {
+            const versionsUrl = `${import.meta.env.BASE_URL}parsed_configs/versions.json`;
+            console.log(`[GameDataContext] Fetching versions from: ${versionsUrl}`);
+            
             try {
-                const res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/versions.json`);
+                const res = await fetch(versionsUrl);
                 if (res.ok) {
-                    const v = await res.json();
-                    v.sort((a: string, b: string) => b.localeCompare(a));
-                    setVersions(v);
-                    if (v.length > 0) {
-                        setSelectedVersion(v[0]); // Default to latest
+                    try {
+                        const v = await res.json();
+                        if (Array.isArray(v) && v.length > 0) {
+                            v.sort((a: string, b: string) => b.localeCompare(a));
+                            console.log(`[GameDataContext] Versions loaded: ${v.join(', ')}`);
+                            setVersions(v);
+                            setSelectedVersion(v[0]);
+                            return;
+                        }
+                    } catch (parseError) {
+                        console.error("[GameDataContext] Failed to parse versions.json", parseError);
                     }
+                } else {
+                    console.error(`[GameDataContext] versions.json fetch failed with status: ${res.status}`);
                 }
             } catch (e) {
-                console.error("Failed to load versions", e);
+                console.error("[GameDataContext] Failed to fetch versions", e);
             } finally {
                 setIsLoadingVersions(false);
+                // Last resort fallback if everything failed
+                setVersions(prev => {
+                    if (prev.length === 0) {
+                        const fallback = ["2026_05_06_11_12"];
+                        setSelectedVersion(fallback[0]);
+                        return fallback;
+                    }
+                    return prev;
+                });
             }
         }
         fetchVersions();

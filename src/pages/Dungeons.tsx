@@ -11,6 +11,7 @@ import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { useTreeMode } from '../context/TreeModeContext';
 import { getItemImage } from '../utils/itemAssets';
 import { AGES } from '../utils/constants';
+import { useGameDataContext } from '../context/GameDataContext';
 
 // --- Types ---
 type DungeonType = 'Hammer' | 'Skill' | 'Egg' | 'Potion';
@@ -36,6 +37,7 @@ import { usePersistentState } from '../hooks/usePersistentState';
 
 export default function Dungeons() {
     const [selectedTab, setSelectedTab] = usePersistentState<DungeonType>('dungeon_selected_tab', 'Hammer');
+    const { selectedVersion } = useGameDataContext();
 
     // Initialize levels for ALL tabs from LocalStorage
     const [levels, setLevels] = useState<Record<DungeonType, number>>(() => {
@@ -134,7 +136,8 @@ export default function Dungeons() {
                     WeaponId: { Age: 10000, Type: 'Weapon', Idx: 0 }
                 };
 
-                const weaponSpriteSrc = `${import.meta.env.BASE_URL}Texture2D/IconMedievalWeaponWarhammer.png`; // Hardcoded guess for Hammer Thief
+                const versionPath = selectedVersion ? `${selectedVersion}/` : '';
+                const weaponSpriteSrc = `${import.meta.env.BASE_URL}Texture2D/${versionPath}IconMedievalWeaponWarhammer.png`; // Hardcoded guess for Hammer Thief
 
                 waveEnemies.push({
                     id: 9999,
@@ -158,15 +161,16 @@ export default function Dungeons() {
 
                     // Resolve Weapon Sprite
                     let weaponSpriteSrc = null;
+                    const versionPath = selectedVersion ? `${selectedVersion}/` : '';
 
                     // FORCE Hammer for Hammer Dungeon
                     if (selectedTab === 'Hammer') {
-                        weaponSpriteSrc = `${import.meta.env.BASE_URL}Texture2D/IconMedievalWeaponWarhammer.png`;
+                        weaponSpriteSrc = `${import.meta.env.BASE_URL}Texture2D/${versionPath}IconMedievalWeaponWarhammer.png`;
                     }
                     else if (enemyConfig?.WeaponId) {
                         const ageName = AGES[enemyConfig.WeaponId.Age];
                         if (ageName) {
-                            weaponSpriteSrc = getItemImage(ageName, 'Weapon', enemyConfig.WeaponId.Idx, null);
+                            weaponSpriteSrc = getItemImage(ageName, 'Weapon', enemyConfig.WeaponId.Idx, null, selectedVersion);
                         }
                     }
 
@@ -174,7 +178,7 @@ export default function Dungeons() {
                     if (!weaponSpriteSrc && weaponInfo) {
                         const isRanged = (weaponInfo.AttackRange || 0) > 1.0;
                         if (isRanged) {
-                            weaponSpriteSrc = `${import.meta.env.BASE_URL}Texture2D/IconMedievalWeaponBow.png`;
+                            weaponSpriteSrc = `${import.meta.env.BASE_URL}Texture2D/${versionPath}IconMedievalWeaponBow.png`;
                         }
                     }
 
@@ -529,7 +533,7 @@ export default function Dungeons() {
                                                             : "bg-red-500/10 text-red-400 border-red-500/30"
                                                     )}>
                                                         {(enemy.weapon.AttackRange || 0) > 1.0 ? (
-                                                            <img src={`${import.meta.env.BASE_URL}Texture2D/IconMedievalWeaponBow.png`} className="w-3 h-3" alt="Ranged" />
+                                                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}IconMedievalWeaponBow.png`} className="w-3 h-3" alt="Ranged" />
                                                         ) : (
                                                             <SpriteIcon name="Sword" size={12} />
                                                         )}

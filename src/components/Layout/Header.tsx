@@ -9,7 +9,7 @@ import { ConfirmModal } from '../UI/ConfirmModal';
 import { cn } from '../../lib/utils';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { formatCompactNumber } from '../../utils/statsCalculator';
-
+import { useGameDataContext } from '../../context/GameDataContext';
 interface HeaderProps {
     onMenuToggle: () => void;
     onStatsToggle: () => void;
@@ -23,6 +23,7 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
     const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
     const [justCopied, setJustCopied] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const { selectedVersion } = useGameDataContext();
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -147,7 +148,7 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                                     onClick={handleCreateProfile}
                                     className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-bg-input text-text-secondary hover:text-text-primary transition-colors"
                                 >
-                                    <img src={`${import.meta.env.BASE_URL}Texture2D/PlusIcon.png`} alt="New Profile" className="w-4 h-4 object-contain" />
+                                    <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/PlusIcon.png`} alt="New Profile" className="w-4 h-4 object-contain" />
                                     <span className="text-sm">New Profile</span>
                                 </button>
                                 <button
@@ -229,8 +230,8 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                     onClick={onStatsToggle}
                     className={cn(
                         "gap-2 shadow-lg transition-all duration-300",
-                        treeMode === 'my' 
-                            ? "from-emerald-600 to-green-700 shadow-emerald-500/20" 
+                        treeMode === 'my'
+                            ? "from-emerald-600 to-green-700 shadow-emerald-500/20"
                             : "from-red-600 to-rose-700 shadow-red-500/20"
                     )}
                 >

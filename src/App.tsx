@@ -36,6 +36,11 @@ import SkinsPage from './pages/Skins';
 import BaseDrops from './pages/BaseDrops';
 import Shop from './pages/Shop';
 import ProgressPassWiki from './pages/ProgressPassWiki';
+import Gallery from './pages/Gallery';
+import SecondaryStatsWiki from './pages/SecondaryStatsWiki';
+import MissionsWiki from './pages/MissionsWiki';
+
+
 
 function App() {
     return (
@@ -77,7 +82,10 @@ function App() {
                                     <Route path="wiki/base-drops" element={<BaseDrops />} />
                                     <Route path="wiki/shop" element={<Shop />} />
                                     <Route path="wiki/progress-pass" element={<ProgressPassWiki />} />
+                                    <Route path="wiki/secondary-stats" element={<SecondaryStatsWiki />} />
+                                    <Route path="wiki/missions" element={<MissionsWiki />} />
                                     <Route path="skins" element={<SkinsPage />} />
+                                    <Route path="gallery" element={<Gallery />} />
                                     <Route path="*" element={<Home />} />
                                 </Route>
                             </Routes>

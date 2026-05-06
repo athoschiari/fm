@@ -5,6 +5,7 @@ import { useGameData } from '../hooks/useGameData';
 import { Search, Sparkles, TrendingUp, Package, Info, Lock, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { getItemImage, getItemName } from '../utils/itemAssets';
+import { useGameDataContext } from '../context/GameDataContext';
 
 interface Reward {
     Amount: number;
@@ -42,7 +43,7 @@ const AGES = ['Primitive', 'Medieval', 'Early-Modern', 'Modern', 'Space', 'Inter
 /**
  * Maps game reward data to the correct icon name in Texture2D or IconsMap
  */
-function getShopIcon(reward: Reward, product?: IAPProduct, autoMapping?: any): string {
+function getShopIcon(reward: Reward, product?: IAPProduct, autoMapping?: any, version?: string): string {
     const type = reward.Type;
     const itemType = reward.$type;
 
@@ -67,7 +68,7 @@ function getShopIcon(reward: Reward, product?: IAPProduct, autoMapping?: any): s
             const itemId = (reward as any).ItemId;
             // Map Age Index to Name
             const ageName = AGES[itemId.Age];
-            const spritePath = getItemImage(ageName, itemId.Type, itemId.Idx, autoMapping);
+            const spritePath = getItemImage(ageName, itemId.Type, itemId.Idx, autoMapping, version);
             if (spritePath) {
                 // getItemImage returns full path, we just need the filename for GameIcon (it handles the rest)
                 return spritePath.split('/').pop()?.replace('.png', '') || 'CommonChest';
@@ -102,6 +103,7 @@ function getShopIcon(reward: Reward, product?: IAPProduct, autoMapping?: any): s
     if (type === 'ClockWinders') return 'MountKey';
     if (type === 'Gems') return 'GemIcon';
     if (type === 'Token') return 'WarTicket';
+    if (type === 'GuildPotions') return 'GuildPotions';
 
     return type;
 }
@@ -109,6 +111,7 @@ function getShopIcon(reward: Reward, product?: IAPProduct, autoMapping?: any): s
 import { usePersistentState } from '../hooks/usePersistentState';
 
 export default function Shop() {
+    const { selectedVersion } = useGameDataContext();
     const { data: dailyDeals } = useGameData<Record<string, DailyDeal>>('DailyDealLibrary.json');
     const { data: iapProducts } = useGameData<Record<string, IAPProduct>>('InAppProducts.json');
     const { data: unlockData } = useGameData<Record<string, UnlockCondition>>('UnlockConditions.json');
@@ -323,7 +326,7 @@ export default function Shop() {
                                                             <div className="flex -space-x-1">
                                                                 {size.Rewards.slice(0, 3).map((r, i) => (
                                                                     <div key={i} className="w-6 h-6 rounded-full border border-bg-primary bg-bg-secondary flex items-center justify-center overflow-hidden shadow-md">
-                                                                        <GameIcon name={getShopIcon(r, undefined, autoMapping)} className="w-full h-full p-1" />
+                                                                        <GameIcon name={getShopIcon(r, undefined, autoMapping, selectedVersion)} className="w-full h-full p-1" />
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -334,7 +337,7 @@ export default function Shop() {
                                                                 <div key={i} className="flex items-center justify-between py-1 border-b border-white/5 last:border-0 group-hover:border-accent-primary/10 transition-colors">
                                                                     <div className="flex items-center gap-2 max-w-[70%]">
                                                                         <div className="w-5 h-5 flex-shrink-0">
-                                                                            <GameIcon name={getShopIcon(reward, undefined, autoMapping)} className="w-full h-full opacity-80" />
+                                                                            <GameIcon name={getShopIcon(reward, undefined, autoMapping, selectedVersion)} className="w-full h-full opacity-80" />
                                                                         </div>
                                                                         <span className="text-text-secondary font-semibold truncate text-[10px] uppercase tracking-tighter">{reward.Type}</span>
                                                                     </div>
@@ -396,6 +399,7 @@ export default function Shop() {
                                         unlockData={unlockData}
                                         autoMapping={autoMapping}
                                         isWarActive={isWarActive}
+                                        version={selectedVersion}
                                     />
                                 )}
                             </div>
@@ -450,7 +454,7 @@ export default function Shop() {
                                     </h2>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative z-10">
                                         {products.filter(p => !['GemPack', 'TokenPack', 'StarterOffer', 'ProgressPass', 'DailyDeal'].some(key => p.ProductId.includes(key))).map((p) => (
-                                            <ProductCard key={p.ProductId} product={p} variant="primary" unlockData={unlockData} autoMapping={autoMapping} isWarActive={isWarActive} />
+                                            <ProductCard key={p.ProductId} product={p} variant="primary" unlockData={unlockData} autoMapping={autoMapping} isWarActive={isWarActive} version={selectedVersion} />
                                         ))}
                                     </div>
                                 </div>
@@ -463,12 +467,13 @@ export default function Shop() {
     );
 }
 
-function ProductCard({ product, variant, unlockData, autoMapping, isWarActive }: {
+function ProductCard({ product, variant, unlockData, autoMapping, isWarActive, version }: {
     product: any;
     variant: 'primary' | 'secondary';
     unlockData?: Record<string, UnlockCondition> | null;
     autoMapping?: any;
     isWarActive?: boolean;
+    version?: string;
 }) {
     // Safety check - if product is completely missing or malformed
     if (!product || !product.ProductId) return null;
@@ -525,7 +530,7 @@ function ProductCard({ product, variant, unlockData, autoMapping, isWarActive }:
                         variant === 'primary' ? "border-accent-primary/20" : "border-accent-secondary/20"
                     )}>
                         <GameIcon
-                            name={getShopIcon(product.Rewards?.[0], product, autoMapping)}
+                            name={getShopIcon(product.Rewards?.[0], product, autoMapping, version)}
                             className="w-full h-full drop-shadow-lg"
                         />
                     </div>

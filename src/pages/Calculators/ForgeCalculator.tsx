@@ -6,6 +6,7 @@ import { ArrowRightLeft, HelpCircle, RefreshCw, Trophy } from 'lucide-react';
 import { isWarPointDay } from '../../utils/guildWarUtils';
 import { cn, getAgeIconStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
+import { useGameDataContext } from '../../context/GameDataContext';
 
 // Helper types matching JSON structure
 interface ItemAgeDropChances {
@@ -66,7 +67,7 @@ interface GuildWarDayConfig {
 
 
 // Helper for Tech Tree Icons
-function getTechTreeIconStyle(spriteIndex: number, size: number = 32): React.CSSProperties {
+function getTechTreeIconStyle(spriteIndex: number, size: number = 32, version?: string): React.CSSProperties {
     // 8x8 grid based on TechTreeIcons.png size 1024x1024 and sprite size 128
     const cols = 8;
     const col = spriteIndex % cols;
@@ -75,8 +76,9 @@ function getTechTreeIconStyle(spriteIndex: number, size: number = 32): React.CSS
     const sheetSize = 1024;
     const scale = size / spriteSize;
 
+    const versionPath = version ? `${version}/` : '';
     return {
-        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/TechTreeIcons.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}TechTreeIcons.png)`,
         backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
         backgroundSize: `${sheetSize * scale}px ${sheetSize * scale}px`,
         width: `${size}px`,
@@ -89,6 +91,7 @@ function getTechTreeIconStyle(spriteIndex: number, size: number = 32): React.CSS
 type CalculationMode = 'hammers' | 'gold';
 
 export default function ForgeCalculator() {
+    const { selectedVersion } = useGameDataContext();
     const { profile, updateNestedProfile } = useProfile();
     const { treeMode } = useTreeMode();
 
@@ -248,7 +251,7 @@ export default function ForgeCalculator() {
         const rect = nodeIcons[key];
         if (!rect || !techTreeMap?.texture_size) {
             // Fallback if no rect found (shouldn't happen if map is good)
-            return getTechTreeIconStyle(0, size);
+            return getTechTreeIconStyle(0, size, selectedVersion);
         }
 
         const { x, y, width, height } = rect;
@@ -259,8 +262,9 @@ export default function ForgeCalculator() {
         // Unity Y is bottom-left, CSS is top-left
         const cssY = sheetH - y - height;
 
+        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
         return {
-            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/TechTreeIcons.png)`,
+            backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}TechTreeIcons.png)`,
             backgroundPosition: `-${x * scale}px -${cssY * scale}px`,
             backgroundSize: `${sheetW * scale}px ${sheetH * scale}px`,
             width: `${size}px`,
@@ -807,7 +811,7 @@ export default function ForgeCalculator() {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-primary to-accent-secondary bg-clip-text text-transparent mb-2 flex items-center gap-3">
-                        <img src={`${import.meta.env.BASE_URL}Texture2D/Anvil.png`} alt="Forge" className="w-10 h-10 object-contain" />
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}Anvil.png`} alt="Forge" className="w-10 h-10 object-contain" />
                         Forge Calculator
                     </h1>
                     <p className="text-text-secondary">
@@ -884,7 +888,7 @@ export default function ForgeCalculator() {
                                 : "text-text-muted hover:text-white hover:bg-white/5"
                         )}
                     >
-                        <img src="./Texture2D/Hammer.png" alt="Hammer" className="w-5 h-5 object-contain" />
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}Hammer.png`} alt="Hammer" className="w-5 h-5 object-contain" />
                         I have Hammers
                     </button>
                     <button onClick={() => setMode((prev) => (prev === 'hammers' ? 'gold' : 'hammers'))} className="px-4 text-text-muted hover:text-white">
@@ -899,7 +903,7 @@ export default function ForgeCalculator() {
                                 : "text-text-muted hover:text-white hover:bg-white/5"
                         )}
                     >
-                        <img src="./Texture2D/CoinIcon.png" alt="Gold" className="w-5 h-5 object-contain" />
+                        <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}CoinIcon.png`} alt="Gold" className="w-5 h-5 object-contain" />
                         I want Gold
                     </button>
                 </div>
@@ -925,8 +929,8 @@ export default function ForgeCalculator() {
                                 />
                                 <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none opacity-50">
                                     {mode === 'hammers' ?
-                                        <img src="./Texture2D/Hammer.png" alt="Hammer" className="w-8 h-8 object-contain" /> :
-                                        <img src="./Texture2D/CoinIcon.png" alt="Gold" className="w-8 h-8 object-contain" />
+                                        <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}Hammer.png`} alt="Hammer" className="w-8 h-8 object-contain" /> :
+                                        <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}CoinIcon.png`} alt="Gold" className="w-8 h-8 object-contain" />
                                     }
                                 </div>
                             </div>
@@ -1030,7 +1034,7 @@ export default function ForgeCalculator() {
                         <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
                             <div className="flex items-center gap-3">
                                 <div className="p-1 rounded bg-orange-500/20">
-                                    <img src="./Texture2D/Anvil.png" alt="Forge" className="w-8 h-8 object-contain filter drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                                    <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}Anvil.png`} alt="Forge" className="w-8 h-8 object-contain filter drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
                                 </div>
                                 <span className="font-medium text-text-secondary">Forge Level</span>
                             </div>
@@ -1074,7 +1078,7 @@ export default function ForgeCalculator() {
                                 {/* Show Range instead of Single Value */}
                                 {renderPriceRange(results.totalCoinsMin, results.totalCoinsMax)}
                             </div>
-                            <img src="./Texture2D/CoinIcon.png" alt="Gold" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
+                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}CoinIcon.png`} alt="Gold" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
                         </div>
 
                         <div className="card p-6 bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20 flex flex-col justify-between relative overflow-hidden group">
@@ -1083,7 +1087,7 @@ export default function ForgeCalculator() {
                                 <div className="text-sm font-bold text-red-500 uppercase tracking-wider mb-1">Total War Points</div>
                                 {renderPriceWithPrecision(results.totalWarPoints)}
                             </div>
-                            <img src="./Texture2D/TechTreePower.png" alt="War Points" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
+                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}TechTreePower.png`} alt="War Points" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
                         </div>
 
                         <div className="card p-6 bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20 flex flex-col justify-between relative overflow-hidden group">
@@ -1101,7 +1105,7 @@ export default function ForgeCalculator() {
                                     <span className="opacity-70"> Free Forges ({Math.floor(results.freeForges).toLocaleString()})</span>
                                 </div>
                             </div>
-                            <img src="./Texture2D/Hammer.png" alt="Hammer" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
+                            <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}Hammer.png`} alt="Hammer" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
                         </div>
 
                         {/* Estimated AutoForge Time */}
@@ -1180,7 +1184,7 @@ export default function ForgeCalculator() {
 
             {/* Background Decoration */}
             <div className="absolute -right-10 -bottom-10 opacity-5 pointer-events-none overflow-hidden">
-                <img src="./Texture2D/Anvil.png" alt="" className="w-64 h-64 object-contain grayscale" />
+                <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}Anvil.png`} alt="" className="w-64 h-64 object-contain grayscale" />
             </div>
         </div>
     );

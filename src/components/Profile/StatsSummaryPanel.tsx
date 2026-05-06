@@ -70,7 +70,7 @@ function StatRow({ icon, label, value, subValue, count, color = 'text-accent-pri
 }
 
 // Compact stat for grid layouts
-function CompactStat({ icon, label, value, color = 'text-accent-primary' }: Omit<StatRowProps, 'subValue'>) {
+function CompactStat({ icon, label, value, subValue, color = 'text-accent-primary' }: StatRowProps) {
     return (
         <div className="flex flex-col justify-between p-2.5 bg-bg-input/30 rounded-lg border border-border/30 hover:bg-bg-input/50 transition-colors min-h-[4.5rem]">
             <div className="flex items-center gap-1.5 mb-1">
@@ -79,8 +79,15 @@ function CompactStat({ icon, label, value, color = 'text-accent-primary' }: Omit
                 </div>
                 <span className="text-sm text-text-muted break-words leading-tight">{label}</span>
             </div>
-            <div className={cn("font-mono font-bold text-base text-right mt-auto", color)}>
-                {value}
+            <div className="flex flex-col items-end mt-auto">
+                <div className={cn("font-mono font-bold text-base", color)}>
+                    {value}
+                </div>
+                {subValue && (
+                    <div className="text-[9px] text-text-muted leading-tight opacity-70 font-medium text-right mt-0.5">
+                        {subValue}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -487,14 +494,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
         );
     }
 
-    const weaponDps = stats.weaponDps;
-    const effectiveDps = stats.averageTotalDps;
-    const regenHps = stats.totalHealth * stats.healthRegen;
-    const lifestealHps = weaponDps * stats.lifeSteal;
-    const skillHps = stats.skillHps;
-    const effectiveHps = regenHps + lifestealHps + skillHps;
-    const treeBonusEntries = Object.entries(techModifiers).filter(([_, v]) => v > 0);
-
     const calculateDpsDetails = (s: typeof stats) => {
         const cappedCrit = Math.min(s.criticalChance, 1);
         const cappedDouble = Math.min(s.doubleDamageChance, 1);
@@ -511,8 +510,35 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
         const regen = s.totalHealth * s.healthRegen;
         const lifesteal = dps * s.lifeSteal;
         const skills = s.skillHps;
-        return { total: regen + lifesteal + skills, regen, lifesteal, skills };
+        const rawTotal = regen + lifesteal + skills;
+
+        // Effective HPS: Since blocking damage means you don't need to heal it,
+        // it acts as a multiplier to your effective recovery.
+        // EHPS = Raw HPS / (1 - BlockChance)
+        const blockChance = Math.min(s.blockChance || 0, 0.95); // Cap at 95% for calculation
+        const effectiveTotal = rawTotal / (1 - blockChance);
+        const blockBenefit = effectiveTotal - rawTotal;
+
+        return {
+            total: effectiveTotal,
+            rawTotal,
+            regen,
+            lifesteal,
+            skills,
+            blockBenefit
+        };
     };
+
+    const currentDpsDetails = calculateDpsDetails(stats);
+    const weaponDps = currentDpsDetails.weapon;
+    const effectiveDps = currentDpsDetails.total;
+    const currentHpsDetails = calculateHpsDetails(stats, weaponDps);
+    const regenHps = currentHpsDetails.regen;
+    const lifestealHps = currentHpsDetails.lifesteal;
+    const skillHps = currentHpsDetails.skills;
+    const effectiveHps = currentHpsDetails.total;
+    const blockBenefitHps = currentHpsDetails.blockBenefit;
+    const treeBonusEntries = Object.entries(techModifiers).filter(([_, v]) => v > 0);
 
     const originalDpsDetails = originalStats ? calculateDpsDetails(originalStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
     const testDpsDetails = testStats ? calculateDpsDetails(testStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
@@ -613,8 +639,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
             />
             <ComparisonStatRow
                 isCompact={isCompactStats}
-                icon={<TrendingUp className="w-4 h-4" />}
-                label="HPS"
+                icon={<TrendingUp className="w-4 h-4 text-emerald-400" />}
+                label="Total HPS"
                 originalValue={originalHps}
                 testValue={testHps}
                 color="text-emerald-400"
@@ -788,7 +814,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real-Time" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
                             </div>
                             <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Total HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
                             </div>
                         </>
                     ) : (
@@ -969,19 +995,42 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                 value={formatValue(stats.power)}
                                 color="text-purple-400"
                             />
+                            {(() => {
+                                const formatDetailedBreakdown = (b: any) => {
+                                    const parts = [];
+                                    if (b.substats > 0) parts.push(`Substats: +${formatPercent(b.substats, 1)}`);
+                                    if (b.tree > 0) parts.push(`Tree: +${formatPercent(b.tree, 1)}`);
+                                    if (b.ascension > 0) parts.push(`Asc: +${formatPercent(b.ascension, 1)}`);
+                                    if (b.skins > 0) parts.push(`Skins: +${formatPercent(b.skins, 1)}`);
+                                    if (b.sets > 0) parts.push(`Sets: +${formatPercent(b.sets, 1)}`);
+                                    return parts.length > 0 ? parts.join(', ') : null;
+                                };
+
+                                return (
+                                    <>
+                                        <StatRow
+                                            icon={<Swords className="w-4 h-4" />}
+                                            label="Total Damage"
+                                            value={formatValue(stats.totalDamage)}
+                                            subValue={`${formatPercent(stats.damageMultiplier || 1, 0)} Total (${formatDetailedBreakdown(stats.damageBreakdown) || 'Base Only'})`}
+                                            color="text-red-400"
+                                        />
+                                        <StatRow
+                                            icon={<Heart className="w-4 h-4" />}
+                                            label="Total Health"
+                                            value={formatValue(stats.totalHealth)}
+                                            subValue={`${formatPercent(stats.healthMultiplier || 1, 0)} Total (${formatDetailedBreakdown(stats.healthBreakdown) || 'Base Only'})`}
+                                            color="text-green-400"
+                                        />
+                                    </>
+                                );
+                            })()}
                             <StatRow
-                                icon={<Swords className="w-4 h-4" />}
-                                label="Total Damage"
-                                value={formatValue(stats.totalDamage)}
-                                subValue={`${formatMultiplier(stats.damageMultiplier || 1, 2)} (Sub: ${formatPercent(stats.damageBreakdown?.substats || 0, 2)}, Asc: x${((stats.damageBreakdown?.ascension || 0) + 1).toFixed(2)})`}
-                                color="text-red-400"
-                            />
-                            <StatRow
-                                icon={<Heart className="w-4 h-4" />}
-                                label="Total Health"
-                                value={formatValue(stats.totalHealth)}
-                                subValue={`${formatMultiplier(stats.healthMultiplier || 1, 2)} (Sub: ${formatPercent(stats.healthBreakdown?.substats || 0, 2)}, Asc: x${((stats.healthBreakdown?.ascension || 0) + 1).toFixed(2)})`}
-                                color="text-green-400"
+                                icon={<TrendingUp className="w-4 h-4" />}
+                                label="Effective HPS"
+                                value={formatValue(effectiveHps)}
+                                subValue={`Regen: ${formatCompactNumber(regenHps)}, LifeSteal: ${formatCompactNumber(lifestealHps)}, Skills: ${formatCompactNumber(skillHps)}${blockBenefitHps > 0 ? `, Block Benefit: +${formatCompactNumber(blockBenefitHps)}` : ''}`}
+                                color="text-emerald-400"
                             />
                             <StatRow
                                 icon={<Zap className="w-4 h-4" />}
@@ -1058,21 +1107,106 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                             onToggle={() => setOpenSection(openSection === 'passives' ? null : 'passives')}
                         >
                             <div className="space-y-2">
-                                <div className="grid grid-cols-2 gap-2">
-                                    <CompactStat icon={<Star className="w-3 h-3" />} label="Crit %" value={formatPercent(stats.criticalChance || 0)} color="text-yellow-400" />
-                                    <CompactStat icon={<TrendingUp className="w-3 h-3" />} label="Crit x" value={`${(stats.criticalDamage || 0).toFixed(2)}x`} color="text-yellow-500" />
-                                    <CompactStat icon={<Shield className="w-3 h-3" />} label="Block %" value={formatPercent(stats.blockChance || 0)} color="text-blue-400" />
-                                    <CompactStat icon={<Zap className="w-3 h-3" />} label="Double %" value={formatPercent(stats.doubleDamageChance || 0)} color="text-purple-400" />
-                                    <CompactStat icon={<Heart className="w-3 h-3" />} label="Life Steal %" value={formatPercent(stats.lifeSteal || 0)} color="text-purple-400" />
-                                    <CompactStat icon={<Heart className="w-3 h-3" />} label="Health Regen %" value={formatPercent(stats.healthRegen || 0)} color="text-purple-400" />
-                                    <CompactStat icon={<TrendingUp className="w-3 h-3" />} label="Attack Speed %" value={formatPercent(stats.attackSpeedMultiplier)} color="text-orange-400" />
-                                    <CompactStat icon={<TrendingUp className="w-3 h-3" />} label="Skill Cooldown %" value={formatPercent(stats.skillCooldownReduction)} color="text-emerald-400" />
+                                {(() => {
+                                    const formatBreakdown = (breakdown: any, isMultiplier: boolean = false) => {
+                                        const parts = [];
+                                        if (breakdown.base > 0) parts.push(`Base: ${isMultiplier ? '+' : ''}${formatPercent(breakdown.base, 1)}`);
+                                        if (breakdown.substats > 0) parts.push(`Items: +${formatPercent(breakdown.substats, 1)}`);
+                                        if (breakdown.tree > 0) parts.push(`Tree: +${formatPercent(breakdown.tree, 1)}`);
+                                        if (breakdown.ascension > 0) parts.push(`Asc: +${formatPercent(breakdown.ascension, 1)}`);
+                                        return parts.length > 0 ? parts.join(', ') : null;
+                                    };
 
+                                    return (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <CompactStat
+                                                icon={<Star className="w-3 h-3" />}
+                                                label="Crit %"
+                                                value={formatPercent(stats.criticalChance || 0)}
+                                                subValue={formatBreakdown(stats.critChanceBreakdown)}
+                                                color="text-yellow-400"
+                                            />
+                                            <CompactStat
+                                                icon={<TrendingUp className="w-3 h-3" />}
+                                                label="Crit Damage"
+                                                value={formatMultiplier(stats.criticalDamage || 0)}
+                                                subValue={formatBreakdown(stats.critDamageBreakdown, true)}
+                                                color="text-yellow-500"
+                                            />
+                                            <CompactStat icon={<Shield className="w-3 h-3" />} label="Block %" value={formatPercent(stats.blockChance || 0)} color="text-blue-400" />
+                                            <CompactStat
+                                                icon={<Zap className="w-3 h-3" />}
+                                                label="Double %"
+                                                value={formatPercent(stats.doubleDamageChance || 0)}
+                                                subValue={formatBreakdown(stats.doubleDamageBreakdown)}
+                                                color="text-purple-400"
+                                            />
+                                            <CompactStat icon={<Heart className="w-3 h-3" />} label="Life Steal %" value={formatPercent(stats.lifeSteal || 0)} color="text-purple-400" />
+                                            <CompactStat icon={<Heart className="w-3 h-3" />} label="Health Regen %" value={formatPercent(stats.healthRegen || 0)} color="text-purple-400" />
+                                            <CompactStat
+                                                icon={<TrendingUp className="w-3 h-3" />}
+                                                label="Attack Speed"
+                                                value={formatMultiplier(stats.attackSpeedMultiplier)}
+                                                subValue={formatBreakdown(stats.attackSpeedBreakdown, true)}
+                                                color="text-orange-400"
+                                            />
+                                            <CompactStat
+                                                icon={<TrendingUp className="w-3 h-3" />}
+                                                label="Skill CDR %"
+                                                value={formatPercent(stats.skillCooldownReduction)}
+                                                subValue={formatBreakdown(stats.skillCooldownBreakdown)}
+                                                color="text-emerald-400"
+                                            />
+                                        </div>
+                                    );
+                                })()}
 
-                                </div>
-                                <StatRow icon={<Swords className="w-3 h-3" />} label="Skill Damage %" value={formatPercent(stats.skillDamageMultiplier)} color="text-red-400" />
-                                <StatRow icon={<Swords className="w-3 h-3" />} label="Damage Multiplier %" value={formatPercent(stats.damageMultiplier)} color="text-red-400" />
-                                <StatRow icon={<Heart className="w-3 h-3" />} label="Health Multiplier %" value={formatPercent(stats.healthMultiplier)} color="text-emerald-400" />
+                                <StatRow
+                                    icon={<Swords className="w-3 h-3" />}
+                                    label="Skill Damage %"
+                                    value={formatMultiplier(stats.skillDamageMultiplier)}
+                                    subValue={(() => {
+                                        const b = stats.skillDamageBreakdown;
+                                        const parts = [];
+                                        if (b.substats > 0) parts.push(`Items: +${formatPercent(b.substats, 1)}`);
+                                        if (b.tree > 0) parts.push(`Tree: +${formatPercent(b.tree, 1)}`);
+                                        if (b.ascension > 0) parts.push(`Asc: +${formatPercent(b.ascension, 1)}`);
+                                        return parts.join(', ');
+                                    })()}
+                                    color="text-red-400"
+                                />
+                                <StatRow
+                                    icon={<Swords className="w-3 h-3" />}
+                                    label="Overall Damage Multi"
+                                    value={formatPercent(stats.damageMultiplier, 0)}
+                                    subValue={(() => {
+                                        const b = stats.damageBreakdown;
+                                        const parts = [];
+                                        if (b.substats > 0) parts.push(`Items: +${formatPercent(b.substats, 1)}`);
+                                        if (b.tree > 0) parts.push(`Tree: +${formatPercent(b.tree, 1)}`);
+                                        if (b.ascension > 0) parts.push(`Asc: +${formatPercent(b.ascension, 1)}`);
+                                        if (b.skins > 0) parts.push(`Skins: +${formatPercent(b.skins, 1)}`);
+                                        if (b.sets > 0) parts.push(`Sets: +${formatPercent(b.sets, 1)}`);
+                                        return parts.length > 0 ? parts.join(', ') : 'Base Only';
+                                    })()}
+                                    color="text-red-400"
+                                />
+                                <StatRow
+                                    icon={<Heart className="w-3 h-3" />}
+                                    label="Health Multiplier %"
+                                    value={formatPercent(stats.healthMultiplier, 0)}
+                                    subValue={(() => {
+                                        const b = stats.healthBreakdown;
+                                        const parts = [];
+                                        if (b.substats > 0) parts.push(`Items: +${formatPercent(b.substats, 1)}`);
+                                        if (b.tree > 0) parts.push(`Tree: +${formatPercent(b.tree, 1)}`);
+                                        if (b.ascension > 0) parts.push(`Asc: +${formatPercent(b.ascension, 1)}`);
+                                        if (b.skins > 0) parts.push(`Skins: +${formatPercent(b.skins, 1)}`);
+                                        if (b.sets > 0) parts.push(`Sets: +${formatPercent(b.sets, 1)}`);
+                                        return parts.length > 0 ? parts.join(', ') : 'Base Only';
+                                    })()}
+                                    color="text-emerald-400"
+                                />
                                 <StatRow
                                     icon={<TrendingUp className="w-4 h-4 text-text-primary" />}
                                     label="Total HPS"

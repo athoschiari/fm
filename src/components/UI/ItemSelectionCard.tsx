@@ -6,6 +6,8 @@ import { cn, getAgeBgStyle, getAgeBorderStyle, getRarityBgStyle, getRarityBorder
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
 import { formatSecondaryStat } from '../../utils/statNames';
 import { formatNumber } from '../../utils/format';
+import { StatBreakdownTooltip } from './StatBreakdownTooltip';
+import { useGameDataContext } from '../../context/GameDataContext';
 
 interface ItemSelectionCardProps {
     item: ItemSlot | MountSlot | PetSlot | any;
@@ -28,6 +30,23 @@ interface ItemSelectionCardProps {
         multi?: number;
         skinBonuses?: { damage: number; health: number };
         isMelee?: boolean;
+        details?: {
+            damage?: {
+                base: number;
+                levelMulti?: number;
+                techMulti?: number;
+                ascMulti?: number;
+                skinMulti?: number;
+                meleeMulti?: number;
+            };
+            health?: {
+                base: number;
+                levelMulti?: number;
+                techMulti?: number;
+                ascMulti?: number;
+                skinMulti?: number;
+            };
+        };
     };
     customStats?: React.ReactNode;
     perfection?: number | null;
@@ -77,6 +96,7 @@ export function ItemSelectionCard({
     currentLevel,
     maxLevel = 299
 }: ItemSelectionCardProps) {
+    const { selectedVersion } = useGameDataContext();
     const isCompact = variant === 'compact';
     const displayLevel = currentLevel ?? item?.level ?? 0;
 
@@ -86,14 +106,14 @@ export function ItemSelectionCard({
             className={cn(
                 "h-full rounded-xl border-2 transition-all relative flex flex-col items-center p-1.5 gap-1 group cursor-pointer",
                 isCompact ? "min-h-[130px]" : "min-h-[160px]",
-                isSelected 
-                    ? "border-accent-primary bg-accent-primary/10 shadow-lg shadow-accent-primary/20" 
+                isSelected
+                    ? "border-accent-primary bg-accent-primary/10 shadow-lg shadow-accent-primary/20"
                     : "border-border hover:border-accent-primary/50",
                 hasDiff && "ring-2 ring-yellow-500 ring-offset-2 ring-offset-bg-primary"
             )}
             style={
                 !isSelected ? (
-                    hideAgeStyles 
+                    hideAgeStyles
                         ? (rarity ? { background: getRarityBgStyle(rarity).background?.toString().replace('0.3', '0.1').replace('0.1', '0.05') } : { backgroundColor: 'var(--bg-secondary)' })
                         : { background: getAgeBgStyle((item as ItemSlot)?.age || 0).background?.toString().replace('0.3', '0.1').replace('0.1', '0.05') }
                 ) : {}
@@ -105,7 +125,7 @@ export function ItemSelectionCard({
                     {/* Level Control */}
                     {onLevelChange ? (
                         <div className="flex items-center gap-1 bg-black/60 px-1.5 py-0.5 rounded backdrop-blur-sm border border-white/10 shrink-0 w-fit" onClick={(e) => e.stopPropagation()}>
-                            <button 
+                            <button
                                 onClick={(e) => onLevelChange(-1, e)}
                                 className="p-0.5 hover:bg-white/10 rounded transition-colors"
                             >
@@ -137,7 +157,7 @@ export function ItemSelectionCard({
                             ) : (
                                 <span className="text-[10px] md:text-[11px] font-bold text-white min-w-[3.5ch] text-center tabular-nums">Lv{displayLevel}</span>
                             )}
-                            <button 
+                            <button
                                 onClick={(e) => onLevelChange(1, e)}
                                 className="p-0.5 hover:bg-white/10 rounded transition-colors"
                             >
@@ -153,7 +173,7 @@ export function ItemSelectionCard({
                     {/* Ascension Stars */}
                     {onAscensionChange ? (
                         <div onClick={(e) => e.stopPropagation()}>
-                            <AscensionStars 
+                            <AscensionStars
                                 value={globalAscensionLevel}
                                 onChange={onAscensionChange}
                                 size="xs"
@@ -162,11 +182,11 @@ export function ItemSelectionCard({
                     ) : globalAscensionLevel > 0 && (
                         <div className="flex gap-0.5 flex-wrap">
                             {Array.from({ length: globalAscensionLevel }).map((_, i) => (
-                                <img 
-                                    key={i} 
-                                    src={`${import.meta.env.BASE_URL}Texture2D/AscensionStar.png`} 
-                                    alt="Star" 
-                                    className="w-2 md:w-2.5 h-2 md:h-2.5 object-contain drop-shadow-sm" 
+                                <img
+                                    key={i}
+                                    src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}AscensionStar.png`}
+                                    alt="Star"
+                                    className="w-2 md:w-2.5 h-2 md:h-2.5 object-contain drop-shadow-sm"
                                 />
                             ))}
                         </div>
@@ -214,8 +234,8 @@ export function ItemSelectionCard({
                         "rounded-lg flex items-center justify-center border-2 shrink-0 bg-bg-primary/50 transition-transform group-hover:scale-110",
                         isCompact ? "w-10 h-10" : "w-12 h-12"
                     )}
-                    style={hideAgeStyles 
-                        ? (rarity ? { ...getRarityBgStyle(rarity), ...getRarityBorderStyle(rarity) } : {}) 
+                    style={hideAgeStyles
+                        ? (rarity ? { ...getRarityBgStyle(rarity), ...getRarityBorderStyle(rarity) } : {})
                         : { ...getAgeBgStyle(typeof (item as any)?.age === 'number' ? (item as any).age : 0), ...getAgeBorderStyle(typeof (item as any)?.age === 'number' ? (item as any).age : 0) }
                     }
                 >
@@ -232,8 +252,8 @@ export function ItemSelectionCard({
                     )}
                 </div>
                 {(item as ItemSlot)?.skin && (
-                    <div 
-                        className="absolute -bottom-1.5 -right-1.5 z-20 w-6 h-6 md:w-8 md:h-8 rounded-md bg-bg-secondary border border-accent-primary shadow-sm overflow-hidden" 
+                    <div
+                        className="absolute -bottom-1.5 -right-1.5 z-20 w-6 h-6 md:w-8 md:h-8 rounded-md bg-bg-secondary border border-accent-primary shadow-sm overflow-hidden"
                         title={`Skin ID: ${(item as ItemSlot).skin!.idx}`}
                     >
                         <div className="w-full h-full flex items-center justify-center bg-accent-primary/20">
@@ -244,7 +264,7 @@ export function ItemSelectionCard({
                                         Idx: (item as ItemSlot).skin!.idx,
                                         Type: (item as ItemSlot).skin!.type || slotKey
                                     }
-                                }, spriteMapping?.skins?.mapping)}
+                                }, spriteMapping?.skins?.mapping, selectedVersion)}
                             />
                         </div>
                     </div>
@@ -266,7 +286,7 @@ export function ItemSelectionCard({
                 {stats && (
                     <div className="w-full flex flex-col gap-1">
                         {stats.damage > 0 && (
-                            <div className="bg-red-400/10 rounded p-1 border border-red-400/20 flex flex-col items-center">
+                            <div className="bg-red-400/10 rounded p-1 border border-red-400/20 flex flex-col items-center group/stats relative">
                                 <div className="flex items-center gap-1 text-red-400">
                                     <span className={cn("font-bold uppercase", isCompact ? "text-[8px]" : "text-[10px]")}>{stats.damageLabel || "Damage"}</span>
                                 </div>
@@ -274,7 +294,7 @@ export function ItemSelectionCard({
                                     {isCompact ? formatNumber(stats.damage) : Math.round(stats.damage).toLocaleString()}
                                 </div>
                                 {(stats.multi !== undefined || stats.damageMulti !== undefined || stats.bonus !== undefined) && (
-                                    <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center justify-center flex-wrap gap-x-1 gap-y-0 mt-0.5">
+                                    <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center justify-center flex-wrap gap-x-1 gap-y-0 mt-0.5 relative">
                                         {(() => {
                                             const m = stats.damageMulti ?? stats.multi;
                                             if (m !== undefined) {
@@ -291,10 +311,15 @@ export function ItemSelectionCard({
                                         })()}
                                     </div>
                                 )}
+                                {stats.details?.damage && (
+                                    <div className="hidden group-hover/stats:block">
+                                        <StatBreakdownTooltip damage={stats.details.damage} isMelee={stats.isMelee} />
+                                    </div>
+                                )}
                             </div>
                         )}
                         {stats.health > 0 && (
-                            <div className="bg-green-400/10 rounded p-1 border border-green-400/20 flex flex-col items-center">
+                            <div className="bg-green-400/10 rounded p-1 border border-green-400/20 flex flex-col items-center group/h-stats relative">
                                 <div className="flex items-center gap-1 text-green-400">
                                     <span className={cn("font-bold uppercase", isCompact ? "text-[8px]" : "text-[10px]")}>{stats.healthLabel || "Health"}</span>
                                 </div>
@@ -302,7 +327,7 @@ export function ItemSelectionCard({
                                     {isCompact ? formatNumber(stats.health) : Math.round(stats.health).toLocaleString()}
                                 </div>
                                 {(stats.multi !== undefined || stats.healthMulti !== undefined || stats.bonus !== undefined) && (
-                                    <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center justify-center flex-wrap gap-x-1 gap-y-0 mt-0.5">
+                                    <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center justify-center flex-wrap gap-x-1 gap-y-0 mt-0.5 relative">
                                         {(() => {
                                             const m = stats.healthMulti ?? stats.multi;
                                             if (m !== undefined) {
@@ -319,6 +344,11 @@ export function ItemSelectionCard({
                                         })()}
                                     </div>
                                 )}
+                                {stats.details?.health && (
+                                    <div className="hidden group-hover/h-stats:block">
+                                        <StatBreakdownTooltip health={stats.details.health} />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -330,7 +360,7 @@ export function ItemSelectionCard({
             {item?.secondaryStats && item.secondaryStats.length > 0 && (
                 <div className="w-full grid grid-cols-1 gap-1 mt-1 pt-1 border-t border-border/20">
                     {item.secondaryStats.map((stat: { statId: string; value: number }, idx: number) => {
-                         const formatted = formatSecondaryStat(stat.statId, stat.value);
+                        const formatted = formatSecondaryStat(stat.statId, stat.value);
                         const statPerf = getStatPerfection?.(stat.statId, stat.value) ?? null;
                         return (
                             <div key={idx} className={cn("flex flex-col items-center gap-y-0 select-none", isCompact ? "text-[8px] leading-none" : "text-[10px] gap-y-0.5", formatted.color)}>
@@ -340,11 +370,11 @@ export function ItemSelectionCard({
                                     {statPerf !== null && (
                                         <div className="flex items-center gap-0.5 group/perf">
                                             <span className={cn("opacity-70", isCompact ? "text-[7px]" : "text-[8px]")}>({Math.round(statPerf)}%)</span>
-                                            <div 
+                                            <div
                                                 className={cn("rounded-full bg-gray-700/50 overflow-hidden", isCompact ? "w-0.5 h-2" : "w-0.5 h-2.5")}
                                                 title={`Perfection: ${statPerf.toFixed(1)}%`}
                                             >
-                                                <div 
+                                                <div
                                                     className={cn(
                                                         "w-full bg-current opacity-80",
                                                         statPerf >= 90 ? "brightness-125" : "brightness-75"
@@ -363,13 +393,13 @@ export function ItemSelectionCard({
 
             {/* Perfection Bar */}
             {perfection != null && (
-                 <div className="w-full mt-1 flex flex-col gap-0.5 select-none" title={`Perfection: ${perfection.toFixed(1)}%`}>
+                <div className="w-full mt-1 flex flex-col gap-0.5 select-none" title={`Perfection: ${perfection.toFixed(1)}%`}>
                     <div className={cn("flex justify-between items-center font-bold text-text-muted", isCompact ? "text-[7px]" : "text-[8px]")}>
                         <span>Perfection</span>
                         <span className={cn(
-                             perfection >= 100 ? 'text-yellow-400' :
-                             perfection >= 80 ? 'text-green-500' :
-                             perfection >= 50 ? 'text-blue-500' : 'text-gray-400'
+                            perfection >= 100 ? 'text-yellow-400' :
+                                perfection >= 80 ? 'text-green-500' :
+                                    perfection >= 50 ? 'text-blue-500' : 'text-gray-400'
                         )}>{perfection.toFixed(1)}%</span>
                     </div>
                     <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
@@ -377,8 +407,8 @@ export function ItemSelectionCard({
                             className={cn(
                                 "h-full",
                                 perfection >= 100 ? 'bg-yellow-400' :
-                                perfection >= 80 ? 'bg-green-500' :
-                                perfection >= 50 ? 'bg-blue-500' : 'bg-gray-500'
+                                    perfection >= 80 ? 'bg-green-500' :
+                                        perfection >= 50 ? 'bg-blue-500' : 'bg-gray-500'
                             )}
                             style={{ width: `${Math.min(100, perfection)}%` }}
                         />

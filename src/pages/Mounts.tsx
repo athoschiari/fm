@@ -8,9 +8,11 @@ import { Star, Search, BookOpen, TrendingUp } from 'lucide-react';
 import { AscensionStars } from '../components/UI/AscensionStars';
 
 import { usePersistentState } from '../hooks/usePersistentState';
+import { useGameDataContext } from '../context/GameDataContext';
 
 export default function Mounts() {
     const { profile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const { data: mountLibrary, loading: l1 } = useGameData<any>('MountLibrary.json');
     const { data: mountUpgrades, loading: l1b } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: petUnlockLib, loading: l1c } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
@@ -32,9 +34,10 @@ export default function Mounts() {
             const configs = ascensionConfigs.Mounts.AscensionConfigPerLevel;
             for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
                 for (const s of configs[i].StatContributions || []) {
-                    const val = s.Value;
-                    if (s.StatNode?.UniqueStat?.StatType === 'Damage') dmg += val;
-                    if (s.StatNode?.UniqueStat?.StatType === 'Health') hp += val;
+                    const val = s.Value + 1;
+                    const statType = s.StatNode?.UniqueStat?.StatType;
+                    if (statType === 'Damage' || statType === 'AscensionDamage') dmg += val;
+                    if (statType === 'Health' || statType === 'AscensionHealth') hp += val;
                 }
             }
         }
@@ -117,10 +120,13 @@ export default function Mounts() {
 
     const getAscMountSpriteUrl = () => {
         const baseUrl = import.meta.env.BASE_URL;
-        if (ascensionLevel === 1) return `${baseUrl}Texture2D/MegaMountIcons.png`;
-        if (ascensionLevel === 2) return `${baseUrl}Texture2D/UltraMountIcons.png`;
-        if (ascensionLevel === 3) return `${baseUrl}Texture2D/ApexMountIcons.png`;
-        return `${baseUrl}Texture2D/MountIcons.png`;
+        const versionPath = selectedVersion ? `${selectedVersion}/` : '';
+        const textureBase = `${baseUrl}Texture2D/${versionPath}`;
+        
+        if (ascensionLevel === 1) return `${textureBase}MegaMountIcons.png`;
+        if (ascensionLevel === 2) return `${textureBase}UltraMountIcons.png`;
+        if (ascensionLevel === 3) return `${textureBase}ApexMountIcons.png`;
+        return `${textureBase}MountIcons.png`;
     };
 
     // Calculate cumulative experience per rarity

@@ -11,6 +11,23 @@ export interface ItemStatsResult {
         health: number;
     };
     isMelee: boolean;
+    details?: {
+        damage?: {
+            base: number;
+            levelMulti?: number;
+            techMulti?: number;
+            ascMulti?: number;
+            skinMulti?: number;
+            meleeMulti?: number;
+        };
+        health?: {
+            base: number;
+            levelMulti?: number;
+            techMulti?: number;
+            ascMulti?: number;
+            skinMulti?: number;
+        };
+    };
 }
 
 // Slot to tech bonus mapping
@@ -116,51 +133,58 @@ export const getItemStats = (
     const bonusKey = SLOT_TO_TECH_BONUS[slotKey];
     const techBonus = techModifiers[bonusKey] || 0;
 
-    let damageMulti = (1 + techBonus) * (1 + forgeAscensionMulti);
-    let healthMulti = (1 + techBonus) * (1 + forgeAscensionMulti);
+    let damageMulti = (1 + techBonus) * (forgeAscensionMulti || 1);
+    let healthMulti = (1 + techBonus) * (forgeAscensionMulti || 1);
 
-    let damage = 0;
-    let health = 0;
+    let baseDamage = 0;
+    let baseHealth = 0;
 
     for (const stat of itemData.EquipmentStats) {
         const statType = stat.StatNode?.UniqueStat?.StatType;
-        let value = stat.Value || 0;
-
-        // Level scaling
-        const levelExp = Math.max(0, item.level - 1);
-        value = value * Math.pow(levelScaling, levelExp);
-
-        // Tech tree bonus
-        value = value * (1 + techBonus);
-
-        // Forge Ascension bonus
-        value = value * (1 + forgeAscensionMulti);
-
-        if (statType === 'Damage') damage += value;
-        if (statType === 'Health') health += value;
+        if (statType === 'Damage') baseDamage += (stat.Value || 0);
+        if (statType === 'Health') baseHealth += (stat.Value || 0);
     }
 
+    const levelMulti = Math.pow(levelScaling, Math.max(0, item.level - 1));
+    const techMulti = (1 + techBonus);
+    const ascMulti = (forgeAscensionMulti || 1);
+    const meleeMulti = (slotKey === 'Weapon' && isMelee) ? meleeBaseMulti : 1;
+    const skinDmgMulti = (1 + (item.skin?.stats?.['Damage'] || 0));
+    const skinHpMulti = (1 + (item.skin?.stats?.['Health'] || 0));
+
+    let damage = baseDamage * levelMulti * techMulti * ascMulti * meleeMulti * skinDmgMulti;
+    let health = baseHealth * levelMulti * techMulti * ascMulti * skinHpMulti;
+
     if (slotKey === 'Weapon' && isMelee && damage > 0) {
-        damage = damage * meleeBaseMulti;
         damageMulti *= meleeBaseMulti;
     }
 
-    // Apply Skin Multipliers
-    let skinBonuses = { damage: 0, health: 0 };
-    if (item.skin && item.skin.stats) {
-        const skinDamage = item.skin.stats['Damage'] || 0;
-        const skinHealth = item.skin.stats['Health'] || 0;
+    let skinBonuses = { 
+        damage: item.skin?.stats?.['Damage'] || 0, 
+        health: item.skin?.stats?.['Health'] || 0 
+    };
 
-        if (skinDamage) {
-            damage *= (1 + skinDamage);
-            damageMulti *= (1 + skinDamage);
-        }
-        if (skinHealth) {
-            health *= (1 + skinHealth);
-            healthMulti *= (1 + skinHealth);
-        }
-        skinBonuses = { damage: skinDamage, health: skinHealth };
-    }
+    if (skinBonuses.damage) damageMulti *= (1 + skinBonuses.damage);
+    if (skinBonuses.health) healthMulti *= (1 + skinBonuses.health);
 
-    return { damage, health, bonus: techBonus, damageMulti, healthMulti, skinBonuses, isMelee };
+    // Populate details
+    const details = {
+        damage: {
+            base: baseDamage,
+            levelMulti,
+            techMulti,
+            ascMulti,
+            skinMulti: skinDmgMulti,
+            meleeMulti
+        },
+        health: {
+            base: baseHealth,
+            levelMulti,
+            techMulti,
+            ascMulti,
+            skinMulti: skinHpMulti
+        }
+    };
+
+    return { damage, health, bonus: techBonus, damageMulti, healthMulti, skinBonuses, isMelee, details };
 };

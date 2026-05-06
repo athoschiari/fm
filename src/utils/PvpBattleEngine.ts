@@ -934,7 +934,7 @@ export function profileToEnemyConfig(profile: UserProfile, libs: any, existingSt
                 const item = profile.items[slot];
                 if (!item?.skin) continue;
                 const skinEntry = Object.values(libs.skinsLibrary).find((s: any) => s.SkinId?.Type === (item.skin?.type || slotToJsonType[slot]) && s.SkinId?.Idx === item.skin?.idx) as any;
-                if (skinEntry?.SetId) counts[skinEntry.SetId] = (counts[skinEntry.SetId] || 0) + 1;
+                if (skinEntry?.BaseSetId) counts[skinEntry.BaseSetId] = (counts[skinEntry.BaseSetId] || 0) + 1;
             }
             for (const [id, count] of Object.entries(counts)) {
                 const set = libs.setsLibrary[id];
@@ -952,7 +952,7 @@ export function profileToEnemyConfig(profile: UserProfile, libs: any, existingSt
             if (mountAscLevel > 0 && libs.ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
                 const configs = libs.ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
                 for (let i = 0; i < mountAscLevel && i < configs.length; i++) {
-                     configs[i].StatContributions?.forEach((s: any) => { if (s.StatNode?.UniqueStat?.StatType === 'Health') mountAscMulti += s.Value; });
+                    configs[i].StatContributions?.forEach((s: any) => { if (s.StatNode?.UniqueStat?.StatType === 'Health') mountAscMulti += s.Value; });
                 }
             }
             const deScale = (1 + (techModifiers['MountHealth'] || 0) + mountAscMulti);
