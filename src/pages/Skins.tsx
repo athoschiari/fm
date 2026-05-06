@@ -156,12 +156,12 @@ export default function Skins() {
                             <div className="flex items-center gap-3 border-b border-border/30 pb-3">
                                 <div className="p-2 bg-accent-primary/10 rounded-lg">
                                     {type === 'Weapon' ? <Sword className="w-5 h-5 text-accent-primary" /> :
-                                     type === 'Helmet' ? <Shield className="w-5 h-5 text-accent-primary" /> :
-                                     <Shield className="w-5 h-5 text-accent-primary opacity-70" />}
+                                        type === 'Helmet' ? <Shield className="w-5 h-5 text-accent-primary" /> :
+                                            <Shield className="w-5 h-5 text-accent-primary opacity-70" />}
                                 </div>
                                 <h3 className="text-lg font-bold text-text-primary uppercase tracking-wider">{type} Upgrades</h3>
                             </div>
-                            
+
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-text-muted">Stat Increase / Level</span>
@@ -246,7 +246,7 @@ export default function Skins() {
                                     <SkinCard
                                         key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                         skin={skin}
-                                        bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
+                                        bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
                                         windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
                                         duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
                                         onShowBreakpoints={(w, d) => setBreakpointModal({
@@ -273,7 +273,7 @@ export default function Skins() {
                             <SkinCard
                                 key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                 skin={skin}
-                                bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
+                                bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
                                 windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
                                 duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
                                 onShowBreakpoints={(w, d) => setBreakpointModal({

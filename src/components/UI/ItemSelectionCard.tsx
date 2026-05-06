@@ -264,7 +264,7 @@ export function ItemSelectionCard({
                                         Idx: (item as ItemSlot).skin!.idx,
                                         Type: (item as ItemSlot).skin!.type || slotKey
                                     }
-                                }, spriteMapping?.skins?.mapping, selectedVersion)}
+                                }, spriteMapping?.skins?.mapping)}
                             />
                         </div>
                     </div>

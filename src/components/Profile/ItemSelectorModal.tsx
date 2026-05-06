@@ -573,7 +573,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             >
                                 <div
                                     className="w-full h-full"
-                                    style={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
+                                    style={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
                                 />
                             </button>
                         );
