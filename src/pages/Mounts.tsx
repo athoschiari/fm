@@ -34,7 +34,7 @@ export default function Mounts() {
             const configs = ascensionConfigs.Mounts.AscensionConfigPerLevel;
             for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
                 for (const s of configs[i].StatContributions || []) {
-                    const val = s.Value + 1;
+                    const val = s.Value;
                     const statType = s.StatNode?.UniqueStat?.StatType;
                     if (statType === 'Damage' || statType === 'AscensionDamage') dmg += val;
                     if (statType === 'Health' || statType === 'AscensionHealth') hp += val;
@@ -122,7 +122,7 @@ export default function Mounts() {
         const baseUrl = import.meta.env.BASE_URL;
         const versionPath = selectedVersion ? `${selectedVersion}/` : '';
         const textureBase = `${baseUrl}Texture2D/${versionPath}`;
-        
+
         if (ascensionLevel === 1) return `${textureBase}MegaMountIcons.png`;
         if (ascensionLevel === 2) return `${textureBase}UltraMountIcons.png`;
         if (ascensionLevel === 3) return `${textureBase}ApexMountIcons.png`;

@@ -63,7 +63,7 @@ export default function Items() {
                 for (const stat of configs[i].StatContributions || []) {
                     const statType = stat.StatNode?.UniqueStat?.StatType;
                     if (statType === 'Damage' || statType === 'AscensionDamage' || statType === 'Health' || statType === 'AscensionHealth') {
-                        total += (stat.Value + 1) / 100;
+                        total += (stat.Value)
                         break;
                     }
                 }
@@ -111,7 +111,7 @@ export default function Items() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-6 animate-fade-in pb-12">
-            <BreakpointWikiModal 
+            <BreakpointWikiModal
                 isOpen={breakpointModal.isOpen}
                 onClose={() => setBreakpointModal({ isOpen: false })}
                 weaponName={breakpointModal.weapon?.Name || 'Weapon'}
@@ -327,16 +327,16 @@ export default function Items() {
                                                             {weaponData.WindupTime ? weaponData.WindupTime.toFixed(2) + 's' : 'N/A'}
                                                         </div>
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            setBreakpointModal({ 
-                                                                isOpen: true, 
-                                                                weapon: { 
+                                                            setBreakpointModal({
+                                                                isOpen: true,
+                                                                weapon: {
                                                                     Name: `${selectedSlot} ${item.ItemId?.Idx + 1}`,
                                                                     AttackDuration: item.EquipmentStats?.[0]?.Value ? 1.1 : 1.1, // Fallback, but we should try to find real duration
-                                                                    WindupTime: weaponData.WindupTime 
-                                                                } 
+                                                                    WindupTime: weaponData.WindupTime
+                                                                }
                                                             });
                                                         }}
                                                         className="mt-2 w-full flex items-center justify-center gap-2 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary py-2 rounded-lg text-[9px] font-bold uppercase transition-all ring-1 ring-accent-primary/30 col-span-2"

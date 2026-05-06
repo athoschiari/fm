@@ -70,7 +70,7 @@ export default function Pets() {
             const configs = ascensionConfigs.Pets.AscensionConfigPerLevel;
             for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
                 for (const s of configs[i].StatContributions || []) {
-                    const val = s.Value + 1;
+                    const val = s.Value;
                     const statType = s.StatNode?.UniqueStat?.StatType;
                     if (statType === 'Damage' || statType === 'AscensionDamage') dmg += val;
                     if (statType === 'Health' || statType === 'AscensionHealth') hp += val;
@@ -157,7 +157,7 @@ export default function Pets() {
         const baseUrl = import.meta.env.BASE_URL;
         const versionPath = selectedVersion ? `${selectedVersion}/` : '';
         const textureBase = `${baseUrl}Texture2D/${versionPath}`;
-        
+
         if (ascensionLevel === 1) return `${textureBase}MegaPets.png`;
         if (ascensionLevel === 2) return `${textureBase}UltraPets.png`;
         if (ascensionLevel === 3) return `${textureBase}ApexPets.png`;
@@ -250,7 +250,7 @@ export default function Pets() {
                         <p className="text-xs text-text-muted">Visual evolution of eggs based on ascension level</p>
                     </div>
                 </div>
-                
+
                 <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
                     {['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'].map((rarity) => (
                         <div key={rarity} className="flex flex-col items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors group">
@@ -259,11 +259,11 @@ export default function Pets() {
                                     "absolute inset-0 blur-xl opacity-20 group-hover:opacity-40 transition-opacity",
                                     `bg-rarity-${rarity.toLowerCase()}`
                                 )} />
-                                <EggIcon 
-                                    rarity={rarity} 
-                                    size={64} 
-                                    ascensionLevel={ascensionLevel} 
-                                    className="relative z-10 drop-shadow-xl scale-110 group-hover:scale-125 transition-transform duration-300" 
+                                <EggIcon
+                                    rarity={rarity}
+                                    size={64}
+                                    ascensionLevel={ascensionLevel}
+                                    className="relative z-10 drop-shadow-xl scale-110 group-hover:scale-125 transition-transform duration-300"
                                 />
                             </div>
                             <span className={cn(

@@ -35,7 +35,7 @@ export default function Skills() {
             const configs = ascensionConfigs.Skills.AscensionConfigPerLevel;
             for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
                 for (const s of configs[i].StatContributions || []) {
-                    const val = s.Value + 1;
+                    const val = s.Value;
                     const target = s.StatNode?.StatTarget?.$type;
                     const statType = s.StatNode?.UniqueStat?.StatType;
                     if (target === 'ActiveSkillStatTarget') {
@@ -145,7 +145,7 @@ export default function Skills() {
         const baseUrl = import.meta.env.BASE_URL;
         const versionPath = selectedVersion ? `${selectedVersion}/` : '';
         const textureBase = `${baseUrl}Texture2D/${versionPath}`;
-        
+
         if (ascensionLevel === 1) return `${textureBase}MegaSkillIcons.png`;
         if (ascensionLevel === 2) return `${textureBase}UltraSkillIcons.png`;
         if (ascensionLevel === 3) return `${textureBase}ApexSkillIcons.png`;
