@@ -4,6 +4,7 @@ import { Input } from '../components/UI/Input';
 import { Button } from '../components/UI/Button';
 import { Palette, Copy, Plus, Trash2 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useGameDataContext } from '../context/GameDataContext';
 
 interface ColorStop {
     id: number;
@@ -12,7 +13,9 @@ interface ColorStop {
 }
 
 export default function Colors() {
-    const [text, setText] = useState('1vcian.me/fm');
+    const { selectedVersion } = useGameDataContext();
+    const [text, setText] = useState("<sprite index=28''/>1vcian.me/fm<sprite index=28''/>");
+    const [isGradient, setIsGradient] = useState(true);
     const [startColor, setStartColor] = useState('#ff0000');
     const [startAlpha, setStartAlpha] = useState(255);
     const [endColor, setEndColor] = useState('#FFD700');
@@ -72,7 +75,7 @@ export default function Colors() {
     const tryShortenHex = (hex: string) => {
         const h = hex.replace('#', '').toLowerCase();
         if (h.length !== 6 && h.length !== 8) return h;
-        
+
         const pairs = h.match(/.{2}/g) || [];
         if (pairs.every(p => p[0] === p[1])) {
             return pairs.map(p => p[0]).join('');
@@ -134,27 +137,54 @@ export default function Colors() {
             { hex: endColor, alpha: endAlpha }
         ];
 
-        let segments: { text: string; isSpace: boolean }[] = [];
+        let segments: { text: string; isSpace: boolean; isSprite?: boolean; spriteIndex?: number }[] = [];
 
-        if (mode === 'chars') {
-            segments = text.split('').map(char => ({
-                text: char,
-                isSpace: /\s/.test(char)
-            }));
-        } else {
-            // Words
-            segments = text.split(/(\s+)/).map(part => ({
-                text: part,
-                isSpace: /^\s+$/.test(part)
-            })).filter(p => p.text.length > 0);
+        const parseSegments = (textPart: string) => {
+            if (mode === 'chars') {
+                return textPart.split('').map(char => ({
+                    text: char,
+                    isSpace: /\s/.test(char),
+                    isSprite: false,
+                    spriteIndex: undefined
+                }));
+            } else {
+                return textPart.split(/(\s+)/).map(part => ({
+                    text: part,
+                    isSpace: /^\s+$/.test(part),
+                    isSprite: false,
+                    spriteIndex: undefined
+                })).filter(p => p.text.length > 0);
+            }
+        };
+
+        const spriteRegex = /<sprite[^>]*>/gi;
+        let match;
+        let lastIndex = 0;
+
+        while ((match = spriteRegex.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                segments.push(...parseSegments(text.substring(lastIndex, match.index)));
+            }
+            const indexMatch = /index=['"]?(\d+)['"]?/.exec(match[0]);
+            segments.push({
+                text: match[0],
+                isSpace: false,
+                isSprite: true,
+                spriteIndex: indexMatch ? parseInt(indexMatch[1], 10) : undefined
+            });
+            lastIndex = spriteRegex.lastIndex;
         }
 
-        const colorStepsCount = segments.filter(s => !s.isSpace).length;
+        if (lastIndex < text.length) {
+            segments.push(...parseSegments(text.substring(lastIndex)));
+        }
+
+        const colorStepsCount = segments.filter(s => !s.isSpace && !s.isSprite).length;
         const gradientColors = getGradientColors(allColors, Math.max(colorStepsCount, 2));
 
         let colorIndex = 0;
         const resultItems = segments.map((seg) => {
-            if (seg.isSpace) {
+            if (seg.isSpace || seg.isSprite) {
                 return { ...seg, color: null };
             }
             const color = gradientColors[Math.min(colorIndex, gradientColors.length - 1)];
@@ -167,7 +197,19 @@ export default function Colors() {
         // Actually for simplicity, we treat previewHtml as a list of styled objects
 
         // Generate Code
+        if (!isGradient) {
+            let fullHex = startColor;
+            if (startAlpha < 255) {
+                fullHex += startAlpha.toString(16).padStart(2, '0');
+            }
+            const hex = useShortHex ? shortenHex(fullHex) : tryShortenHex(fullHex);
+            const code = `<#${hex}>` + segments.map(item => item.text).join('');
+            setGeneratedCode(code);
+            return;
+        }
+
         const code = resultItems.map(item => {
+            if (item.isSprite) return item.text;
             if (item.isSpace || !item.color) return item.text;
             const hex = useShortHex ? shortenHex(item.color) : tryShortenHex(item.color);
             return `<#${hex}>${item.text}`;
@@ -175,9 +217,7 @@ export default function Colors() {
 
         setGeneratedCode(code);
 
-        setGeneratedCode(code);
-
-    }, [text, startColor, startAlpha, endColor, endAlpha, middleColors, mode, getGradientColors, useShortHex]);
+    }, [text, startColor, startAlpha, endColor, endAlpha, middleColors, mode, getGradientColors, useShortHex, isGradient]);
 
     // Helpers for rendering
     const renderPreview = () => {
@@ -188,27 +228,80 @@ export default function Colors() {
             ...middleColors.map(c => ({ hex: c.hex, alpha: c.alpha })),
             { hex: endColor, alpha: endAlpha }
         ];
-        let segments: { text: string; isSpace: boolean }[] = [];
+        let segments: { text: string; isSpace: boolean; isSprite?: boolean; spriteIndex?: number }[] = [];
 
-        if (mode === 'chars') {
-            segments = text.split('').map(char => ({
-                text: char,
-                isSpace: /\s/.test(char)
-            }));
-        } else {
-            segments = text.split(/(\s+)/).map(part => ({
-                text: part,
-                isSpace: /^\s+$/.test(part)
-            })).filter(p => p.text.length > 0);
+        const parseSegments = (textPart: string) => {
+            if (mode === 'chars') {
+                return textPart.split('').map(char => ({
+                    text: char,
+                    isSpace: /\s/.test(char),
+                    isSprite: false,
+                    spriteIndex: undefined
+                }));
+            } else {
+                return textPart.split(/(\s+)/).map(part => ({
+                    text: part,
+                    isSpace: /^\s+$/.test(part),
+                    isSprite: false,
+                    spriteIndex: undefined
+                })).filter(p => p.text.length > 0);
+            }
+        };
+
+        const spriteRegex = /<sprite[^>]*>/gi;
+        let match;
+        let lastIndex = 0;
+
+        while ((match = spriteRegex.exec(text)) !== null) {
+            if (match.index > lastIndex) {
+                segments.push(...parseSegments(text.substring(lastIndex, match.index)));
+            }
+            const indexMatch = /index=['"]?(\d+)['"]?/.exec(match[0]);
+            segments.push({
+                text: match[0],
+                isSpace: false,
+                isSprite: true,
+                spriteIndex: indexMatch ? parseInt(indexMatch[1], 10) : undefined
+            });
+            lastIndex = spriteRegex.lastIndex;
         }
 
-        const colorStepsCount = segments.filter(s => !s.isSpace).length;
+        if (lastIndex < text.length) {
+            segments.push(...parseSegments(text.substring(lastIndex)));
+        }
+
+        const colorStepsCount = segments.filter(s => !s.isSpace && !s.isSprite).length;
         const gradientColors = getGradientColors(allColors, Math.max(colorStepsCount, 2));
 
         let colorIndex = 0;
         return segments.map((seg, idx) => {
+            if (seg.isSprite && seg.spriteIndex !== undefined) {
+                const gridIdx = seg.spriteIndex >= 25 ? seg.spriteIndex + 3 : seg.spriteIndex;
+                return (
+                    <span
+                        key={idx}
+                        style={{
+                            display: 'inline-block',
+                            width: '1.2em',
+                            height: '1.2em',
+                            verticalAlign: 'text-bottom',
+                            backgroundImage: `url('/Texture2D/${selectedVersion}/Icons.png')`,
+                            backgroundSize: '800% 800%',
+                            backgroundPosition: `${(gridIdx % 8) * (100 / 7)}% ${Math.floor(gridIdx / 8) * (100 / 7)}%`
+                        }}
+                        title={seg.text}
+                    />
+                );
+            }
+            if (seg.isSprite) {
+                // Return text for sprite tags without index (e.g. name="gem") so they are visible in preview but untouched by colors
+                return <span key={idx} className="text-accent-secondary opacity-80">{seg.text}</span>;
+            }
             if (seg.isSpace) {
                 return <span key={idx}>{seg.text}</span>;
+            }
+            if (!isGradient) {
+                return <span key={idx} style={{ color: startColor, opacity: startAlpha / 255 }}>{seg.text}</span>;
             }
             const color = gradientColors[Math.min(colorIndex, gradientColors.length - 1)];
             // Apply opacity via styles too
@@ -248,28 +341,54 @@ export default function Colors() {
                             />
 
                             <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-text-muted">Gradient Mode</label>
+                                <label className="text-sm font-medium text-text-muted">Color Mode</label>
                                 <div className="flex bg-bg-input rounded-lg p-1 border border-border">
                                     <button
-                                        onClick={() => setMode('chars')}
+                                        onClick={() => setIsGradient(false)}
                                         className={cn(
                                             "flex-1 py-1.5 text-sm rounded-md transition-all",
-                                            mode === 'chars' ? "bg-accent-primary text-black font-bold shadow-glow" : "text-text-muted hover:text-text-primary"
+                                            !isGradient ? "bg-accent-primary text-black font-bold shadow-glow" : "text-text-muted hover:text-text-primary"
                                         )}
                                     >
-                                        By Character
+                                        Solid Color
                                     </button>
                                     <button
-                                        onClick={() => setMode('words')}
+                                        onClick={() => setIsGradient(true)}
                                         className={cn(
                                             "flex-1 py-1.5 text-sm rounded-md transition-all",
-                                            mode === 'words' ? "bg-accent-primary text-black font-bold shadow-glow" : "text-text-muted hover:text-text-primary"
+                                            isGradient ? "bg-accent-primary text-black font-bold shadow-glow" : "text-text-muted hover:text-text-primary"
                                         )}
                                     >
-                                        By Word
+                                        Gradient
                                     </button>
                                 </div>
                             </div>
+
+                            {isGradient && (
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium text-text-muted">Gradient Mode</label>
+                                    <div className="flex bg-bg-input rounded-lg p-1 border border-border">
+                                        <button
+                                            onClick={() => setMode('chars')}
+                                            className={cn(
+                                                "flex-1 py-1.5 text-sm rounded-md transition-all",
+                                                mode === 'chars' ? "bg-accent-primary text-black font-bold shadow-glow" : "text-text-muted hover:text-text-primary"
+                                            )}
+                                        >
+                                            By Character
+                                        </button>
+                                        <button
+                                            onClick={() => setMode('words')}
+                                            className={cn(
+                                                "flex-1 py-1.5 text-sm rounded-md transition-all",
+                                                mode === 'words' ? "bg-accent-primary text-black font-bold shadow-glow" : "text-text-muted hover:text-text-primary"
+                                            )}
+                                        >
+                                            By Word
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="flex items-center justify-between pt-2">
                                 <div className="flex flex-col">
@@ -295,9 +414,11 @@ export default function Colors() {
                     <Card>
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="font-semibold text-accent-primary">Colors</h2>
-                            <Button size="sm" variant="outline" onClick={addMiddleColor} className="h-8 text-xs gap-1">
-                                <Plus className="w-3 h-3" /> Add Stop
-                            </Button>
+                            {isGradient && (
+                                <Button size="sm" variant="outline" onClick={addMiddleColor} className="h-8 text-xs gap-1">
+                                    <Plus className="w-3 h-3" /> Add Stop
+                                </Button>
+                            )}
                         </div>
 
                         <div className="space-y-3">
@@ -315,7 +436,7 @@ export default function Colors() {
                                         onChange={(e) => setStartColor(e.target.value)}
                                         className="flex-1 font-mono"
                                     />
-                                    <span className="text-xs text-text-muted w-16 text-right font-bold">Start</span>
+                                    <span className="text-xs text-text-muted w-16 text-right font-bold">{isGradient ? 'Start' : 'Color'}</span>
                                 </div>
                                 <div className="flex items-center gap-3 px-1">
                                     <input
@@ -331,7 +452,7 @@ export default function Colors() {
                             </div>
 
                             {/* Middle */}
-                            {middleColors.map((c) => (
+                            {isGradient && middleColors.map((c) => (
                                 <div key={c.id} className="flex flex-col gap-3 p-3 rounded-lg bg-bg-secondary/30 border border-border/50">
                                     <div className="flex items-center gap-3">
                                         <input
@@ -367,33 +488,35 @@ export default function Colors() {
                             ))}
 
                             {/* End */}
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="color"
-                                        value={endColor}
-                                        onChange={(e) => setEndColor(e.target.value)}
-                                        className="w-10 h-10 rounded cursor-pointer bg-transparent border-none p-0"
-                                    />
-                                    <Input
-                                        value={endColor}
-                                        onChange={(e) => setEndColor(e.target.value)}
-                                        className="flex-1 font-mono"
-                                    />
-                                    <span className="text-xs text-text-muted w-16 text-right font-bold">End</span>
+                            {isGradient && (
+                                <div className="flex flex-col gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="color"
+                                            value={endColor}
+                                            onChange={(e) => setEndColor(e.target.value)}
+                                            className="w-10 h-10 rounded cursor-pointer bg-transparent border-none p-0"
+                                        />
+                                        <Input
+                                            value={endColor}
+                                            onChange={(e) => setEndColor(e.target.value)}
+                                            className="flex-1 font-mono"
+                                        />
+                                        <span className="text-xs text-text-muted w-16 text-right font-bold">End</span>
+                                    </div>
+                                    <div className="flex items-center gap-3 px-1">
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max="255"
+                                            value={endAlpha}
+                                            onChange={(e) => setEndAlpha(parseInt(e.target.value))}
+                                            className="flex-1 h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                                        />
+                                        <span className="text-[10px] font-mono w-8 text-right text-text-muted">{Math.round((endAlpha / 255) * 100)}%</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3 px-1">
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max="255"
-                                        value={endAlpha}
-                                        onChange={(e) => setEndAlpha(parseInt(e.target.value))}
-                                        className="flex-1 h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
-                                    />
-                                    <span className="text-[10px] font-mono w-8 text-right text-text-muted">{Math.round((endAlpha / 255) * 100)}%</span>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </Card>
                 </div>
@@ -432,6 +555,34 @@ export default function Colors() {
                             <Button onClick={copyToClipboard} className="gap-2">
                                 <Copy className="w-4 h-4" /> Copy Code
                             </Button>
+                        </div>
+                    </Card>
+
+                    <Card>
+                        <h2 className="font-semibold mb-4 text-accent-primary">Available Icons</h2>
+                        <div className="flex flex-wrap gap-2 max-h-[300px] overflow-y-auto p-2 bg-bg-secondary/50 rounded-lg border border-border">
+                            {Array.from({ length: 32 }).map((_, i) => {
+                                const gridIdx = i >= 25 ? i + 3 : i;
+                                return (
+                                    <button
+                                        key={i}
+                                        onClick={() => setText(prev => prev + `<sprite index=${i}''>`)}
+                                        className="w-10 h-10 aspect-square flex items-center justify-center rounded bg-bg-input/50 hover:bg-bg-input transition-colors border border-transparent hover:border-accent-primary p-1"
+                                        title={`Sprite Index ${i}`}
+                                    >
+                                        <span
+                                            style={{
+                                                display: 'inline-block',
+                                                width: '100%',
+                                                height: '100%',
+                                                backgroundImage: `url('/Texture2D/${selectedVersion}/Icons.png')`,
+                                                backgroundSize: '800% 800%',
+                                                backgroundPosition: `${(gridIdx % 8) * (100 / 7)}% ${Math.floor(gridIdx / 8) * (100 / 7)}%`
+                                            }}
+                                        />
+                                    </button>
+                                );
+                            })}
                         </div>
                     </Card>
                 </div>
