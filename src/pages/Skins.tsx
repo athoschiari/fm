@@ -246,7 +246,7 @@ export default function Skins() {
                                     <SkinCard
                                         key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                         skin={skin}
-                                        bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
+                                        bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
                                         windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
                                         duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
                                         onShowBreakpoints={(w, d) => setBreakpointModal({
@@ -273,7 +273,7 @@ export default function Skins() {
                             <SkinCard
                                 key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                 skin={skin}
-                                bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
+                                bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
                                 windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
                                 duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
                                 onShowBreakpoints={(w, d) => setBreakpointModal({

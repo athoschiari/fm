@@ -264,7 +264,7 @@ export function ItemSelectionCard({
                                         Idx: (item as ItemSlot).skin!.idx,
                                         Type: (item as ItemSlot).skin!.type || slotKey
                                     }
-                                }, spriteMapping?.skins?.mapping)}
+                                }, spriteMapping?.skins?.mapping, selectedVersion)}
                             />
                         </div>
                     </div>
@@ -274,7 +274,7 @@ export function ItemSelectionCard({
             {/* Item Name */}
             <div className="w-full px-1 min-h-[1.5em] flex items-center justify-center mt-1">
                 <span className={cn(
-                    "font-bold text-center leading-tight select-none",
+                    "font-bold text-center leading-tight select-none text-text-primary",
                     isCompact ? (itemName.length > 20 ? "text-[8px]" : "text-[9px]") : (itemName.length > 20 ? "text-[9px]" : "text-[10px]")
                 )}>
                     {itemName}

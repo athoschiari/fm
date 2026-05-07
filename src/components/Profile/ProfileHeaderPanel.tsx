@@ -5,8 +5,9 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
-import { Pencil, Check, X } from 'lucide-react';
+import { Pencil, Check, X, Trophy } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useSkinSets } from '../../hooks/useSkinSets';
 
 // CardIcons.png is 8x8 spritesheet with offset
 const ICONS_PER_ROW = 8;
@@ -101,6 +102,7 @@ function IconSelectorModal({ isOpen, onClose, onSelect, currentIndex }: IconSele
 
 export function ProfileHeaderPanel() {
     const { profile, renameProfile, setProfileIcon, isNameTaken } = useProfile();
+    const { sets } = useSkinSets();
     const [isEditing, setIsEditing] = useState(false);
     const [editName, setEditName] = useState(profile.name);
     const [nameError, setNameError] = useState('');
@@ -200,6 +202,20 @@ export function ProfileHeaderPanel() {
                     <p className="text-sm text-text-muted mt-1">
                         Click the icon to change it
                     </p>
+                    
+                    {/* Skin Set Summary */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                        {sets.filter(s => s.isComplete).map(set => (
+                            <div 
+                                key={set.setId}
+                                className="flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/30 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.05)] animate-in fade-in zoom-in duration-500"
+                                title={`${set.setId.replace(/Set$/, '')} Set Complete!`}
+                            >
+                                <Trophy className="w-3 h-3" />
+                                <span>{set.setId.replace(/Set$/, '')}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 

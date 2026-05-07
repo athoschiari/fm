@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Trash2, Save, Info, X, Search, Grid, Settings, Bookmark, Unlock } from 'lucide-react';
 
@@ -18,6 +18,8 @@ import { getAscensionTexturePath } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 
 type MobileTab = 'rarity' | 'pets' | 'config';
+type SortField = 'level' | 'name' | 'rarity' | 'perfection';
+type SortOrder = 'asc' | 'desc';
 
 interface PetSelectorModalProps {
     isOpen: boolean;
@@ -54,6 +56,10 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
     const { profile, updateNestedProfile } = useProfile();
 
+    // Ref to break circular dependency in auto-sync effect
+    const savedBuildsRef = useRef(profile.pets.savedBuilds);
+    savedBuildsRef.current = profile.pets.savedBuilds;
+
     const [activeTab, setActiveTab] = useState<'library' | 'saved'>('library');
     const [mobileTab, setMobileTab] = useState<MobileTab>('rarity');
     const [selectedRarity, setSelectedRarity] = useState<string>('Common');
@@ -61,30 +67,99 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
     const [petLevel, setPetLevel] = useState<number>(1);
     const [manualStats, setManualStats] = useState<{ statId: string; value: number }[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSavedIndex, setSelectedSavedIndex] = useState<number | null>(null);
+
+    // Saved Builds Sorting
+    const [savedSortField, setSavedSortField] = useState<SortField>('level');
+    const [savedSortOrder, setSavedSortOrder] = useState<SortOrder>('desc');
+
+    // Advanced Filters
+    const [filterRarities, setFilterRarities] = useState<string[]>([]);
+    const [minPerfection, setMinPerfection] = useState<number>(0);
+    const [filterStats, setFilterStats] = useState<string[]>([]);
+    const [showFilters, setShowFilters] = useState(false);
+
+    const petsConfig = spriteMapping?.pets;
 
     // Reset state when opening or populate from currentPet
     useEffect(() => {
         if (isOpen) {
             if (currentPet) {
+                // Try to find if it's a saved one
+                const savedIdx = profile.pets.savedBuilds.findIndex(p => 
+                    p.id === currentPet.id && 
+                    p.rarity === currentPet.rarity && 
+                    JSON.stringify(p.secondaryStats) === JSON.stringify(currentPet.secondaryStats)
+                );
+                
+                if (savedIdx !== -1) {
+                    setSelectedSavedIndex(savedIdx);
+                    setActiveTab('saved');
+                } else {
+                    setSelectedSavedIndex(null);
+                    setActiveTab('library');
+                }
+
                 setSelectedRarity(currentPet.rarity);
                 setSelectedPetId(currentPet.id);
                 setPetLevel(currentPet.level);
                 setManualStats(currentPet.secondaryStats || []);
             } else {
+                setSelectedSavedIndex(null);
                 setSelectedRarity('Common');
                 setSelectedPetId(null);
                 setPetLevel(1);
                 setManualStats([]);
+                setActiveTab('library');
             }
             setSearchTerm('');
             setMobileTab('rarity');
-            // Default to library tab unless editing
-            if (!currentPet) setActiveTab('library');
             if (context === 'pvp') setActiveTab('library');
         }
     }, [isOpen, currentPet, context]);
 
-    const petsConfig = spriteMapping?.pets;
+    // Auto-sync for saved pets (uses ref to avoid re-triggering on savedBuilds change)
+    useEffect(() => {
+        if (!isOpen) return;
+        if (selectedSavedIndex !== null) {
+            const currentSaved = savedBuildsRef.current;
+            const savedPet = currentSaved[selectedSavedIndex];
+            if (savedPet) {
+                const updatedPet: PetSlot = {
+                    ...savedPet,
+                    level: petLevel,
+                    secondaryStats: manualStats
+                };
+
+                const hasChanged = 
+                    savedPet.level !== updatedPet.level ||
+                    JSON.stringify(savedPet.secondaryStats) !== JSON.stringify(updatedPet.secondaryStats);
+
+                if (hasChanged) {
+                    const newSaved = [...currentSaved];
+                    newSaved[selectedSavedIndex] = updatedPet;
+
+                    // Also propagate to active pets if this saved pet is currently equipped
+                    const activePets = profile.pets.active;
+                    let updatedActive: PetSlot[] | null = null;
+                    activePets.forEach((ap, i) => {
+                        if (ap.id === savedPet.id && ap.rarity === savedPet.rarity &&
+                            ap.level === savedPet.level &&
+                            JSON.stringify(ap.secondaryStats) === JSON.stringify(savedPet.secondaryStats)) {
+                            if (!updatedActive) updatedActive = [...activePets];
+                            updatedActive![i] = updatedPet;
+                        }
+                    });
+
+                    updateNestedProfile('pets', {
+                        savedBuilds: newSaved,
+                        ...(updatedActive ? { active: updatedActive } : {})
+                    });
+                }
+            }
+        }
+    }, [petLevel, manualStats, activeTab, selectedSavedIndex, updateNestedProfile, profile.pets.active]);
+
 
     const filteredPets = useMemo(() => {
         if (!petsConfig?.mapping) return [];
@@ -151,6 +226,74 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
         }
         return count > 0 ? totalPercent / count : null;
     };
+
+    const sortedSavedBuilds = useMemo(() => {
+        const base = profile.pets.savedBuilds || [];
+        let filtered = base;
+        
+        // Search Filter
+        if (searchTerm.trim()) {
+            const q = searchTerm.toLowerCase();
+            filtered = filtered.filter(p => {
+                const petInfo = petsConfig?.mapping ? 
+                    Object.values(petsConfig.mapping).find((v: any) => v.id === p.id && v.rarity === p.rarity) as any 
+                    : null;
+                const name = p.customName || petInfo?.name || `Pet #${p.id}`;
+                return name.toLowerCase().includes(q);
+            });
+        }
+
+        // Rarity Filter
+        if (filterRarities.length > 0) {
+            filtered = filtered.filter(p => filterRarities.includes(p.rarity));
+        }
+
+        // Perfection Filter
+        if (minPerfection > 0) {
+            filtered = filtered.filter(p => (getPerfection(p) || 0) >= minPerfection);
+        }
+
+        // Stats Filter
+        if (filterStats.length > 0) {
+            filtered = filtered.filter(p => 
+                filterStats.some(sId => p.secondaryStats?.some(s => s.statId === sId))
+            );
+        }
+
+        return [...filtered].sort((a, b) => {
+            let valA: any;
+            let valB: any;
+
+            switch (savedSortField) {
+                case 'level':
+                    valA = a.level;
+                    valB = b.level;
+                    break;
+                case 'name':
+                    const petInfoA = petsConfig?.mapping ? Object.values(petsConfig.mapping).find((v: any) => v.id === a.id && v.rarity === a.rarity) as any : null;
+                    const petInfoB = petsConfig?.mapping ? Object.values(petsConfig.mapping).find((v: any) => v.id === b.id && v.rarity === b.rarity) as any : null;
+                    valA = a.customName || petInfoA?.name || `Pet #${a.id}`;
+                    valB = b.customName || petInfoB?.name || `Pet #${b.id}`;
+                    break;
+                case 'rarity':
+                    valA = RARITIES.indexOf(a.rarity);
+                    valB = RARITIES.indexOf(b.rarity);
+                    break;
+                case 'perfection':
+                    valA = getPerfection(a);
+                    valB = getPerfection(b);
+                    break;
+                default:
+                    valA = a.id;
+                    valB = b.id;
+            }
+
+            if (typeof valA === 'string') {
+                return savedSortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            return savedSortOrder === 'asc' ? valA - valB : valB - valA;
+        });
+    }, [profile.pets.savedBuilds, searchTerm, savedSortField, savedSortOrder, filterRarities, minPerfection, filterStats, petsConfig, secondaryStatLibrary]);
 
     const handleAddStat = () => {
         if (manualStats.length < maxSecondaryStats) {
@@ -410,11 +553,12 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                             key={pet.id}
                                             onClick={() => {
                                                 setSelectedPetId(pet.id);
+                                                setSelectedSavedIndex(null);
                                                 setMobileTab('config');
                                             }}
                                             className={cn(
                                                 "relative aspect-square rounded-xl border-2 transition-all p-2 flex flex-col items-center justify-center gap-1 group overflow-hidden bg-bg-secondary/40",
-                                                selectedPetId === pet.id
+                                                selectedPetId === pet.id && activeTab === 'library'
                                                     ? `border-rarity-${selectedRarity.toLowerCase()} shadow-lg shadow-rarity-${selectedRarity.toLowerCase()}/20`
                                                     : "border-border hover:border-white/20"
                                             )}
@@ -451,21 +595,122 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                 </div>
                             )
                         ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {profile.pets.savedBuilds && profile.pets.savedBuilds.length > 0 ? (
-                                    profile.pets.savedBuilds
-                                        .filter(saved => !searchTerm || (saved.customName || `Pet #${saved.id}`).toLowerCase().includes(searchTerm.toLowerCase()))
-                                        .map((savedPet, idx) => {
+                            <div className="space-y-4">
+                                <div className="flex flex-col gap-3 mb-4 bg-bg-secondary/40 p-3 rounded-xl border border-border/50">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <div className="flex items-center gap-1 bg-bg-input rounded-lg p-1 border border-border">
+                                                <select
+                                                    value={savedSortField}
+                                                    onChange={(e) => setSavedSortField(e.target.value as SortField)}
+                                                    className="bg-transparent text-[10px] font-black uppercase tracking-wider px-2 py-1 outline-none cursor-pointer text-text-primary"
+                                                >
+                                                    {(['level', 'name', 'rarity', 'perfection'] as SortField[]).map(field => (
+                                                        <option key={field} value={field} className="bg-bg-secondary text-text-primary">
+                                                            {field}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 w-8 p-0"
+                                                onClick={() => setSavedSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                            >
+                                                {savedSortOrder === 'asc' ? '↑' : '↓'}
+                                            </Button>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setShowFilters(!showFilters)}
+                                            className={cn("h-8 gap-2 text-[10px] font-black uppercase tracking-wider ml-auto md:ml-0", showFilters && "text-accent-primary bg-accent-primary/10")}
+                                        >
+                                            <Settings className="w-3.5 h-3.5" />
+                                            Filters {(filterRarities.length > 0 || minPerfection > 0 || filterStats.length > 0) && `(${(filterRarities.length > 0 ? 1 : 0) + (minPerfection > 0 ? 1 : 0) + (filterStats.length > 0 ? 1 : 0)})`}
+                                        </Button>
+                                    </div>
+
+                                    {showFilters && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border/30 animate-in fade-in slide-in-from-top-1">
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black text-text-muted uppercase tracking-widest">Rarity</label>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {RARITIES.map(rarity => (
+                                                        <button
+                                                            key={rarity}
+                                                            onClick={() => setFilterRarities(prev => prev.includes(rarity) ? prev.filter(r => r !== rarity) : [...prev, rarity])}
+                                                            className={cn(
+                                                                "px-2 py-0.5 rounded text-[9px] font-bold border transition-all",
+                                                                filterRarities.includes(rarity)
+                                                                    ? `bg-rarity-${rarity.toLowerCase()}/20 border-rarity-${rarity.toLowerCase()} text-rarity-${rarity.toLowerCase()}`
+                                                                    : "bg-bg-input border-border text-text-muted hover:border-border/80"
+                                                            )}
+                                                        >
+                                                            {rarity}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[9px] font-black text-text-muted uppercase tracking-widest">Min Perfection: {minPerfection}%</label>
+                                                <input
+                                                    type="range"
+                                                    min="0"
+                                                    max="100"
+                                                    value={minPerfection}
+                                                    onChange={(e) => setMinPerfection(parseInt(e.target.value))}
+                                                    className="w-full h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                                                />
+                                            </div>
+                                            <div className="space-y-2 md:col-span-2">
+                                                <label className="text-[9px] font-black text-text-muted uppercase tracking-widest">Required Stats (Multiselect)</label>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {STAT_TYPES.map(statId => (
+                                                        <button
+                                                            key={statId}
+                                                            onClick={() => setFilterStats(prev => prev.includes(statId) ? prev.filter(s => s !== statId) : [...prev, statId])}
+                                                            className={cn(
+                                                                "px-2 py-1 rounded-md text-[9px] font-bold border transition-all",
+                                                                filterStats.includes(statId)
+                                                                    ? "bg-accent-primary/20 border-accent-primary text-accent-primary"
+                                                                    : "bg-bg-input border-border text-text-muted hover:border-border/80"
+                                                            )}
+                                                        >
+                                                            {getStatName(statId)}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {(filterRarities.length > 0 || minPerfection > 0 || filterStats.length > 0) && (
+                                                <button
+                                                    onClick={() => { setFilterRarities([]); setMinPerfection(0); setFilterStats([]); }}
+                                                    className="md:col-span-2 text-[9px] font-black text-red-400 hover:text-red-300 uppercase tracking-widest text-center py-1"
+                                                >
+                                                    Clear All Filters
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {sortedSavedBuilds.length > 0 ? (
+                                        sortedSavedBuilds.map((savedPet, sIdx) => {
+                                            // Find real index in profile for deletion
+                                            const originalIdx = profile.pets.savedBuilds.indexOf(savedPet);
+                                            
                                             const spriteInfo = petsConfig?.mapping ?
                                                 Object.entries(petsConfig.mapping).find(([_, v]: [any, any]) => v.id === savedPet.id && v.rarity === savedPet.rarity)
                                                 : null;
 
                                             const spriteIndex = spriteInfo ? parseInt(spriteInfo[0]) : 0;
-                                            const isSelected = selectedPetId === savedPet.id && selectedRarity === savedPet.rarity && JSON.stringify(manualStats) === JSON.stringify(savedPet.secondaryStats);
+                                            const isSelected = selectedSavedIndex === originalIdx;
 
                                             return (
                                                 <ItemSelectionCard
-                                                    key={idx}
+                                                    key={originalIdx}
                                                     item={savedPet}
                                                     slotKey="pet-saved"
                                                     slotLabel="Saved Pet"
@@ -482,13 +727,18 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                         setSelectedPetId(savedPet.id);
                                                         setPetLevel(savedPet.level);
                                                         setManualStats(savedPet.secondaryStats || []);
+                                                        setSelectedSavedIndex(originalIdx);
                                                         setMobileTab('config');
                                                     }}
                                                     onDelete={(e) => {
                                                         e.stopPropagation();
                                                         const newSaved = [...(profile.pets.savedBuilds || [])];
-                                                        newSaved.splice(idx, 1);
+                                                        newSaved.splice(originalIdx, 1);
                                                         updateNestedProfile('pets', { savedBuilds: newSaved });
+                                                        if (selectedSavedIndex === originalIdx) {
+                                                            setSelectedSavedIndex(null);
+                                                            setSelectedPetId(null);
+                                                        }
                                                     }}
                                                     renderIcon={() => (
                                                         <SpriteSheetIcon
@@ -504,13 +754,14 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                                 />
                                             );
                                         })
-                                ) : (
-                                    <div className="col-span-full flex flex-col items-center justify-center py-20 text-text-muted">
-                                        <Bookmark className="w-12 h-12 opacity-20 mb-4" />
-                                        <p className="font-bold">No saved pets</p>
-                                        <p className="text-xs opacity-60">Presets will appear here after you save them in the main panel</p>
-                                    </div>
-                                )}
+                                    ) : (
+                                        <div className="col-span-full flex flex-col items-center justify-center py-20 text-text-muted">
+                                            <Bookmark className="w-12 h-12 opacity-20 mb-4" />
+                                            <p className="font-bold">{searchTerm ? 'No results found' : 'No saved pets'}</p>
+                                            <p className="text-xs opacity-60">Presets will appear here after you save them in the main panel</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -522,6 +773,31 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                     )}>
                         {selectedPetId !== null ? (
                             <>
+                                {/* Custom Name for Presets */}
+                                {activeTab === 'saved' && selectedSavedIndex !== null && (
+                                    <div className="space-y-2 mb-2">
+                                        <label className="text-[10px] font-bold text-text-muted block uppercase tracking-widest">Preset Name</label>
+                                        <div className="relative group">
+                                            <input
+                                                value={profile.pets.savedBuilds[selectedSavedIndex]?.customName || ''}
+                                                onChange={(e) => {
+                                                    const newSaved = [...profile.pets.savedBuilds];
+                                                    if (newSaved[selectedSavedIndex]) {
+                                                        newSaved[selectedSavedIndex] = {
+                                                            ...newSaved[selectedSavedIndex],
+                                                            customName: e.target.value
+                                                        };
+                                                        updateNestedProfile('pets', { savedBuilds: newSaved });
+                                                    }
+                                                }}
+                                                placeholder="Set a custom name..."
+                                                className="w-full bg-bg-input/50 border border-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-accent-primary transition-all pr-10"
+                                            />
+                                            <Settings className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted opacity-30 group-hover:opacity-60 transition-opacity" />
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Item Preview */}
                                 <div className="text-center">
                                     <div

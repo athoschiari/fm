@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, Info, Plus, Trash2, Grid, Settings, Bookmark, Search, Unlock } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSlot } from '../../types/Profile';
 import { Button } from '../UI/Button';
+import { Input } from '../UI/Input';
 
 import { ModalLevelSelector } from '../UI/ModalLevelSelector';
 import { SecondaryStatCard } from '../UI/SecondaryStatCard';
@@ -17,6 +18,8 @@ import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { useGameDataContext } from '../../context/GameDataContext';
 
 type MobileTab = 'rarity' | 'mounts' | 'config';
+type SortField = 'level' | 'name' | 'rarity' | 'perfection';
+type SortOrder = 'asc' | 'desc';
 
 interface MountSelectorModalProps {
     isOpen: boolean;
@@ -38,6 +41,11 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
     const { data: mountUpgradeLib } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
     const { profile, updateNestedProfile } = useProfile();
+
+    // Ref to break circular dependency in auto-sync effect
+    const savedBuildsRef = useRef(profile.mount.savedBuilds);
+    savedBuildsRef.current = profile.mount.savedBuilds;
+
     const { data: petUnlockLib } = useGameData<any>('SecondaryStatPetUnlockLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
     const { selectedVersion } = useGameDataContext();
@@ -49,27 +57,54 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
     const [mountLevel, setMountLevel] = useState<number>(1);
     const [manualStats, setManualStats] = useState<{ statId: string; value: number }[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedSavedIndex, setSelectedSavedIndex] = useState<number | null>(null);
+
+    // Saved Builds Sorting
+    const [savedSortField, setSavedSortField] = useState<SortField>('level');
+    const [savedSortOrder, setSavedSortOrder] = useState<SortOrder>('desc');
+
+    // Advanced Filters
+    const [filterRarities, setFilterRarities] = useState<string[]>([]);
+    const [minPerfection, setMinPerfection] = useState<number>(0);
+    const [filterStats, setFilterStats] = useState<string[]>([]);
+    const [showFilters, setShowFilters] = useState(false);
 
     // Reset state when opening or populate from currentMount
     useEffect(() => {
         if (isOpen) {
             if (currentMount) {
+                // Try to find if it's a saved one
+                const savedIdx = profile.mount.savedBuilds.findIndex(m => 
+                    m.id === currentMount.id && 
+                    m.rarity === currentMount.rarity && 
+                    JSON.stringify(m.secondaryStats) === JSON.stringify(currentMount.secondaryStats)
+                );
+
+                if (savedIdx !== -1) {
+                    setSelectedSavedIndex(savedIdx);
+                    setActiveTab('saved');
+                } else {
+                    setSelectedSavedIndex(null);
+                    setActiveTab('library');
+                }
+
                 setSelectedRarity(currentMount.rarity);
                 setSelectedMountId(currentMount.id);
                 setMountLevel(currentMount.level);
                 setManualStats(currentMount.secondaryStats || []);
             } else {
+                setSelectedSavedIndex(null);
                 setSelectedRarity('Common');
                 setSelectedMountId(null);
                 setMountLevel(1);
                 setManualStats([]);
+                setActiveTab('library');
             }
             setSearchTerm('');
-            if (!currentMount) setActiveTab('library');
             if (context === 'pvp') setActiveTab('library');
             setMobileTab('mounts');
         }
-    }, [isOpen, currentMount, context]);
+    }, [isOpen, currentMount, context, profile.mount.savedBuilds]);
 
     const maxSlots = useMemo(() => {
         const currentAsc = mountAscensionLevel !== undefined ? mountAscensionLevel : (profile.misc.mountAscensionLevel || 0);
@@ -149,7 +184,116 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
 
     const removeStat = (index: number) => setManualStats(manualStats.filter((_, i) => i !== index));
 
+    // Auto-sync for saved mounts (uses ref to avoid re-triggering on savedBuilds change)
+    useEffect(() => {
+        if (!isOpen) return;
+        if (selectedSavedIndex !== null) {
+            const currentSaved = savedBuildsRef.current;
+            const savedMount = currentSaved[selectedSavedIndex];
+            if (savedMount) {
+                const updatedMount: MountSlot = {
+                    ...savedMount,
+                    level: mountLevel,
+                    secondaryStats: manualStats
+                };
+
+                const hasChanged = 
+                    savedMount.level !== updatedMount.level ||
+                    JSON.stringify(savedMount.secondaryStats) !== JSON.stringify(updatedMount.secondaryStats);
+
+                if (hasChanged) {
+                    const newSaved = [...currentSaved];
+                    newSaved[selectedSavedIndex] = updatedMount;
+
+                    // Also propagate to active mount if this saved mount is currently equipped
+                    const activeMount = profile.mount.active;
+                    let updatedActive: MountSlot | null = null;
+                    if (activeMount &&
+                        activeMount.id === savedMount.id && activeMount.rarity === savedMount.rarity &&
+                        activeMount.level === savedMount.level &&
+                        JSON.stringify(activeMount.secondaryStats) === JSON.stringify(savedMount.secondaryStats)) {
+                        updatedActive = updatedMount;
+                    }
+
+                    updateNestedProfile('mount', {
+                        savedBuilds: newSaved,
+                        ...(updatedActive ? { active: updatedActive } : {})
+                    });
+                }
+            }
+        }
+    }, [mountLevel, manualStats, activeTab, selectedSavedIndex, updateNestedProfile, profile.mount.active]);
+
     const mountsConfig = spriteMapping?.mounts;
+
+    const sortedSavedBuilds = useMemo(() => {
+        const base = profile.mount.savedBuilds || [];
+        let filtered = base;
+
+        // Search Filter
+        if (searchTerm.trim()) {
+            const q = searchTerm.toLowerCase();
+            filtered = filtered.filter(m => {
+                const mountInfo = mountsConfig?.mapping ? 
+                    Object.values(mountsConfig.mapping).find((v: any) => v.id === m.id && v.rarity === m.rarity) as any 
+                    : null;
+                const name = m.customName || mountInfo?.name || `Mount #${m.id}`;
+                return name.toLowerCase().includes(q);
+            });
+        }
+
+        // Rarity Filter
+        if (filterRarities.length > 0) {
+            filtered = filtered.filter(m => filterRarities.includes(m.rarity));
+        }
+
+        // Perfection Filter
+        if (minPerfection > 0) {
+            filtered = filtered.filter(m => (getPerfection(m) || 0) >= minPerfection);
+        }
+
+        // Stats Filter
+        if (filterStats.length > 0) {
+            filtered = filtered.filter(m => 
+                filterStats.some(sId => m.secondaryStats?.some(s => s.statId === sId))
+            );
+        }
+
+        return [...filtered].sort((a, b) => {
+            let valA: any;
+            let valB: any;
+
+            switch (savedSortField) {
+                case 'level':
+                    valA = a.level;
+                    valB = b.level;
+                    break;
+                case 'name':
+                    const mountInfoA = mountsConfig?.mapping ? Object.values(mountsConfig.mapping).find((v: any) => v.id === a.id && v.rarity === a.rarity) as any : null;
+                    const mountInfoB = mountsConfig?.mapping ? Object.values(mountsConfig.mapping).find((v: any) => v.id === b.id && v.rarity === b.rarity) as any : null;
+                    valA = a.customName || mountInfoA?.name || `Mount #${a.id}`;
+                    valB = b.customName || mountInfoB?.name || `Mount #${b.id}`;
+                    break;
+                case 'rarity':
+                    valA = RARITIES.indexOf(a.rarity);
+                    valB = RARITIES.indexOf(b.rarity);
+                    break;
+                case 'perfection':
+                    valA = getPerfection(a);
+                    valB = getPerfection(b);
+                    break;
+                default:
+                    valA = a.id;
+                    valB = b.id;
+            }
+
+            if (typeof valA === 'string') {
+                return savedSortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            return savedSortOrder === 'asc' ? valA - valB : valB - valA;
+        });
+    }, [profile.mount.savedBuilds, searchTerm, savedSortField, savedSortOrder, filterRarities, minPerfection, filterStats, mountsConfig, secondaryStatLibrary]);
+
     const filteredMounts = useMemo(() => {
         if (!mountsConfig?.mapping) return [];
         return Object.entries(mountsConfig.mapping)
@@ -351,57 +495,155 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                             key={mount.id}
                                             onClick={() => {
                                                 setSelectedMountId(mount.id);
+                                                setSelectedSavedIndex(null);
                                                 setMobileTab('config');
                                             }}
                                             className={cn(
-                                                "relative aspect-square rounded-xl border-2 transition-all p-2 flex flex-col items-center justify-center gap-1 group overflow-hidden bg-bg-secondary/40",
-                                                selectedMountId === mount.id
-                                                    ? `border-rarity-${selectedRarity.toLowerCase()} shadow-lg shadow-rarity-${selectedRarity.toLowerCase()}/20`
-                                                    : "border-border hover:border-white/20"
+                                                "relative rounded-xl border-2 transition-all p-1.5 flex flex-col items-center gap-1 group overflow-hidden",
+                                                selectedMountId === mount.id && activeTab === 'library'
+                                                    ? `border-rarity-${selectedRarity.toLowerCase()} shadow-lg shadow-rarity-${selectedRarity.toLowerCase()}/20 bg-rarity-${selectedRarity.toLowerCase()}/5`
+                                                    : "border-border hover:border-accent-primary/50"
                                             )}
                                         >
-                                            <div className="w-full h-full rounded-lg overflow-hidden flex items-center justify-center transition-transform group-hover:scale-110" style={getRarityBgStyle(selectedRarity)}>
-                                                {mountsConfig && (
-                                                    <SpriteSheetIcon
-                                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
-                                                        spriteWidth={mountsConfig.sprite_size.width}
-                                                        spriteHeight={mountsConfig.sprite_size.height}
-                                                        sheetWidth={mountsConfig.texture_size.width}
-                                                        sheetHeight={mountsConfig.texture_size.height}
-                                                        iconIndex={mount.spriteIndex}
-                                                        className="w-full h-full p-2"
-                                                    />
-                                                )}
+                                            <div
+                                                className="w-full aspect-square rounded-lg flex items-center justify-center pointer-events-none"
+                                                style={{ ...getRarityBgStyle(selectedRarity) }}
+                                            >
+                                                <SpriteSheetIcon
+                                                    textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
+                                                    spriteWidth={mountsConfig!.sprite_size.width}
+                                                    spriteHeight={mountsConfig!.sprite_size.height}
+                                                    sheetWidth={mountsConfig!.texture_size.width}
+                                                    sheetHeight={mountsConfig!.texture_size.height}
+                                                    iconIndex={mount.spriteIndex}
+                                                    className="w-16 h-16 drop-shadow-lg"
+                                                />
                                             </div>
-                                            <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm py-0.5 px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <span className="text-[9px] text-white truncate block text-center font-bold">{mount.name}</span>
-                                            </div>
+                                            <span className="text-[10px] text-center text-text-primary font-bold truncate w-full leading-tight select-none">
+                                                {mount.name}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                    {profile.mount.savedBuilds && profile.mount.savedBuilds.length > 0 ? (
-                                        profile.mount.savedBuilds
-                                            .filter(saved => !searchTerm || (saved.customName || `Mount #${saved.id}`).toLowerCase().includes(searchTerm.toLowerCase()))
-                                            .map((savedMount, idx) => {
+                                <div className="space-y-4">
+                                    <div className="flex flex-col gap-3 mb-4 bg-bg-secondary/40 p-3 rounded-xl border border-border/50">
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <div className="flex items-center gap-1 bg-bg-input rounded-lg p-1 border border-border">
+                                                    <select
+                                                        value={savedSortField}
+                                                        onChange={(e) => setSavedSortField(e.target.value as SortField)}
+                                                        className="bg-transparent text-[10px] font-black uppercase tracking-wider px-2 py-1 outline-none cursor-pointer text-text-primary"
+                                                    >
+                                                        {(['level', 'name', 'rarity', 'perfection'] as SortField[]).map(field => (
+                                                            <option key={field} value={field} className="bg-bg-secondary text-text-primary">
+                                                                {field}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0"
+                                                    onClick={() => setSavedSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                                >
+                                                    {savedSortOrder === 'asc' ? '↑' : '↓'}
+                                                </Button>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setShowFilters(!showFilters)}
+                                                className={cn("h-8 gap-2 text-[10px] font-black uppercase tracking-wider ml-auto md:ml-0", showFilters && "text-accent-primary bg-accent-primary/10")}
+                                            >
+                                                <Settings className="w-3.5 h-3.5" />
+                                                Filters {(filterRarities.length > 0 || minPerfection > 0 || filterStats.length > 0) && `(${(filterRarities.length > 0 ? 1 : 0) + (minPerfection > 0 ? 1 : 0) + (filterStats.length > 0 ? 1 : 0)})`}
+                                            </Button>
+                                        </div>
+
+                                        {showFilters && (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border/30 animate-in fade-in slide-in-from-top-1">
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black text-text-muted uppercase tracking-widest">Rarity</label>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {RARITIES.map(rarity => (
+                                                            <button
+                                                                key={rarity}
+                                                                onClick={() => setFilterRarities(prev => prev.includes(rarity) ? prev.filter(r => r !== rarity) : [...prev, rarity])}
+                                                                className={cn(
+                                                                    "px-2 py-0.5 rounded text-[9px] font-bold border transition-all",
+                                                                    filterRarities.includes(rarity)
+                                                                        ? `bg-rarity-${rarity.toLowerCase()}/20 border-rarity-${rarity.toLowerCase()} text-rarity-${rarity.toLowerCase()}`
+                                                                        : "bg-bg-input border-border text-text-muted hover:border-border/80"
+                                                                )}
+                                                            >
+                                                                {rarity}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[9px] font-black text-text-muted uppercase tracking-widest">Min Perfection: {minPerfection}%</label>
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max="100"
+                                                        value={minPerfection}
+                                                        onChange={(e) => setMinPerfection(parseInt(e.target.value))}
+                                                        className="w-full h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2 md:col-span-2">
+                                                    <label className="text-[9px] font-black text-text-muted uppercase tracking-widest">Required Stats (Multiselect)</label>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {STAT_TYPES.map(statId => (
+                                                            <button
+                                                                key={statId}
+                                                                onClick={() => setFilterStats(prev => prev.includes(statId) ? prev.filter(s => s !== statId) : [...prev, statId])}
+                                                                className={cn(
+                                                                    "px-2 py-1 rounded-md text-[9px] font-bold border transition-all",
+                                                                    filterStats.includes(statId)
+                                                                        ? "bg-accent-primary/20 border-accent-primary text-accent-primary"
+                                                                        : "bg-bg-input border-border text-text-muted hover:border-border/80"
+                                                                )}
+                                                            >
+                                                                {getStatName(statId)}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                {(filterRarities.length > 0 || minPerfection > 0 || filterStats.length > 0) && (
+                                                    <button
+                                                        onClick={() => { setFilterRarities([]); setMinPerfection(0); setFilterStats([]); }}
+                                                        className="md:col-span-2 text-[9px] font-black text-red-400 hover:text-red-300 uppercase tracking-widest text-center py-1"
+                                                    >
+                                                        Clear All Filters
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {sortedSavedBuilds.length > 0 ? (
+                                            sortedSavedBuilds.map((savedMount, sIdx) => {
+                                                const originalIdx = profile.mount.savedBuilds.indexOf(savedMount);
                                                 const spriteInfo = mountsConfig?.mapping ?
                                                     Object.entries(mountsConfig.mapping).find(([_, v]: [any, any]) => v.id === savedMount.id && v.rarity === savedMount.rarity)
                                                     : null;
-                                                const spriteIndex = spriteInfo ? parseInt(spriteInfo[0]) : 0;
-                                                const isSelected = selectedMountId === savedMount.id && selectedRarity === savedMount.rarity && JSON.stringify(manualStats) === JSON.stringify(savedMount.secondaryStats);
+                                                const isSelected = selectedSavedIndex === originalIdx;
 
                                                 return (
                                                     <ItemSelectionCard
-                                                        key={idx}
+                                                        key={originalIdx}
                                                         item={savedMount}
                                                         slotKey="mount-saved"
                                                         slotLabel="Saved Mount"
-                                                        itemName={savedMount.customName || (spriteInfo?.[1] as any)?.name || `Mount #${savedMount.id}`}
+                                                        itemName={savedMount.customName || (spriteInfo ? (spriteInfo[1] as any).name : `Mount #${savedMount.id}`)}
                                                         itemImage={null}
-                                                        rarity={savedMount.rarity}
-                                                        isSaved={true}
                                                         isSelected={isSelected}
+                                                        rarity={savedMount.rarity}
                                                         hideAgeStyles={true}
                                                         perfection={getPerfection(savedMount)}
                                                         getStatPerfection={getStatPerfection}
@@ -410,13 +652,18 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                             setSelectedMountId(savedMount.id);
                                                             setMountLevel(savedMount.level);
                                                             setManualStats(savedMount.secondaryStats || []);
+                                                            setSelectedSavedIndex(originalIdx);
                                                             setMobileTab('config');
                                                         }}
                                                         onDelete={(e) => {
                                                             e.stopPropagation();
                                                             const newSaved = [...(profile.mount.savedBuilds || [])];
-                                                            newSaved.splice(idx, 1);
+                                                            newSaved.splice(originalIdx, 1);
                                                             updateNestedProfile('mount', { savedBuilds: newSaved });
+                                                            if (selectedSavedIndex === originalIdx) {
+                                                                setSelectedSavedIndex(null);
+                                                                setSelectedMountId(null);
+                                                            }
                                                         }}
                                                         renderIcon={() => (
                                                             <SpriteSheetIcon
@@ -425,116 +672,121 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                                 spriteHeight={mountsConfig!.sprite_size.height}
                                                                 sheetWidth={mountsConfig!.texture_size.width}
                                                                 sheetHeight={mountsConfig!.texture_size.height}
-                                                                iconIndex={spriteIndex}
-                                                                className="w-10 h-10"
+                                                                iconIndex={spriteInfo ? parseInt(spriteInfo[0]) : 0}
+                                                                className="w-12 h-12"
                                                             />
                                                         )}
                                                     />
                                                 );
                                             })
-                                    ) : (
-                                        <div className="col-span-full flex flex-col items-center justify-center py-20 text-text-muted">
-                                            <Bookmark className="w-12 h-12 opacity-20 mb-4" />
-                                            <p className="font-bold">No saved mounts</p>
-                                        </div>
-                                    )}
+                                        ) : (
+                                            <div className="col-span-full flex flex-col items-center justify-center py-20 text-text-muted">
+                                                <Bookmark className="w-12 h-12 opacity-20 mb-4" />
+                                                <p className="font-bold">{searchTerm ? 'No results found' : 'No saved mounts'}</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </div>
+                    </div>
 
-                        {/* Config Panel */}
-                        <div className={cn(
-                            "w-full md:w-80 bg-bg-secondary/20 p-4 border-t md:border-t-0 md:border-l border-border overflow-y-auto custom-scrollbar flex flex-col gap-6",
-                            mobileTab !== 'config' && "hidden md:flex"
-                        )}>
+                    {/* Config Panel */}
+                    <div className={cn(
+                        "w-full md:w-80 border-t md:border-t-0 md:border-l border-border bg-bg-secondary/20 flex flex-col flex-shrink-0",
+                        mobileTab !== 'config' && "hidden md:flex"
+                    )}>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6">
                             {selectedMountId !== null ? (
                                 <>
-                                    <div className="text-center">
-                                        <div
-                                            className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-xl border-2 overflow-hidden relative"
-                                            style={{ ...getRarityBgStyle(selectedRarity), borderColor: `var(--rarity-${selectedRarity.toLowerCase()})` }}
-                                        >
-                                            {mountsConfig && (
-                                                <SpriteSheetIcon
-                                                    textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
-                                                    spriteWidth={mountsConfig.sprite_size.width}
-                                                    spriteHeight={mountsConfig.sprite_size.height}
-                                                    sheetWidth={mountsConfig.texture_size.width}
-                                                    sheetHeight={mountsConfig.texture_size.height}
-                                                    iconIndex={Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)![0]) : 0}
-                                                    className="w-20 h-20"
-                                                />
-                                            )}
+                                    <div className="space-y-4">
+                                        <h3 className="text-sm font-black text-text-primary flex items-center gap-2 uppercase tracking-tight">
+                                            <Settings className="w-4 h-4 text-accent-primary" />
+                                            Companion Config
+                                        </h3>
+
+                                        {/* Item Preview */}
+                                        <div className="text-center bg-bg-primary/30 rounded-2xl p-4 border border-border/50">
+                                            <div
+                                                className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-xl border-2 overflow-hidden relative"
+                                                style={{ ...getRarityBgStyle(selectedRarity), borderColor: `var(--rarity-${selectedRarity.toLowerCase()})` }}
+                                            >
+                                                {mountsConfig && (
+                                                    <SpriteSheetIcon
+                                                        textureSrc={getAscensionTexturePath('MountIcons', profile.misc.mountAscensionLevel || 0, selectedVersion)}
+                                                        spriteWidth={mountsConfig.sprite_size.width}
+                                                        spriteHeight={mountsConfig.sprite_size.height}
+                                                        sheetWidth={mountsConfig.texture_size.width}
+                                                        sheetHeight={mountsConfig.texture_size.height}
+                                                        iconIndex={Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)?.[0] ? parseInt(Object.entries(mountsConfig.mapping as Record<string, any>).find(([_, v]) => v.id === selectedMountId && v.rarity === selectedRarity)![0]) : 0}
+                                                        className="w-20 h-20"
+                                                    />
+                                                )}
+                                            </div>
+                                            <h2 className="text-xl font-bold text-text-primary leading-tight">
+                                                {(Object.values(mountsConfig?.mapping || {}) as any[]).find((p: any) => p.id === selectedMountId && p.rarity === selectedRarity)?.name || `Mount #${selectedMountId}`}
+                                            </h2>
+                                            <div className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", `text-rarity-${selectedRarity.toLowerCase()}`)}>
+                                                {selectedRarity} Companion
+                                            </div>
                                         </div>
-                                        <h2 className="text-xl font-bold text-text-primary leading-tight">
-                                            {(Object.values(mountsConfig?.mapping || {}) as any[]).find((m: any) => m.id === selectedMountId && m.rarity === selectedRarity)?.name || `Mount #${selectedMountId}`}
-                                        </h2>
-                                        <div className={cn("text-[10px] font-bold uppercase tracking-widest mt-1", `text-rarity-${selectedRarity.toLowerCase()}`)}>
-                                            {selectedRarity} Mount
-                                        </div>
-                                    </div>
 
-                                    <div className="space-y-3">
-                                        <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Base Attributes</h4>
-                                        <div className="grid grid-cols-1 gap-2">
-                                            {mountStats && mountStats.Stats && (
-                                                <div className="bg-black/20 rounded-xl p-3 border border-white/5 space-y-2">
-                                                    {mountStats.Stats.map((stat: any, idx: number) => (
-                                                        <div key={idx} className="flex justify-between items-center text-xs">
-                                                            <span className="text-text-muted">{getStatName(stat.StatNode?.UniqueStat?.StatType || '')}</span>
-                                                            <span className="text-accent-primary font-mono font-bold">
-                                                                 {(() => {
-                                                                     const val = stat.Value;
-                                                                     const type = stat.StatNode?.UniqueStat?.StatType;
-                                                                     const currentAsc = mountAscensionLevel !== undefined ? mountAscensionLevel : (profile.misc.mountAscensionLevel || 0);
-                                                                     
-                                                                     let ascensionBonus = 0;
-                                                                     if (currentAsc > 0 && ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
-                                                                         const ascConfigs = ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
-                                                                         for (let i = 0; i < currentAsc && i < ascConfigs.length; i++) {
-                                                                             const stats = ascConfigs[i].StatContributions || [];
-                                                                             for (const s of stats) {
-                                                                                 const sType = s.StatNode?.UniqueStat?.StatType;
-                                                                                 if (sType === type || (type === 'Damage' && sType === 'AscensionDamage') || (type === 'Health' && sType === 'AscensionHealth')) {
-                                                                                     ascensionBonus += (s.Value + 1);
-                                                                                 }
-                                                                             }
-                                                                         }
-                                                                     }
-
-                                                                     const finalVal = type === 'Damage' || type === 'Health' ? val * (1 + ascensionBonus) : val;
-
-                                                                     if (type === 'Damage' || type === 'Health') {
-                                                                         if (finalVal >= 1000000) return `+${(finalVal / 1000000).toFixed(2)}M`;
-                                                                         if (finalVal >= 1000) return `+${(finalVal / 1000).toFixed(2)}K`;
-                                                                         return `+${finalVal.toFixed(0)}`;
-                                                                     }
-                                                                     return `+${(finalVal * 100).toFixed(2)}%`;
-                                                                 })()}
-                                                             </span>
-                                                        </div>
-                                                    ))}
+                                        <div className="space-y-3">
+                                            {activeTab === 'saved' && selectedSavedIndex !== null && (
+                                                <div className="space-y-1.5">
+                                                    <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Preset Name</label>
+                                                    <div className="relative group">
+                                                        <input
+                                                            placeholder="Enter preset name..."
+                                                            value={profile.mount.savedBuilds[selectedSavedIndex]?.customName || ''}
+                                                            onChange={(e) => {
+                                                                if (selectedSavedIndex !== null) {
+                                                                    const newSaved = [...profile.mount.savedBuilds];
+                                                                    newSaved[selectedSavedIndex] = {
+                                                                        ...newSaved[selectedSavedIndex],
+                                                                        customName: e.target.value
+                                                                    };
+                                                                    updateNestedProfile('mount', { savedBuilds: newSaved });
+                                                                }
+                                                            }}
+                                                            className="w-full bg-bg-input border border-border focus:border-accent-primary transition-all h-10 text-sm font-bold pl-3 rounded-lg"
+                                                        />
+                                                    </div>
                                                 </div>
                                             )}
 
-                                            <ModalLevelSelector
-                                                level={mountLevel}
-                                                maxLevel={maxMountLevel}
-                                                onChange={setMountLevel}
-                                                label="Mount Level"
-                                                className="bg-black/20 rounded-xl p-3 border border-white/5"
-                                            />
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] font-black text-text-muted uppercase tracking-widest px-1">Companion Level</label>
+                                                <ModalLevelSelector
+                                                    level={mountLevel}
+                                                    onChange={setMountLevel}
+                                                    maxLevel={maxMountLevel}
+                                                    label="Mount Level"
+                                                    className="bg-bg-input rounded-xl p-3 border border-border"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-3 flex-1">
+                                    <div className="space-y-4">
                                         <div className="flex items-center justify-between">
-                                            <h4 className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Secondary Stats</h4>
-                                            <div className="bg-bg-input px-2 py-0.5 rounded text-[10px] border border-white/10 font-bold text-accent-primary">
-                                                {manualStats.length} / {maxSlots}
-                                            </div>
+                                            <h3 className="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                                Passive Stats ({manualStats.length}/{maxSlots})
+                                            </h3>
+                                            {manualStats.length < maxSlots && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={addStat}
+                                                    className="h-7 px-2 text-[10px] font-black text-accent-primary hover:bg-accent-primary/10 uppercase tracking-wider"
+                                                >
+                                                    <Plus className="w-3.5 h-3.5 mr-1" />
+                                                    Add Stat
+                                                </Button>
+                                            )}
                                         </div>
-                                        <div className="space-y-2">
+
+                                        <div className="space-y-3">
                                             {manualStats.map((stat, idx) => {
                                                 const range = getStatRange(stat.statId);
                                                 const statOptions = STAT_TYPES.filter(t =>
@@ -554,31 +806,48 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                                     />
                                                 );
                                             })}
-                                            {manualStats.length < maxSlots && (
-                                                <button onClick={addStat} className="w-full py-4 border-2 border-dashed border-white/5 hover:border-accent-primary/30 rounded-xl flex items-center justify-center gap-2 text-xs text-text-muted hover:text-accent-primary transition-all group">
-                                                    <Plus className="w-4 h-4 group-hover:scale-125 transition-transform" />
-                                                    <span className="font-bold">ADD STAT SLOT</span>
-                                                </button>
+                                            {manualStats.length === 0 && (
+                                                <div className="bg-bg-input/10 border-2 border-dashed border-border/50 rounded-2xl p-6 text-center">
+                                                    <p className="text-[11px] text-text-muted font-bold uppercase tracking-wider">No stats added</p>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={addStat}
+                                                        className="mt-2 text-[10px] font-black text-accent-primary hover:bg-accent-primary/10 uppercase tracking-widest"
+                                                    >
+                                                        Add first stat
+                                                    </Button>
+                                                </div>
                                             )}
                                         </div>
                                     </div>
-
-                                    <div className="pt-4 border-t border-white/10 mt-auto">
-                                        <Button variant="primary" className="w-full py-4 rounded-xl font-bold text-sm gap-2 shadow-lg shadow-accent-primary/20" onClick={handleSave}>
-                                            <Save className="w-5 h-5" /> Equip Mount
-                                        </Button>
-                                    </div>
                                 </>
                             ) : (
-                                <div className="flex-1 flex flex-col items-center justify-center text-text-muted opacity-30 text-center px-6">
-                                    <div className="p-4 bg-white/5 rounded-full mb-4">
-                                        <Info className="w-12 h-12" />
+                                <div className="h-full flex flex-col items-center justify-center text-center space-y-4 py-12">
+                                    <div className="w-16 h-16 rounded-3xl bg-bg-primary flex items-center justify-center border border-border shadow-inner">
+                                        <Grid className="w-8 h-8 text-text-muted opacity-20" />
                                     </div>
-                                    <p className="font-bold uppercase tracking-widest text-xs">Configuration</p>
-                                    <p className="text-[10px] mt-2 leading-relaxed">Select a mount from the library to configure stats.</p>
+                                    <div>
+                                        <p className="text-sm font-black text-text-primary uppercase tracking-tight">No Mount Selected</p>
+                                        <p className="text-[11px] text-text-muted font-medium mt-1">Select a companion from the library to configure its stats</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
+
+                        {selectedMountId !== null && (
+                            <div className="p-4 bg-bg-primary/50 border-t border-border mt-auto">
+                                <Button
+                                    onClick={() => {
+                                        onSelect(selectedRarity, selectedMountId, mountLevel, manualStats);
+                                        onClose();
+                                    }}
+                                    className="w-full bg-accent-primary hover:bg-accent-primary/90 text-white font-black py-4 rounded-2xl shadow-lg shadow-accent-primary/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] uppercase tracking-wider text-xs"
+                                >
+                                    Equip Companion
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

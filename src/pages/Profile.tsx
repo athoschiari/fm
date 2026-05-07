@@ -12,6 +12,7 @@ import { TechTreePanel } from '../components/Profile/TechTreePanel';
 import { StatsSummaryPanel } from '../components/Profile/StatsSummaryPanel';
 import { ProfileHeaderPanel } from '../components/Profile/ProfileHeaderPanel';
 import { SkillsPassivesPanel } from '../components/Profile/SkillsPassivesPanel';
+import { SkinSetPanel } from '../components/Profile/SkinSetPanel';
 
 
 export default function Profile() {
@@ -87,6 +88,8 @@ export default function Profile() {
             {/* Content */}
             <div className="space-y-6">
                 <MiscPanel />
+                
+                <SkinSetPanel />
 
                 {isComparing ? (
                     <div className="space-y-6">

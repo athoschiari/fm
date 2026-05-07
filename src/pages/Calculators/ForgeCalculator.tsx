@@ -970,7 +970,7 @@ export default function ForgeCalculator() {
                                                 onChange={(e) => setAutoForgeSummons(parseInt(e.target.value))}
                                                 className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs font-bold text-white outline-none focus:border-accent-primary"
                                             >
-                                                {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+                                                {new Array(20).fill(1).map((_, i) => i + 1).map(n => (
                                                     <option key={n} value={n}>{n} Items</option>
                                                 ))}
                                             </select>

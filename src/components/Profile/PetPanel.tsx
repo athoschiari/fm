@@ -166,9 +166,35 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         const pet = activePets[index];
         const maxLevel = petUpgradeLib?.[pet.rarity]?.LevelInfo?.length || 100;
         const newLevel = Math.max(1, Math.min(maxLevel, pet.level + delta));
+        if (newLevel === pet.level) return;
+
         const newPets = [...activePets];
-        newPets[index] = { ...pet, level: newLevel };
-        updatePets(newPets);
+        const updatedPet = { ...pet, level: newLevel };
+        newPets[index] = updatedPet;
+        
+        if (variant === 'default') {
+            // Bidirectional sync: find if this pet was a saved build
+            const saved = profile.pets.savedBuilds || [];
+            const savedIdx = saved.findIndex(s => 
+                s.id === pet.id && 
+                s.rarity === pet.rarity && 
+                JSON.stringify(s.secondaryStats) === JSON.stringify(pet.secondaryStats)
+            );
+
+            if (savedIdx !== -1) {
+                const newSaved = [...saved];
+                newSaved[savedIdx] = { ...newSaved[savedIdx], level: newLevel };
+                updateNestedProfile('pets', { 
+                    active: newPets,
+                    savedBuilds: newSaved
+                });
+            } else {
+                updatePets(newPets);
+            }
+        } else {
+            updatePets(newPets);
+        }
+        
         setPreviousPets(null);
     };
 

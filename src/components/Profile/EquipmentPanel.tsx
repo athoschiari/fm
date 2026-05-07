@@ -430,10 +430,32 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
         if (!mount) return;
         const newLevel = Math.max(1, Math.min(100, mount.level + delta));
         if (newLevel === mount.level) return;
-        const newMount = { ...mount, level: newLevel };
-        if (variant === 'original') updateOriginalMount(newMount);
-        else if (variant === 'test') updateTestMount(newMount);
-        else updateNestedProfile('mount', { active: newMount });
+        const updatedMount = { ...mount, level: newLevel };
+        
+        if (variant === 'original') {
+            updateOriginalMount(updatedMount);
+        } else if (variant === 'test') {
+            updateTestMount(updatedMount);
+        } else {
+            // Bidirectional sync: find if this mount was a saved build
+            const saved = profile.mount.savedBuilds || [];
+            const savedIdx = saved.findIndex(s => 
+                s.id === mount.id && 
+                s.rarity === mount.rarity && 
+                JSON.stringify(s.secondaryStats) === JSON.stringify(mount.secondaryStats)
+            );
+
+            if (savedIdx !== -1) {
+                const newSaved = [...saved];
+                newSaved[savedIdx] = { ...newSaved[savedIdx], level: newLevel };
+                updateNestedProfile('mount', { 
+                    active: updatedMount,
+                    savedBuilds: newSaved
+                });
+            } else {
+                updateNestedProfile('mount', { active: updatedMount });
+            }
+        }
     };
 
     const handleAscensionChange = (newLevel: number) => {

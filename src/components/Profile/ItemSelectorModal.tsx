@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { SecondaryStatInput } from '../UI/SecondaryStatInput';
 import { X, Sword, Heart, Plus, Trash2, Clock, Target, Unlock, Grid, Settings, Bookmark, Shield, Calendar } from 'lucide-react';
@@ -11,7 +11,7 @@ import { Input } from '../UI/Input';
 import { Button } from '../UI/Button';
 import { ModalLevelSelector } from '../UI/ModalLevelSelector';
 import { SecondaryStatCard } from '../UI/SecondaryStatCard';
-import { cn, getAgeBgStyle, getAgeIconStyle } from '../../lib/utils';
+import { cn, getAgeBgStyle, getAgeIconStyle, getRarityBgStyle } from '../../lib/utils';
 import { AGES } from '../../utils/constants';
 import { getItemImage, getItemName } from '../../utils/itemAssets';
 import { getStatName } from '../../utils/statNames';
@@ -96,9 +96,15 @@ const SLOT_TO_JSON_TYPE: Record<string, string> = {
 
 
 type MobileTab = 'age' | 'items' | 'config';
+type SortField = 'level' | 'name' | 'age' | 'perfection' | 'idx';
+type SortOrder = 'asc' | 'desc';
 
 export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, isPvp = false, forgeAscensionLevel }: ItemSelectorModalProps) {
     const { profile, updateNestedProfile } = useProfile();
+
+    // Ref to break circular dependency in auto-sync effect
+    const savedItemsRef = useRef(profile.savedItems);
+    savedItemsRef.current = profile.savedItems;
     const { selectedVersion } = useGameDataContext();
     const stats = useGlobalStats();
     const { data: itemLibrary } = useGameData<any>('ItemBalancingLibrary.json');
@@ -138,7 +144,18 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
     const jsonType = SLOT_MAPPING[slot] || slot;
     const [unlockAll, setUnlockAll] = useState(false);
-    const [mobileTab, setMobileTab] = useState<MobileTab | 'skin'>('age'); // Added 'skin' to tab type implicitly by usage, but let's update type if strict.
+    const [mobileTab, setMobileTab] = useState<MobileTab | 'skin'>('age'); 
+
+    // Saved Presets Filtering/Sorting
+    const [savedSearchQuery, setSavedSearchQuery] = useState('');
+    const [savedSortField, setSavedSortField] = useState<SortField>('level');
+    const [savedSortOrder, setSavedSortOrder] = useState<SortOrder>('desc');
+
+    // Advanced Filters
+    const [filterAges, setFilterAges] = useState<number[]>([]);
+    const [minPerfection, setMinPerfection] = useState<number>(0);
+    const [filterStats, setFilterStats] = useState<string[]>([]);
+    const [showFilters, setShowFilters] = useState(false);
 
     // Skin State
     const [skinIdx, setSkinIdx] = useState<number | null>(null);
@@ -181,6 +198,64 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         current?.secondaryStats?.map(s => ({ type: s.statId, value: s.value })) || []
     );
 
+    // Auto-sync for saved items (uses ref to avoid re-triggering on savedItems change)
+    useEffect(() => {
+        if (!isOpen) return;
+        if (selectedSavedItemIndex !== null) {
+            const currentSaved = savedItemsRef.current?.[slot] || [];
+            const savedItem = currentSaved[selectedSavedItemIndex];
+            if (savedItem) {
+                // Convert skinStatsList array back to Record for storage
+                const skinStatsRecord: Record<string, number> = {};
+                skinStatsList.forEach(s => {
+                    skinStatsRecord[s.type] = s.value;
+                });
+
+                const updatedItem: ItemSlot = {
+                    ...savedItem,
+                    level,
+                    secondaryStats: manualStats.map(s => ({ statId: s.type, value: s.value })),
+                    skin: skinIdx !== null ? {
+                        idx: skinIdx,
+                        type: skinsLibrary ? (() => {
+                            const skinEntry = Object.values(skinsLibrary).find((s: any) =>
+                                s.SkinId.Idx === skinIdx &&
+                                (s.SkinId.Type === (SLOT_TO_JSON_TYPE[slot] || slot) ||
+                                    s.SkinId.Type === 'Helmet' && slot === 'Helmet')
+                            );
+                            return skinEntry ? (skinEntry as any).SkinId.Type : undefined;
+                        })() : undefined,
+                        stats: skinStatsRecord
+                    } : undefined
+                };
+
+                // Only update if actually different to avoid loop
+                const hasChanged = 
+                    savedItem.level !== updatedItem.level ||
+                    JSON.stringify(savedItem.secondaryStats) !== JSON.stringify(updatedItem.secondaryStats) ||
+                    JSON.stringify(savedItem.skin) !== JSON.stringify(updatedItem.skin);
+
+                if (hasChanged) {
+                    const newSaved = [...currentSaved];
+                    newSaved[selectedSavedItemIndex] = updatedItem;
+                    updateNestedProfile('savedItems', { [slot]: newSaved });
+
+                    // Also propagate to active item if this saved item is currently equipped
+                    const activeItem = profile.items[slot as keyof typeof profile.items];
+                    if (activeItem && 
+                        activeItem.idx === savedItem.idx && 
+                        activeItem.age === savedItem.age &&
+                        activeItem.level === savedItem.level &&
+                        JSON.stringify(activeItem.secondaryStats) === JSON.stringify(savedItem.secondaryStats) &&
+                        JSON.stringify(activeItem.skin) === JSON.stringify(savedItem.skin)) {
+                        
+                        updateNestedProfile('items', { [slot]: updatedItem });
+                    }
+                }
+            }
+        }
+    }, [level, manualStats, skinIdx, skinStatsList, ageIdx, selectedSavedItemIndex, slot, skinsLibrary, updateNestedProfile, profile.items]);
+
     // Sync state when modal opens or current item changes
     useEffect(() => {
         if (isOpen) {
@@ -195,21 +270,35 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
             setAgeIdx(targetAge);
             setSelectedItemIdx(current ? current.idx : 0);
-            setSelectedSavedItemIndex(null);
+            
+            // Check if current is a saved item
+            const savedItems = profile.savedItems?.[slot] || [];
+            const savedIdx = current ? savedItems.findIndex(s => 
+                s.age === current.age && 
+                s.idx === current.idx && 
+                JSON.stringify(s.secondaryStats) === JSON.stringify(current.secondaryStats)
+            ) : -1;
+
+            if (savedIdx !== -1) {
+                setSelectedSavedItemIndex(savedIdx);
+                setAgeIdx(-1);
+            } else {
+                setSelectedSavedItemIndex(null);
+            }
+
             setLevel(current ? current.level : 1);
             setManualStats(current?.secondaryStats?.map(s => ({ type: s.statId, value: s.value })) || []);
-            // Initialize Skin State
-            if (current?.skin) {
-                setSkinIdx(current.skin.idx);
-                // Convert record to array for UI
-                setSkinStatsList(Object.entries(current.skin.stats).map(([key, val]) => ({ type: key, value: val })));
+            setSkinIdx(current?.skin?.idx ?? null);
+            
+            if (current?.skin?.stats) {
+                const stats = Object.entries(current.skin.stats).map(([type, value]) => ({ type, value }));
+                setSkinStatsList(stats);
             } else {
-                setSkinIdx(null);
                 setSkinStatsList([]);
             }
             setMobileTab('age');
         }
-    }, [isOpen, current, unlockedAges]);
+    }, [isOpen, current]);
 
     // Get drop chance for display
     const getDropChance = (ageIndex: number): number => {
@@ -245,8 +334,67 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     }, [itemLibrary, ageIdx, jsonType, slot, autoMapping]);
 
     const savedPresets = useMemo(() => {
-        return profile.savedItems?.[slot] || [];
-    }, [profile.savedItems, slot]);
+        const raw = profile.savedItems?.[slot] || [];
+        let filtered = raw.map((item, idx) => ({ ...item, savedIndex: idx }));
+
+        // Search Filter
+        if (savedSearchQuery.trim()) {
+            const q = savedSearchQuery.toLowerCase();
+            filtered = filtered.filter(p => {
+                const name = p.customName || getItemName(jsonType, p.idx, ageIdx === -1 ? p.age : ageIdx) || `Item #${p.idx}`;
+                return name.toLowerCase().includes(q);
+            });
+        }
+
+        // Age Filter
+        if (filterAges.length > 0) {
+            filtered = filtered.filter(p => filterAges.includes(p.age));
+        }
+
+        // Perfection Filter
+        if (minPerfection > 0) {
+            filtered = filtered.filter(p => (getPerfection(p, itemLibrary, secondaryStatLibrary) || 0) >= minPerfection);
+        }
+
+        // Stats Filter
+        if (filterStats.length > 0) {
+            filtered = filtered.filter(p => 
+                filterStats.some(sId => p.secondaryStats?.some(s => s.statId === sId))
+            );
+        }
+
+        return filtered.sort((a, b) => {
+            let valA: any;
+            let valB: any;
+
+            switch (savedSortField) {
+                case 'level':
+                    valA = a.level;
+                    valB = b.level;
+                    break;
+                case 'name':
+                    valA = a.customName || getItemName(jsonType, a.idx, a.age) || `Item #${a.idx}`;
+                    valB = b.customName || getItemName(jsonType, b.idx, b.age) || `Item #${b.idx}`;
+                    break;
+                case 'age':
+                    valA = a.age;
+                    valB = b.age;
+                    break;
+                case 'perfection':
+                    valA = getPerfection(a, itemLibrary, secondaryStatLibrary);
+                    valB = getPerfection(b, itemLibrary, secondaryStatLibrary);
+                    break;
+                default:
+                    valA = a.savedIndex;
+                    valB = b.savedIndex;
+            }
+
+            if (typeof valA === 'string') {
+                return savedSortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            return savedSortOrder === 'asc' ? valA - valB : valB - valA;
+        });
+    }, [profile.savedItems, slot, jsonType, ageIdx, savedSearchQuery, savedSortField, savedSortOrder, filterAges, minPerfection, filterStats, itemLibrary, secondaryStatLibrary]);
 
     const activeList = useMemo(() => {
         if (ageIdx === -1) return savedPresets;
@@ -573,7 +721,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                             >
                                 <div
                                     className="w-full h-full"
-                                    style={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping)}
+                                    style={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
                                 />
                             </button>
                         );
@@ -646,6 +794,32 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
     const renderConfig = () => (
         <div className="p-4 overflow-y-auto custom-scrollbar h-full space-y-4">
+            {/* Custom Name for Presets */}
+            {ageIdx === -1 && selectedSavedItemIndex !== null && (
+                <div className="space-y-2">
+                    <label className="text-xs font-bold text-text-muted block uppercase tracking-wider">Preset Name</label>
+                    <div className="relative group">
+                        <Input
+                            value={(selectedItemData as any)?.customName || ''}
+                            onChange={(e) => {
+                                const currentSaved = profile.savedItems?.[slot] || [];
+                                const newSaved = [...currentSaved];
+                                if (newSaved[selectedSavedItemIndex]) {
+                                    newSaved[selectedSavedItemIndex] = {
+                                        ...newSaved[selectedSavedItemIndex],
+                                        customName: e.target.value
+                                    };
+                                    updateNestedProfile('savedItems', { [slot]: newSaved });
+                                }
+                            }}
+                            placeholder="Set a custom name..."
+                            className="bg-bg-input/50 border-border focus:border-accent-primary h-9 text-sm"
+                        />
+                        <Pencil className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-text-muted opacity-50" />
+                    </div>
+                </div>
+            )}
+
             <h4 className="font-bold text-sm text-text-muted uppercase tracking-wider">Item Details</h4>
 
             {/* Base Stats */}
@@ -900,8 +1074,123 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             </div>
 
             {/* Saved Items - Hidden in Pvp */}
+            {ageIdx === -1 && (
+                <div className="mb-4 space-y-3 bg-bg-secondary/30 p-3 rounded-xl border border-border/50">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                            <div className="relative flex-1">
+                                <Target className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                                <Input
+                                    placeholder="Search presets..."
+                                    value={savedSearchQuery}
+                                    onChange={(e) => setSavedSearchQuery(e.target.value)}
+                                    className="pl-9 h-9 text-sm"
+                                />
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 px-2 shrink-0"
+                                onClick={() => setSavedSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                            >
+                                {savedSortOrder === 'asc' ? '↑' : '↓'}
+                            </Button>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 bg-bg-input rounded-lg p-1 border border-border">
+                                <select
+                                    value={savedSortField}
+                                    onChange={(e) => setSavedSortField(e.target.value as SortField)}
+                                    className="bg-transparent text-[10px] font-black uppercase tracking-wider px-2 py-1 outline-none cursor-pointer text-text-primary"
+                                >
+                                    {(['level', 'name', 'age', 'perfection', 'idx'] as SortField[]).map(field => (
+                                        <option key={field} value={field} className="bg-bg-secondary text-text-primary">
+                                            {field}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={cn("h-9 gap-2 text-[10px] font-black uppercase tracking-wider", showFilters && "text-accent-primary bg-accent-primary/10")}
+                            >
+                                <Settings className="w-3.5 h-3.5" />
+                                Filters {(filterAges.length > 0 || minPerfection > 0 || filterStats.length > 0) && `(${(filterAges.length > 0 ? 1 : 0) + (minPerfection > 0 ? 1 : 0) + (filterStats.length > 0 ? 1 : 0)})`}
+                            </Button>
+                        </div>
+                    </div>
+
+                    {showFilters && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-border/30 animate-in fade-in slide-in-from-top-1">
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-text-muted uppercase tracking-widest">Ages</label>
+                                <div className="flex flex-wrap gap-1">
+                                    {AGES.map((name, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setFilterAges(prev => prev.includes(i) ? prev.filter(a => a !== i) : [...prev, i])}
+                                            className={cn(
+                                                "px-2 py-0.5 rounded text-[9px] font-bold border transition-all",
+                                                filterAges.includes(i)
+                                                    ? "bg-accent-primary/20 border-accent-primary text-accent-primary"
+                                                    : "bg-bg-input border-border text-text-muted hover:border-border/80"
+                                            )}
+                                        >
+                                            {name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[9px] font-black text-text-muted uppercase tracking-widest">Min Perfection: {minPerfection}%</label>
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={minPerfection}
+                                    onChange={(e) => setMinPerfection(parseInt(e.target.value))}
+                                    className="w-full h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-accent-primary"
+                                />
+                            </div>
+                            <div className="space-y-2 md:col-span-2">
+                                <label className="text-[9px] font-black text-text-muted uppercase tracking-widest">Required Stats (Multiselect)</label>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {STAT_TYPES.map(statId => (
+                                        <button
+                                            key={statId}
+                                            onClick={() => setFilterStats(prev => prev.includes(statId) ? prev.filter(s => s !== statId) : [...prev, statId])}
+                                            className={cn(
+                                                "px-2 py-1 rounded-md text-[9px] font-bold border transition-all",
+                                                filterStats.includes(statId)
+                                                    ? "bg-accent-primary/20 border-accent-primary text-accent-primary"
+                                                    : "bg-bg-input border-border text-text-muted hover:border-border/80"
+                                            )}
+                                        >
+                                            {getStatName(statId)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            {(filterAges.length > 0 || minPerfection > 0 || filterStats.length > 0) && (
+                                <button
+                                    onClick={() => { setFilterAges([]); setMinPerfection(0); setFilterStats([]); }}
+                                    className="md:col-span-2 text-[9px] font-black text-red-400 hover:text-red-300 uppercase tracking-widest text-center py-1"
+                                >
+                                    Clear All Filters
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {!isPvp && ageIdx === -1 && savedPresets.length === 0 && (
-                <div className="text-center text-text-muted py-8 text-sm">No saved builds found</div>
+                <div className="text-center text-text-muted py-8 text-sm italic">
+                    {savedSearchQuery ? 'No presets matching search' : 'No saved builds found'}
+                </div>
             )}
 
             {activeList.length > 0 ? (
@@ -1245,7 +1534,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                     <Shield className="w-6 h-6 text-text-muted" />
                                                 )}
                                             </div>
-                                            <span className="text-[9px] sm:text-[10px] text-center text-text-secondary truncate w-full leading-tight select-none">
+                                            <span className="text-[9px] sm:text-[10px] text-center text-text-primary truncate w-full leading-tight select-none">
                                                 {itemName}
                                             </span>
                                         </div>
@@ -1259,7 +1548,45 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
                     {/* Right: Item Details */}
                     <div className="w-72 p-4 border-l border-border overflow-y-auto custom-scrollbar bg-bg-secondary/10 shrink-0">
-                        <h4 className="font-bold mb-4 text-sm text-text-muted uppercase tracking-wider">Item Details</h4>
+                        <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-bold text-sm text-text-muted uppercase tracking-wider">Item Details</h4>
+                        </div>
+
+                        {/* Item Preview */}
+                        <div className="text-center bg-bg-primary/30 rounded-2xl p-4 border border-border/50 mb-6">
+                            <div
+                                className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-xl border-2 overflow-hidden relative"
+                                style={ageIdx === -1 && (selectedItemData as any)?.rarity ? 
+                                    { ...getRarityBgStyle((selectedItemData as any).rarity), borderColor: `var(--rarity-${(selectedItemData as any).rarity.toLowerCase()})` } : 
+                                    { ...getAgeBgStyle(ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx), borderColor: `rgb(var(--age-${AGES[ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx].toLowerCase().replace(' ', '')}))` }
+                                }
+                            >
+                                {(() => {
+                                    const fileSlot = IMAGE_SLOT_MAP[slot] || slot;
+                                    const ageToUse = ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx;
+                                    const idxToUse = ageIdx === -1 ? ((selectedItemData as any)?.idx || 0) : selectedItemIdx;
+                                    const imgPath = getItemImage(AGES[ageToUse], fileSlot, idxToUse, autoMapping, selectedVersion);
+                                    
+                                    return imgPath ? (
+                                        <img src={imgPath} alt="Preview" className="w-20 h-20 object-contain drop-shadow-xl" />
+                                    ) : (
+                                        <Shield className="w-12 h-12 text-text-muted opacity-30" />
+                                    );
+                                })()}
+                            </div>
+                            <h2 className="text-xl font-bold text-text-primary leading-tight">
+                                {(() => {
+                                    if (ageIdx === -1 && (selectedItemData as any)?.customName) return (selectedItemData as any).customName;
+                                    const fileSlot = IMAGE_SLOT_MAP[slot] || slot;
+                                    const ageToUse = ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx;
+                                    const idxToUse = ageIdx === -1 ? ((selectedItemData as any)?.idx || 0) : selectedItemIdx;
+                                    return getItemName(AGES[ageToUse], fileSlot, idxToUse, autoMapping) || `Item #${idxToUse}`;
+                                })()}
+                            </h2>
+                            <div className="text-[10px] font-bold uppercase tracking-widest mt-1 text-text-muted">
+                                {ageIdx === -1 ? ((selectedItemData as any)?.rarity || AGES[(selectedItemData as any)?.age || 0]) : AGES[ageIdx]} {slot}
+                            </div>
+                        </div>
 
                         {/* Base Stats */}
                         <div className="space-y-2 mb-4">
