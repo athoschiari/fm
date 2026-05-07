@@ -149,7 +149,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                 const contributions = config.StatContributions || [];
                 for (const stat of contributions) {
                     if (stat.StatNode?.UniqueStat?.StatType === 'AscensionDamage' || stat.StatNode?.UniqueStat?.StatType === 'Damage') {
-                        total = stat.Value;
+                        total = stat.Value + 1;
                         break; 
                     }
                 }
@@ -255,7 +255,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                             />
                             {forgeAscensionMulti > 0 && (
                                 <div className="hidden xs:block text-[9px] sm:text-[10px] font-mono font-bold text-amber-400 bg-amber-400/10 px-1 sm:px-1.5 py-0.5 rounded border border-amber-400/20">
-                                    x{(forgeAscensionMulti + 1).toFixed(1)}
+                                    x{(forgeAscensionMulti).toFixed(1)}
                                 </div>
                             )}
                         </div>
@@ -509,8 +509,8 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
             if (config) {
                 (config.StatContributions || []).forEach((s: any) => {
                     const type = s.StatNode?.UniqueStat?.StatType;
-                    if (type === 'Damage' || type === 'AscensionDamage') ascDmg = s.Value;
-                    if (type === 'Health' || type === 'AscensionHealth') ascHp = s.Value;
+                    if (type === 'Damage' || type === 'AscensionDamage') ascDmg = s.Value + 1;
+                    if (type === 'Health' || type === 'AscensionHealth') ascHp = s.Value + 1;
                 });
             }
         }

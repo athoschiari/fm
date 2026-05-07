@@ -128,12 +128,13 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
         if (ascLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
             const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
-            for (let i = 0; i < ascLevel && i < configs.length; i++) {
-                const contributions = configs[i].StatContributions || [];
+            const config = configs[Math.min(ascLevel - 1, configs.length - 1)];
+            if (config) {
+                const contributions = config.StatContributions || [];
                 for (const stat of contributions) {
                     const statType = stat.StatNode?.UniqueStat?.StatType;
-                    if (statType === 'Damage' || statType === 'AscensionDamage' || statType === 'Health' || statType === 'AscensionHealth') {
-                        total += (stat.Value + 1) / 100;
+                    if (statType === 'Damage' || statType === 'AscensionDamage') {
+                        total = stat.Value + 1;
                         break;
                     }
                 }

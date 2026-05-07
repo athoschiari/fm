@@ -33,17 +33,18 @@ export default function Skills() {
         let activeDmg = 0, activeHp = 0, passiveDmg = 0, passiveHp = 0;
         if (ascensionLevel > 0 && ascensionConfigs?.Skills?.AscensionConfigPerLevel) {
             const configs = ascensionConfigs.Skills.AscensionConfigPerLevel;
-            for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
-                for (const s of configs[i].StatContributions || []) {
+            const config = configs[Math.min(ascensionLevel - 1, configs.length - 1)];
+            if (config) {
+                for (const s of config.StatContributions || []) {
                     const val = s.Value;
                     const target = s.StatNode?.StatTarget?.$type;
                     const statType = s.StatNode?.UniqueStat?.StatType;
                     if (target === 'ActiveSkillStatTarget') {
-                        if (statType === 'Damage' || statType === 'AscensionDamage') activeDmg += val;
-                        if (statType === 'Health' || statType === 'AscensionHealth') activeHp += val;
+                        if (statType === 'Damage' || statType === 'AscensionDamage') activeDmg = val + 1;
+                        if (statType === 'Health' || statType === 'AscensionHealth') activeHp = val + 1;
                     } else if (target === 'PassiveSkillStatTarget') {
-                        if (statType === 'Damage' || statType === 'AscensionDamage') passiveDmg += val;
-                        if (statType === 'Health' || statType === 'AscensionHealth') passiveHp += val;
+                        if (statType === 'Damage' || statType === 'AscensionDamage') passiveDmg = val + 1;
+                        if (statType === 'Health' || statType === 'AscensionHealth') passiveHp = val + 1;
                     }
                 }
             }

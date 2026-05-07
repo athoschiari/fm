@@ -80,8 +80,8 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                     const sTarget = s.StatNode?.StatTarget?.$type;
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     if (sTarget === 'ActiveSkillStatTarget') {
-                        if (sType === 'Damage' || sType === 'AscensionDamage') d = s.Value;
-                        if (sType === 'Health' || sType === 'AscensionHealth') h = s.Value;
+                        if (sType === 'Damage' || sType === 'AscensionDamage') d = s.Value + 1;
+                        if (sType === 'Health' || sType === 'AscensionHealth') h = s.Value + 1;
                     }
                 }
             }
@@ -202,7 +202,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
         const cooldown = skillData.Cooldown || 0;
 
         const techActiveSkillDmgBonus = techModifiers['SkillDamage'] || 0;
-        const techActiveSkillHpBonus = techModifiers['SkillHealth'] || 0;
+        const techActiveSkillHpBonus = techModifiers['SkillDamage'] || 0;
 
         const totalDamageMulti = (1 + techActiveSkillDmgBonus) * (activeAscensionDmgMulti || 1);
         const totalHealthMulti = (1 + techActiveSkillHpBonus) * (activeAscensionHpMulti || 1);

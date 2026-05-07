@@ -68,12 +68,13 @@ export default function Pets() {
         let dmg = 0, hp = 0;
         if (ascensionLevel > 0 && ascensionConfigs?.Pets?.AscensionConfigPerLevel) {
             const configs = ascensionConfigs.Pets.AscensionConfigPerLevel;
-            for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
-                for (const s of configs[i].StatContributions || []) {
+            const config = configs[Math.min(ascensionLevel - 1, configs.length - 1)];
+            if (config) {
+                for (const s of config.StatContributions || []) {
                     const val = s.Value;
                     const statType = s.StatNode?.UniqueStat?.StatType;
-                    if (statType === 'Damage' || statType === 'AscensionDamage') dmg += val;
-                    if (statType === 'Health' || statType === 'AscensionHealth') hp += val;
+                    if (statType === 'Damage' || statType === 'AscensionDamage') dmg = val + 1;
+                    if (statType === 'Health' || statType === 'AscensionHealth') hp = val + 1;
                 }
             }
         }

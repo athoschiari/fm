@@ -222,14 +222,7 @@ export function useItemStats(item: ItemSlot | null, slot: string) {
             if (statType === 'Health') health += value;
         }
 
-        // Apply Skin Bonuses
-        if (item.skin && item.skin.stats) {
-            const skinDamageBonus = item.skin.stats['Damage'] || 0;
-            const skinHealthBonus = item.skin.stats['Health'] || 0;
-
-            damage = damage * (1 + skinDamageBonus);
-            health = health * (1 + skinHealthBonus);
-        }
+        // Skin bonuses are global (applied in statEngine), so we don't apply them to the individual item display anymore.
 
         // For weapons: apply melee base multiplier (1.6x) to match in-game display
         if (slot === 'Weapon' && isMelee) {

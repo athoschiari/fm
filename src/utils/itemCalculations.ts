@@ -152,8 +152,8 @@ export const getItemStats = (
     const skinDmgMulti = (1 + (item.skin?.stats?.['Damage'] || 0));
     const skinHpMulti = (1 + (item.skin?.stats?.['Health'] || 0));
 
-    let damage = baseDamage * levelMulti * techMulti * ascMulti * meleeMulti * skinDmgMulti;
-    let health = baseHealth * levelMulti * techMulti * ascMulti * skinHpMulti;
+    let damage = baseDamage * levelMulti * techMulti * ascMulti * meleeMulti;
+    let health = baseHealth * levelMulti * techMulti * ascMulti;
 
     if (slotKey === 'Weapon' && isMelee && damage > 0) {
         damageMulti *= meleeBaseMulti;
@@ -164,8 +164,9 @@ export const getItemStats = (
         health: item.skin?.stats?.['Health'] || 0 
     };
 
-    if (skinBonuses.damage) damageMulti *= (1 + skinBonuses.damage);
-    if (skinBonuses.health) healthMulti *= (1 + skinBonuses.health);
+    // skin multipliers are global, not per-item
+    // if (skinBonuses.damage) damageMulti *= (1 + skinBonuses.damage);
+    // if (skinBonuses.health) healthMulti *= (1 + skinBonuses.health);
 
     // Populate details
     const details = {
@@ -174,7 +175,7 @@ export const getItemStats = (
             levelMulti,
             techMulti,
             ascMulti,
-            skinMulti: skinDmgMulti,
+            skinMulti: 1,
             meleeMulti
         },
         health: {
@@ -182,7 +183,7 @@ export const getItemStats = (
             levelMulti,
             techMulti,
             ascMulti,
-            skinMulti: skinHpMulti
+            skinMulti: 1,
         }
     };
 

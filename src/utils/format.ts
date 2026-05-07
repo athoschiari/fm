@@ -9,15 +9,21 @@ export function formatNumber(num: number): string {
 
     let value = num / Math.pow(10, actualSuffixIdx * 3);
 
-    // Handle rounding up (e.g., 999.9 -> 1.00K)
-    if (Math.abs(value) >= 999.95 && actualSuffixIdx < suffixes.length - 1) {
+    // Helper per troncare invece di arrotondare (es: 17.19 -> 17.1)
+    const truncate = (val: number, decimals: number) => {
+        const factor = Math.pow(10, decimals);
+        return (Math.trunc(val * factor) / factor).toFixed(decimals);
+    };
+
+    // Handle edge cases where value might be very close to 1000 due to floating point
+    if (Math.abs(value) >= 1000 && actualSuffixIdx < suffixes.length - 1) {
         value /= 1000;
-        return value.toFixed(2) + suffixes[actualSuffixIdx + 1];
+        return truncate(value, 2) + suffixes[actualSuffixIdx + 1];
     }
 
-    if (Math.abs(value) >= 100) return value.toFixed(0) + suffixes[actualSuffixIdx];
-    if (Math.abs(value) >= 10) return value.toFixed(1) + suffixes[actualSuffixIdx];
-    return value.toFixed(2) + suffixes[actualSuffixIdx];
+    if (Math.abs(value) >= 100) return truncate(value, 0) + suffixes[actualSuffixIdx];
+    if (Math.abs(value) >= 10) return truncate(value, 1) + suffixes[actualSuffixIdx];
+    return truncate(value, 2) + suffixes[actualSuffixIdx];
 }
 
 // Format seconds into readable duration

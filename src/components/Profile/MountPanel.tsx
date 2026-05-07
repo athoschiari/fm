@@ -84,7 +84,7 @@ export function MountPanel() {
                         const stats = config.StatContributions || [];
                         for (const s of stats) {
                             const sType = s.StatNode?.UniqueStat?.StatType;
-                            const sVal = s.Value;
+                            const sVal = s.Value + 1;
                             if (sType === 'Damage' || sType === 'AscensionDamage') ascensionDmgMulti = sVal;
                             if (sType === 'Health' || sType === 'AscensionHealth') ascensionHpMulti = sVal;
                         }

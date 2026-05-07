@@ -620,7 +620,7 @@ export class StatEngine {
                 const stats = config.StatContributions || [];
                 for (const stat of stats) {
                     const statType = stat.StatNode?.UniqueStat?.StatType;
-                    const value = stat.Value; 
+                    const value = stat.Value + 1;
                     if (statType === 'Damage' || statType === 'AscensionDamage') this.forgeAscensionDamageMulti = value;
                     if (statType === 'Health' || statType === 'AscensionHealth') this.forgeAscensionHealthMulti = value;
                 }
@@ -830,7 +830,7 @@ export class StatEngine {
                     const stats = ascConfigs[i].StatContributions || [];
                     for (const s of stats) {
                         const sType = s.StatNode?.UniqueStat?.StatType;
-                        const sVal = s.Value; 
+                        const sVal = s.Value + 1;
                         if (sType === 'Damage' || sType === 'AscensionDamage') ascensionDmgMulti = sVal;
                         if (sType === 'Health' || sType === 'AscensionHealth') ascensionHpMulti = sVal;
                     }
@@ -1020,7 +1020,7 @@ export class StatEngine {
         const skillPassiveDamageBonus = this.techModifiers['SkillPassiveDamage'] || 0;
         const skillPassiveHealthBonus = this.techModifiers['SkillPassiveHealth'] || 0;
         const skillActiveDamageBonus = this.techModifiers['SkillDamage'] || 0;
-        const skillActiveHealthBonus = this.techModifiers['SkillHealth'] || 0;
+        const skillActiveHealthBonus = this.techModifiers['SkillDamage'] || 0;
 
         const passives = this.profile.skills?.passives || {};
         let totalPassiveDmg = 0;
@@ -1042,12 +1042,12 @@ export class StatEngine {
                     const sTarget = s.StatNode?.StatTarget?.$type;
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     if (sTarget === 'ActiveSkillStatTarget') {
-                        if (sType === 'Damage' || sType === 'AscensionDamage') ascensionActiveDmgMulti = s.Value;
-                        if (sType === 'Health' || sType === 'AscensionHealth') ascensionActiveHpMulti = s.Value;
+                        if (sType === 'Damage' || sType === 'AscensionDamage') ascensionActiveDmgMulti = s.Value + 1;
+                        if (sType === 'Health' || sType === 'AscensionHealth') ascensionActiveHpMulti = s.Value + 1;
                     }
                     if (sTarget === 'PassiveSkillStatTarget') {
-                        if (sType === 'Damage' || sType === 'AscensionDamage') ascensionPassiveDmgMulti = s.Value;
-                        if (sType === 'Health' || sType === 'AscensionHealth') ascensionPassiveHpMulti = s.Value;
+                        if (sType === 'Damage' || sType === 'AscensionDamage') ascensionPassiveDmgMulti = s.Value + 1;
+                        if (sType === 'Health' || sType === 'AscensionHealth') ascensionPassiveHpMulti = s.Value + 1;
                     }
                 }
             }
@@ -1056,7 +1056,7 @@ export class StatEngine {
         // Set active skill multipliers
         this.stats.skillDamageMultiplier = (1 + skillActiveDamageBonus) * ascensionActiveDmgMulti;
         this.stats.skillHealthMultiplier = (1 + skillActiveHealthBonus) * ascensionActiveHpMulti;
-        
+
         // Breakdowns for UI
         this.stats.skillDamageBreakdown.ascension = ascensionActiveDmgMulti;
         this.stats.skillDamageBreakdown.tree = skillActiveDamageBonus;
@@ -1356,7 +1356,7 @@ export class StatEngine {
         // Populate detailed breakdowns for secondary stats
         this.stats.skillDamageBreakdown.substats = this.secondaryStats.skillDamageMulti;
         this.stats.skillHealthBreakdown.substats = this.secondaryStats.skillHealthMulti;
-        
+
         // Crit Damage has a base component (e.g. 1.2x)
         (this.stats.critDamageBreakdown as any).base = baseStats.baseCritDamage;
 

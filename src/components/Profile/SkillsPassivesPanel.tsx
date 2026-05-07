@@ -56,7 +56,7 @@ export function SkillsPassivesPanel() {
                     const sTarget = s.StatNode?.StatTarget?.$type;
                     if (sTarget === 'PassiveSkillStatTarget') {
                         const sType = s.StatNode?.UniqueStat?.StatType;
-                        const sVal = s.Value;
+                        const sVal = s.Value + 1;
                         if (sType === 'Damage' || sType === 'AscensionDamage') dMulti = sVal;
                         if (sType === 'Health' || sType === 'AscensionHealth') hMulti = sVal;
                     }
@@ -177,8 +177,8 @@ export function SkillsPassivesPanel() {
                     const sTarget = s.StatNode?.StatTarget?.$type;
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     if (sTarget === 'ActiveSkillStatTarget') {
-                        if (sType === 'Damage' || sType === 'AscensionDamage') ascActiveDmgMulti = s.Value;
-                        if (sType === 'Health' || sType === 'AscensionHealth') ascActiveHpMulti = s.Value;
+                        if (sType === 'Damage' || sType === 'AscensionDamage') ascActiveDmgMulti = s.Value + 1;
+                        if (sType === 'Health' || sType === 'AscensionHealth') ascActiveHpMulti = s.Value + 1;
                     }
                 }
             }
@@ -203,8 +203,8 @@ export function SkillsPassivesPanel() {
             healthBonus: skillPassiveHealthBonus,
             ascensionDmgMulti,
             ascensionHpMulti,
-            activeDamageMulti: (1 + (techModifiers['ActiveSkillDamage'] || 0)) * (ascActiveDmgMulti || 1),
-            activeHealthMulti: (1 + (techModifiers['ActiveSkillHealth'] || 0)) * (ascActiveHpMulti || 1)
+            activeDamageMulti: (1 + (techModifiers['SkillDamage'] || 0)) * (ascActiveDmgMulti || 1),
+            activeHealthMulti: (1 + (techModifiers['SkillDamage'] || 0)) * (ascActiveHpMulti || 1)
         };
     }, [passives, skillPassiveLibrary, skillLibrary, skillPassiveDamageBonus, skillPassiveHealthBonus, ascensionDmgMulti, ascensionHpMulti, profile.misc.skillAscensionLevel, techModifiers]);
 

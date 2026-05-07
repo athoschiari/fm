@@ -116,7 +116,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                 const stats = config.StatContributions || [];
                 for (const s of stats) {
                     const sType = s.StatNode?.UniqueStat?.StatType;
-                    const sVal = s.Value;
+                    const sVal = s.Value + 1;
                     if (sType === 'Damage' || sType === 'AscensionDamage') dMulti = sVal;
                     if (sType === 'Health' || sType === 'AscensionHealth') hMulti = sVal;
                 }
