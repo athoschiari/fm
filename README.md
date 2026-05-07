@@ -1,6 +1,6 @@
 # Forge Master Wiki & Calculator (FM)
 
-![Forge Master Logo](./public/Texture2D/TechTreeForge.png)
+![Forge Master Logo](./public/icons/hammer.png)
 
 A comprehensive, **100% Fanmade** toolkit and encyclopedia for Forge Master players. This project provides real-time calculators, a persistent profile system, and an exhaustive database sourced directly from the game's official configuration files.
 
