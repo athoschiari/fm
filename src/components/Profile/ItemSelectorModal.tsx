@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { SecondaryStatInput } from '../UI/SecondaryStatInput';
-import { X, Sword, Heart, Plus, Trash2, Clock, Target, Unlock, Grid, Settings, Bookmark, Shield, Calendar } from 'lucide-react';
+import { X, Sword, Heart, Plus, Trash2, Clock, Target, Unlock, Grid, Settings, Bookmark, Shield, Calendar, Pencil } from 'lucide-react';
 import { useGameData } from '../../hooks/useGameData';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -144,7 +144,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
     const jsonType = SLOT_MAPPING[slot] || slot;
     const [unlockAll, setUnlockAll] = useState(false);
-    const [mobileTab, setMobileTab] = useState<MobileTab | 'skin'>('age'); 
+    const [mobileTab, setMobileTab] = useState<MobileTab | 'skin'>('age');
 
     // Saved Presets Filtering/Sorting
     const [savedSearchQuery, setSavedSearchQuery] = useState('');
@@ -230,7 +230,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 };
 
                 // Only update if actually different to avoid loop
-                const hasChanged = 
+                const hasChanged =
                     savedItem.level !== updatedItem.level ||
                     JSON.stringify(savedItem.secondaryStats) !== JSON.stringify(updatedItem.secondaryStats) ||
                     JSON.stringify(savedItem.skin) !== JSON.stringify(updatedItem.skin);
@@ -242,13 +242,13 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
                     // Also propagate to active item if this saved item is currently equipped
                     const activeItem = profile.items[slot as keyof typeof profile.items];
-                    if (activeItem && 
-                        activeItem.idx === savedItem.idx && 
+                    if (activeItem &&
+                        activeItem.idx === savedItem.idx &&
                         activeItem.age === savedItem.age &&
                         activeItem.level === savedItem.level &&
                         JSON.stringify(activeItem.secondaryStats) === JSON.stringify(savedItem.secondaryStats) &&
                         JSON.stringify(activeItem.skin) === JSON.stringify(savedItem.skin)) {
-                        
+
                         updateNestedProfile('items', { [slot]: updatedItem });
                     }
                 }
@@ -270,12 +270,12 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
             setAgeIdx(targetAge);
             setSelectedItemIdx(current ? current.idx : 0);
-            
+
             // Check if current is a saved item
             const savedItems = profile.savedItems?.[slot] || [];
-            const savedIdx = current ? savedItems.findIndex(s => 
-                s.age === current.age && 
-                s.idx === current.idx && 
+            const savedIdx = current ? savedItems.findIndex(s =>
+                s.age === current.age &&
+                s.idx === current.idx &&
                 JSON.stringify(s.secondaryStats) === JSON.stringify(current.secondaryStats)
             ) : -1;
 
@@ -289,7 +289,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             setLevel(current ? current.level : 1);
             setManualStats(current?.secondaryStats?.map(s => ({ type: s.statId, value: s.value })) || []);
             setSkinIdx(current?.skin?.idx ?? null);
-            
+
             if (current?.skin?.stats) {
                 const stats = Object.entries(current.skin.stats).map(([type, value]) => ({ type, value }));
                 setSkinStatsList(stats);
@@ -341,7 +341,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
         if (savedSearchQuery.trim()) {
             const q = savedSearchQuery.toLowerCase();
             filtered = filtered.filter(p => {
-                const name = p.customName || getItemName(jsonType, p.idx, ageIdx === -1 ? p.age : ageIdx) || `Item #${p.idx}`;
+                const name = p.customName || getItemName(AGES[p.age], jsonType, p.idx, autoMapping) || `Item #${p.idx}`;
                 return name.toLowerCase().includes(q);
             });
         }
@@ -353,12 +353,12 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
 
         // Perfection Filter
         if (minPerfection > 0) {
-            filtered = filtered.filter(p => (getPerfection(p, itemLibrary, secondaryStatLibrary) || 0) >= minPerfection);
+            filtered = filtered.filter(p => (getPerfection(p, secondaryStatLibrary) || 0) >= minPerfection);
         }
 
         // Stats Filter
         if (filterStats.length > 0) {
-            filtered = filtered.filter(p => 
+            filtered = filtered.filter(p =>
                 filterStats.some(sId => p.secondaryStats?.some(s => s.statId === sId))
             );
         }
@@ -373,16 +373,16 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                     valB = b.level;
                     break;
                 case 'name':
-                    valA = a.customName || getItemName(jsonType, a.idx, a.age) || `Item #${a.idx}`;
-                    valB = b.customName || getItemName(jsonType, b.idx, b.age) || `Item #${b.idx}`;
+                    valA = a.customName || getItemName(AGES[a.age], jsonType, a.idx, autoMapping) || `Item #${a.idx}`;
+                    valB = b.customName || getItemName(AGES[b.age], jsonType, b.idx, autoMapping) || `Item #${b.idx}`;
                     break;
                 case 'age':
                     valA = a.age;
                     valB = b.age;
                     break;
                 case 'perfection':
-                    valA = getPerfection(a, itemLibrary, secondaryStatLibrary);
-                    valB = getPerfection(b, itemLibrary, secondaryStatLibrary);
+                    valA = getPerfection(a, secondaryStatLibrary);
+                    valB = getPerfection(b, secondaryStatLibrary);
                     break;
                 default:
                     valA = a.savedIndex;
@@ -1556,8 +1556,8 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         <div className="text-center bg-bg-primary/30 rounded-2xl p-4 border border-border/50 mb-6">
                             <div
                                 className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-xl border-2 overflow-hidden relative"
-                                style={ageIdx === -1 && (selectedItemData as any)?.rarity ? 
-                                    { ...getRarityBgStyle((selectedItemData as any).rarity), borderColor: `var(--rarity-${(selectedItemData as any).rarity.toLowerCase()})` } : 
+                                style={ageIdx === -1 && (selectedItemData as any)?.rarity ?
+                                    { ...getRarityBgStyle((selectedItemData as any).rarity), borderColor: `var(--rarity-${(selectedItemData as any).rarity.toLowerCase()})` } :
                                     { ...getAgeBgStyle(ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx), borderColor: `rgb(var(--age-${AGES[ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx].toLowerCase().replace(' ', '')}))` }
                                 }
                             >
@@ -1566,7 +1566,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                     const ageToUse = ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx;
                                     const idxToUse = ageIdx === -1 ? ((selectedItemData as any)?.idx || 0) : selectedItemIdx;
                                     const imgPath = getItemImage(AGES[ageToUse], fileSlot, idxToUse, autoMapping, selectedVersion);
-                                    
+
                                     return imgPath ? (
                                         <img src={imgPath} alt="Preview" className="w-20 h-20 object-contain drop-shadow-xl" />
                                     ) : (
