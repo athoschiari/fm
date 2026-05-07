@@ -8,7 +8,7 @@ import { useGameData } from '../../hooks/useGameData';
 import { DndContext, closestCenter, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical, Plus, Trash2, Search, Play, Pause, List, Zap, Swords, Gauge, Hammer, Shield, Sparkles, Lock, Unlock } from 'lucide-react';
+import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calendar, Clock, Copy, ChevronUp, ChevronDown, ArrowUpDown, GripVertical, Plus, Trash2, Search, Play, Pause, List, Zap, Swords, Gauge, Hammer, Shield, Sparkles, Lock, Unlock, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { ConfirmModal } from '../../components/UI/ConfirmModal';
 import { InputModal } from '../../components/UI/InputModal';
@@ -272,7 +272,7 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
     const [autoSleepEnd, setAutoSleepEnd] = useState(profile.misc.plannerSleepEnd || '07:00');
     const [autoMaxWait, setAutoMaxWait] = useState(profile.misc.plannerMaxWait || 120);
     const [autoMinWait, setAutoMinWait] = useState(profile.misc.plannerMinWaitBetweenNodes || 1);
-    const [autoAllowedTrees, setAutoAllowedTrees] = useState<string[]>(['Forge', 'Power', 'SkillsPetTech']);
+    const [autoAllowedTrees, setAutoAllowedTrees] = useState<string[]>(['Forge', 'Power', 'SkillsPetTech', 'Clan']);
 
     return (
         <Card className="p-6 bg-gradient-to-br from-accent-primary/5 via-bg-secondary to-accent-secondary/5 border-accent-primary/30 shadow-lg shadow-accent-primary/5">
@@ -294,7 +294,8 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
                         {[
                             { key: 'Forge', label: 'Forge', icon: <Hammer size={12} /> },
                             { key: 'Power', label: 'Power', icon: <Shield size={12} /> },
-                            { key: 'SkillsPetTech', label: 'SPT', icon: <Sparkles size={12} /> }
+                            { key: 'SkillsPetTech', label: 'SPT', icon: <Sparkles size={12} /> },
+                            { key: 'Clan', label: 'Clan', icon: <Users size={12} /> }
                         ].map(t => {
                             const isActive = autoAllowedTrees.includes(t.key);
                             return (

@@ -212,7 +212,8 @@ export function useTreePlanner() {
         const virtualTree: UserProfile['techTree'] = {
             Forge: { ...(treeMode === 'empty' ? {} : profile.techTree.Forge) },
             Power: { ...(treeMode === 'empty' ? {} : profile.techTree.Power) },
-            SkillsPetTech: { ...(treeMode === 'empty' ? {} : profile.techTree.SkillsPetTech) }
+            SkillsPetTech: { ...(treeMode === 'empty' ? {} : profile.techTree.SkillsPetTech) },
+            Clan: { ...(treeMode === 'empty' ? {} : profile.techTree.Clan) }
         };
 
         // Simulated profile for real-time DPS tracking
@@ -392,7 +393,8 @@ export function useTreePlanner() {
         const virtualTree: UserProfile['techTree'] = {
             Forge: { ...(treeMode === 'empty' ? {} : profile.techTree.Forge) },
             Power: { ...(treeMode === 'empty' ? {} : profile.techTree.Power) },
-            SkillsPetTech: { ...(treeMode === 'empty' ? {} : profile.techTree.SkillsPetTech) }
+            SkillsPetTech: { ...(treeMode === 'empty' ? {} : profile.techTree.SkillsPetTech) },
+            Clan: { ...(treeMode === 'empty' ? {} : profile.techTree.Clan) }
         };
 
         // Apply queue
@@ -534,7 +536,8 @@ export function useTreePlanner() {
         const virtualTree: UserProfile['techTree'] = {
             Forge: { ...(treeMode === 'empty' ? {} : profile.techTree.Forge) },
             Power: { ...(treeMode === 'empty' ? {} : profile.techTree.Power) },
-            SkillsPetTech: { ...(treeMode === 'empty' ? {} : profile.techTree.SkillsPetTech) }
+            SkillsPetTech: { ...(treeMode === 'empty' ? {} : profile.techTree.SkillsPetTech) },
+            Clan: { ...(treeMode === 'empty' ? {} : profile.techTree.Clan) }
         };
 
         const newQueue: PlanStep[] = [];

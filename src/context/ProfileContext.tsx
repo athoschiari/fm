@@ -90,7 +90,7 @@ interface ProfileContextType {
     saveSharedProfile: () => void; // Save the currently viewed shared profile to local storage
 
     // Convenience Helpers
-    getTechLevel: (tree: 'Forge' | 'Power' | 'SkillsPetTech', nodeId: number) => number;
+    getTechLevel: (tree: 'Forge' | 'Power' | 'SkillsPetTech' | 'Clan', nodeId: number) => number;
     getDungeonLevel: (dungeonId: string) => number;
 
     // Validation
@@ -496,7 +496,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, [isNameTaken]);
 
     // --- Helpers ---
-    const getTechLevel = useCallback((tree: 'Forge' | 'Power' | 'SkillsPetTech', nodeId: number) => {
+    const getTechLevel = useCallback((tree: 'Forge' | 'Power' | 'SkillsPetTech' | 'Clan', nodeId: number) => {
         return profile.techTree[tree]?.[nodeId] || 0;
     }, [profile.techTree]);
 

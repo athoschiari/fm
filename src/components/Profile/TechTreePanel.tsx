@@ -9,7 +9,7 @@ import { useGameDataContext } from '../../context/GameDataContext';
 
 const ICON_SIZE = 40;
 
-type TreeName = 'Forge' | 'Power' | 'SkillsPetTech';
+type TreeName = 'Forge' | 'Power' | 'SkillsPetTech' | 'Clan';
 
 interface TechNode {
     id: number;
@@ -62,7 +62,7 @@ export function TechTreePanel() {
         if (!profile || !treeEffects || !treeMapping) return {};
         const stats: Record<string, number> = {};
 
-        const allTrees: TreeName[] = ['Forge', 'Power', 'SkillsPetTech'];
+        const allTrees: TreeName[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
 
         allTrees.forEach(treeName => {
             const userLevels = profile.techTree?.[treeName] || {};
@@ -151,7 +151,7 @@ export function TechTreePanel() {
         return treeMapping.trees;
     }, [treeMapping]);
 
-    const treeCategories = Object.keys(treesData) as TreeName[];
+    const treeCategories: TreeName[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
 
     // Get current tree levels
     const currentTreeLevels = useMemo(() => {
@@ -296,9 +296,9 @@ export function TechTreePanel() {
         if (!treeMapping?.trees || !treeEffects) return {};
         const data: Record<string, { current: number; max: number; percent: number }> = {};
 
-        Object.keys(treeMapping.trees).forEach((treeName) => {
+        (['Forge', 'Power', 'SkillsPetTech', 'Clan'] as TreeName[]).forEach((treeName) => {
             const tree = treeMapping.trees[treeName];
-            const nodes = tree.nodes || [];
+            const nodes = tree?.nodes || [];
             let currentTotal = 0;
             let maxTotal = 0;
 

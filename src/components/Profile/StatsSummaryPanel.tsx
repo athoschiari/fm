@@ -334,7 +334,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
     const [showDpsModal, setShowDpsModal] = useState(false);
     const [modalData, setModalData] = useState<{ stats: AggregatedStats; profile: UserProfile } | null>(null);
     const [openSection, setOpenSection] = useState<string | null>(null);
-    const [stripViewMode, setStripViewMode] = useState<'general' | 'hits'>('general');
+    const [viewTab, setViewTab] = useState<'general' | 'metrics' | 'hits'>('general');
     const stats = useGlobalStats();
     const techModifiers = useTreeModifiers();
     const {
@@ -421,10 +421,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
 
         let effectiveTechTree = profile.techTree;
         if (treeMode === 'empty') {
-            effectiveTechTree = { Forge: {}, Power: {}, SkillsPetTech: {} };
+            effectiveTechTree = { Forge: {}, Power: {}, SkillsPetTech: {}, Clan: {} };
         } else if (treeMode === 'max' && techTreePositionLibrary && techTreeLibrary) {
-            const maxTree: typeof profile.techTree = { Forge: {}, Power: {}, SkillsPetTech: {} };
-            const trees: ('Forge' | 'Power' | 'SkillsPetTech')[] = ['Forge', 'Power', 'SkillsPetTech'];
+            const maxTree: typeof profile.techTree = { Forge: {}, Power: {}, SkillsPetTech: {}, Clan: {} };
+            const trees: ('Forge' | 'Power' | 'SkillsPetTech' | 'Clan')[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
             for (const tree of trees) {
                 const treeData = techTreePositionLibrary[tree];
                 if (treeData?.Nodes) {
@@ -533,135 +533,180 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
     const weaponDps = currentDpsDetails.weapon;
     const effectiveDps = currentDpsDetails.total;
     const currentHpsDetails = calculateHpsDetails(stats, weaponDps);
-    const regenHps = currentHpsDetails.regen;
-    const lifestealHps = currentHpsDetails.lifesteal;
-    const skillHps = currentHpsDetails.skills;
+    const currentRealHpsDetails = calculateHpsDetails(stats, currentDpsDetails.realWeapon);
+    
     const effectiveHps = currentHpsDetails.total;
-    const blockBenefitHps = currentHpsDetails.blockBenefit;
+    const realHps = currentRealHpsDetails.total;
+    
     const treeBonusEntries = Object.entries(techModifiers).filter(([_, v]) => v > 0);
 
     const originalDpsDetails = originalStats ? calculateDpsDetails(originalStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
     const testDpsDetails = testStats ? calculateDpsDetails(testStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
     const originalHpsDetails = originalStats ? calculateHpsDetails(originalStats, originalDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const originalRealHpsDetails = originalStats ? calculateHpsDetails(originalStats, originalDpsDetails.realWeapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
     const testHpsDetails = testStats ? calculateHpsDetails(testStats, testDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const testRealHpsDetails = testStats ? calculateHpsDetails(testStats, testDpsDetails.realWeapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
 
     const originalDps = originalDpsDetails.total;
     const testDps = testDpsDetails.total;
     const originalHps = originalHpsDetails.total;
     const testHps = testHpsDetails.total;
+    const originalRealHps = originalRealHpsDetails.total;
+    const testRealHps = testRealHpsDetails.total;
 
     const formatValue = (val: number) => isCompactStats
         ? formatCompactNumber(val)
         : val.toLocaleString(undefined, { maximumFractionDigits: 0 });
 
     // The comparison UI block
+    // The comparison UI block
     const comparisonContent = (isComparing && originalStats && testStats) && (
-        <div className="space-y-3">
-            <ComparisonStatRow
-                isCompact={isCompactStats}
-                icon={<Gauge className="w-4 h-4" />}
-                label="Power"
-                originalValue={originalStats.power}
-                testValue={testStats.power}
-                color="text-purple-400"
-            />
-            <ComparisonStatRow
-                isCompact={isCompactStats}
-                icon={<Swords className="w-4 h-4" />}
-                label="Damage"
-                originalValue={originalStats.totalDamage}
-                testValue={testStats.totalDamage}
-                color="text-red-400"
-            />
-            <ComparisonStatRow
-                isCompact={isCompactStats}
-                icon={<Heart className="w-4 h-4" />}
-                label="Health"
-                originalValue={originalStats.totalHealth}
-                testValue={testStats.totalHealth}
-                color="text-green-400"
-            />
-            <ComparisonStatRow
-                isCompact={isCompactStats}
-                icon={<Zap className="w-4 h-4" />}
-                label="Theoretical DPS"
-                originalValue={originalDps}
-                testValue={testDps}
-                color="text-orange-400"
-                originalDetails={[
-                    { label: 'Weapon', value: originalDpsDetails.weapon },
-                    { label: 'Skills', value: originalDpsDetails.skills }
-                ]}
-                testDetails={[
-                    { label: 'Weapon', value: testDpsDetails.weapon },
-                    { label: 'Skills', value: testDpsDetails.skills }
-                ]}
-                onOriginalDetailsClick={() => {
-                    if (originalStats && originalProfile) {
-                        setModalData({ stats: originalStats, profile: originalProfile });
-                        setShowDpsModal(true);
-                    }
-                }}
-                onTestDetailsClick={() => {
-                    if (testStats && testProfile) {
-                        setModalData({ stats: testStats, profile: testProfile });
-                        setShowDpsModal(true);
-                    }
-                }}
-            />
-            <ComparisonStatRow
-                isCompact={isCompactStats}
-                icon={<Zap className="w-4 h-4" />}
-                label="Real-Time DPS"
-                originalValue={originalDpsDetails.realTotal}
-                testValue={testDpsDetails.realTotal}
-                color="text-orange-500"
-                originalDetails={[
-                    { label: 'Weapon', value: originalDpsDetails.realWeapon },
-                    { label: 'Skills', value: originalDpsDetails.skills }
-                ]}
-                testDetails={[
-                    { label: 'Weapon', value: testDpsDetails.realWeapon },
-                    { label: 'Skills', value: testDpsDetails.skills }
-                ]}
-                onOriginalDetailsClick={() => {
-                    if (originalStats && originalProfile) {
-                        setModalData({ stats: originalStats, profile: originalProfile });
-                        setShowDpsModal(true);
-                    }
-                }}
-                onTestDetailsClick={() => {
-                    if (testStats && testProfile) {
-                        setModalData({ stats: testStats, profile: testProfile });
-                        setShowDpsModal(true);
-                    }
-                }}
-            />
-            <ComparisonStatRow
-                isCompact={isCompactStats}
-                icon={<TrendingUp className="w-4 h-4 text-emerald-400" />}
-                label="Total HPS"
-                originalValue={originalHps}
-                testValue={testHps}
-                color="text-emerald-400"
-                originalDetails={[
-                    { label: 'Regen', value: originalHpsDetails.regen },
-                    { label: 'Lifesteal', value: originalHpsDetails.lifesteal },
-                    { label: 'Skills', value: originalHpsDetails.skills }
-                ]}
-                testDetails={[
-                    { label: 'Regen', value: testHpsDetails.regen },
-                    { label: 'Lifesteal', value: testHpsDetails.lifesteal },
-                    { label: 'Skills', value: testHpsDetails.skills }
-                ]}
-            />
+        <div className="space-y-4">
+            {viewTab === 'general' && (
+                <div className="space-y-3">
+                    <ComparisonStatRow
+                        isCompact={isCompactStats}
+                        icon={<Gauge className="w-4 h-4" />}
+                        label="Power"
+                        originalValue={originalStats.power}
+                        testValue={testStats.power}
+                        color="text-purple-400"
+                    />
+                    <ComparisonStatRow
+                        isCompact={isCompactStats}
+                        icon={<Swords className="w-4 h-4" />}
+                        label="Damage"
+                        originalValue={originalStats.totalDamage}
+                        testValue={testStats.totalDamage}
+                        color="text-red-400"
+                    />
+                    <ComparisonStatRow
+                        isCompact={isCompactStats}
+                        icon={<Heart className="w-4 h-4" />}
+                        label="Health"
+                        originalValue={originalStats.totalHealth}
+                        testValue={testStats.totalHealth}
+                        color="text-green-400"
+                    />
+                </div>
+            )}
 
-            <CollapsibleSection
-                title="Single Hit Damage"
-                icon={<Sparkles className="w-4 h-4 text-orange-400" />}
-                isOpen={openSection === 'hit-damage'}
-                onToggle={() => setOpenSection(openSection === 'hit-damage' ? null : 'hit-damage')}
-            >
+            {viewTab === 'metrics' && (
+                <>
+                    {/* Theoretical Block */}
+                    <div className="bg-white/5 rounded-xl border border-white/5 overflow-hidden">
+                        <div className="px-3 py-1.5 bg-white/5 border-b border-white/5 flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Theoretical Metrics</span>
+                        </div>
+                        <div className="p-2 space-y-2">
+                            <ComparisonStatRow
+                                isCompact={isCompactStats}
+                                icon={<Zap className="w-4 h-4" />}
+                                label="Theoretical DPS"
+                                originalValue={originalDps}
+                                testValue={testDps}
+                                color="text-orange-400"
+                                originalDetails={[
+                                    { label: 'Weapon', value: originalDpsDetails.weapon },
+                                    { label: 'Skills', value: originalDpsDetails.skills }
+                                ]}
+                                testDetails={[
+                                    { label: 'Weapon', value: testDpsDetails.weapon },
+                                    { label: 'Skills', value: testDpsDetails.skills }
+                                ]}
+                                onOriginalDetailsClick={() => {
+                                    if (originalStats && originalProfile) {
+                                        setModalData({ stats: originalStats, profile: originalProfile });
+                                        setShowDpsModal(true);
+                                    }
+                                }}
+                                onTestDetailsClick={() => {
+                                    if (testStats && testProfile) {
+                                        setModalData({ stats: testStats, profile: testProfile });
+                                        setShowDpsModal(true);
+                                    }
+                                }}
+                            />
+                            <ComparisonStatRow
+                                isCompact={isCompactStats}
+                                icon={<TrendingUp className="w-4 h-4 text-emerald-400" />}
+                                label="Theoretical HPS"
+                                originalValue={originalHps}
+                                testValue={testHps}
+                                color="text-emerald-400"
+                                originalDetails={[
+                                    { label: 'Regen', value: originalHpsDetails.regen },
+                                    { label: 'Lifesteal', value: originalHpsDetails.lifesteal },
+                                    { label: 'Skills', value: originalHpsDetails.skills }
+                                ]}
+                                testDetails={[
+                                    { label: 'Regen', value: testHpsDetails.regen },
+                                    { label: 'Lifesteal', value: testHpsDetails.lifesteal },
+                                    { label: 'Skills', value: testHpsDetails.skills }
+                                ]}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Real-Time Block */}
+                    <div className="bg-orange-500/5 rounded-xl border border-orange-500/10 overflow-hidden ring-1 ring-orange-500/10">
+                        <div className="px-3 py-1.5 bg-orange-500/10 border-b border-orange-500/10 flex items-center gap-2">
+                            <Zap className="w-3 h-3 text-orange-400" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Real-Time Metrics</span>
+                        </div>
+                        <div className="p-2 space-y-2">
+                            <ComparisonStatRow
+                                isCompact={isCompactStats}
+                                icon={<Zap className="w-4 h-4" />}
+                                label="Real-Time DPS"
+                                originalValue={originalDpsDetails.realTotal}
+                                testValue={testDpsDetails.realTotal}
+                                color="text-orange-500"
+                                originalDetails={[
+                                    { label: 'Weapon', value: originalDpsDetails.realWeapon },
+                                    { label: 'Skills', value: originalDpsDetails.skills }
+                                ]}
+                                testDetails={[
+                                    { label: 'Weapon', value: testDpsDetails.realWeapon },
+                                    { label: 'Skills', value: testDpsDetails.skills }
+                                ]}
+                                onOriginalDetailsClick={() => {
+                                    if (originalStats && originalProfile) {
+                                        setModalData({ stats: originalStats, profile: originalProfile });
+                                        setShowDpsModal(true);
+                                    }
+                                }}
+                                onTestDetailsClick={() => {
+                                    if (testStats && testProfile) {
+                                        setModalData({ stats: testStats, profile: testProfile });
+                                        setShowDpsModal(true);
+                                    }
+                                }}
+                            />
+                            <ComparisonStatRow
+                                isCompact={isCompactStats}
+                                icon={<TrendingUp className="w-4 h-4 text-emerald-500" />}
+                                label="Real-Time HPS"
+                                originalValue={originalRealHps}
+                                testValue={testRealHps}
+                                color="text-emerald-500"
+                                originalDetails={[
+                                    { label: 'Regen', value: originalRealHpsDetails.regen },
+                                    { label: 'Lifesteal', value: originalRealHpsDetails.lifesteal },
+                                    { label: 'Skills', value: originalRealHpsDetails.skills }
+                                ]}
+                                testDetails={[
+                                    { label: 'Regen', value: testRealHpsDetails.regen },
+                                    { label: 'Lifesteal', value: testRealHpsDetails.lifesteal },
+                                    { label: 'Skills', value: testRealHpsDetails.skills }
+                                ]}
+                            />
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {viewTab === 'hits' && (
                 <div className="space-y-3">
                     {/* Base Hit Card */}
                     <div className="bg-black/20 rounded-xl border border-white/5 overflow-hidden">
@@ -671,7 +716,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                         <div className="p-2 space-y-2">
                             <ComparisonStatRow
                                 isCompact={true}
-                                icon={<Swords />}
+                                icon={<Swords className="w-4 h-4" />}
                                 label="Normal"
                                 originalValue={originalStats.hitDamage}
                                 testValue={testStats.hitDamage}
@@ -680,7 +725,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                             />
                             <ComparisonStatRow
                                 isCompact={true}
-                                icon={<Sparkles />}
+                                icon={<Sparkles className="w-4 h-4" />}
                                 label="Critical"
                                 originalValue={originalStats.hitDamageCrit}
                                 testValue={testStats.hitDamageCrit}
@@ -691,15 +736,15 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                     </div>
 
                     {/* All Buffs Card */}
-                    {testStats.hitDamageBuffed !== testStats.hitDamage && (
-                        <div className="bg-black/20 rounded-xl border border-white/5 overflow-hidden">
-                            <div className="px-3 py-1.5 bg-white/5 border-b border-white/5">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">All Buffs Active</span>
+                    {(testStats.hitDamageBuffed !== testStats.hitDamage || originalStats.hitDamageBuffed !== originalStats.hitDamage) && (
+                        <div className="bg-orange-500/5 rounded-xl border border-orange-500/10 overflow-hidden ring-1 ring-orange-500/10">
+                            <div className="px-3 py-1.5 bg-orange-500/10 border-b border-orange-500/10">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">All Buffs Active</span>
                             </div>
                             <div className="p-2 space-y-2">
                                 <ComparisonStatRow
                                     isCompact={true}
-                                    icon={<Zap />}
+                                    icon={<Zap className="w-4 h-4" />}
                                     label="Normal"
                                     originalValue={originalStats.hitDamageBuffed}
                                     testValue={testStats.hitDamageBuffed}
@@ -708,7 +753,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                 />
                                 <ComparisonStatRow
                                     isCompact={true}
-                                    icon={<Sparkles />}
+                                    icon={<Sparkles className="w-4 h-4" />}
                                     label="Critical"
                                     originalValue={originalStats.hitDamageBuffedCrit}
                                     testValue={testStats.hitDamageBuffedCrit}
@@ -718,11 +763,9 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                             </div>
                         </div>
                     )}
-
                 </div>
-
-            </CollapsibleSection >
-        </div >
+            )}
+        </div>
     );
 
     // The strip view (build comparison small bar)
@@ -740,29 +783,36 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                 <div className="absolute left-4 -top-3.5">
                     <div className="flex bg-bg-secondary border border-border/50 rounded-full p-0.5 shadow-lg backdrop-blur-xl">
                         <button
-                            onClick={() => setStripViewMode('general')}
+                            onClick={() => setViewTab('general')}
                             className={cn(
-                                // Modificato: gap e px orizzontale applicati solo da sm (schermi medi) in su
                                 "p-1.5 rounded-full transition-all flex items-center sm:gap-1.5 sm:px-2",
-                                stripViewMode === 'general' ? "bg-accent-primary text-white scale-105 shadow-md" : "text-text-muted hover:text-text-primary"
+                                viewTab === 'general' ? "bg-accent-primary text-white scale-105 shadow-md" : "text-text-muted hover:text-text-primary"
                             )}
                             title="General Stats"
                         >
                             <Layout className="w-3 h-3" />
-                            {/* Modificato: aggiunto hidden per mobile, sm:block per tablet/desktop */}
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">General</span>
                         </button>
                         <button
-                            onClick={() => setStripViewMode('hits')}
+                            onClick={() => setViewTab('metrics')}
                             className={cn(
-                                // Modificato: gap e px orizzontale applicati solo da sm (schermi medi) in su
                                 "p-1.5 rounded-full transition-all flex items-center sm:gap-1.5 sm:px-2",
-                                stripViewMode === 'hits' ? "bg-orange-500 text-white scale-105 shadow-md" : "text-text-muted hover:text-text-primary"
+                                viewTab === 'metrics' ? "bg-orange-500 text-white scale-105 shadow-md" : "text-text-muted hover:text-text-primary"
+                            )}
+                            title="DPS & HPS Metrics"
+                        >
+                            <Zap className="w-3 h-3" />
+                            <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Metrics</span>
+                        </button>
+                        <button
+                            onClick={() => setViewTab('hits')}
+                            className={cn(
+                                "p-1.5 rounded-full transition-all flex items-center sm:gap-1.5 sm:px-2",
+                                viewTab === 'hits' ? "bg-red-500 text-white scale-105 shadow-md" : "text-text-muted hover:text-text-primary"
                             )}
                             title="Hit Damage"
                         >
                             <Swords className="w-3 h-3" />
-                            {/* Modificato: aggiunto hidden per mobile, sm:block per tablet/desktop */}
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Hits</span>
                         </button>
                     </div>
@@ -796,7 +846,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
 
                 {/* Top Row: Build Stats comparison */}
                 <div className="flex items-center justify-start gap-6 overflow-x-auto no-scrollbar w-full pb-2 px-8 snap-x snap-mandatory">
-                    {stripViewMode === 'general' ? (
+                    {viewTab === 'general' ? (
                         <>
                             <div className="shrink-0">
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Gauge className="w-4 h-4 text-purple-400" />} label="Power" originalValue={originalStats?.power ?? 0} testValue={testStats?.power ?? 0} color="text-purple-400" />
@@ -807,14 +857,21 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                             <div className="shrink-0">
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-green-400" />} label="Health" originalValue={originalStats?.totalHealth ?? 0} testValue={testStats?.totalHealth ?? 0} color="text-green-400" />
                             </div>
-                            <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theoretical" originalValue={originalDps} testValue={testDps} color="text-orange-400" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
+                        </>
+                    ) : viewTab === 'metrics' ? (
+                        <>
+                            {/* Grouped Theoretical */}
+                            <div className="shrink-0 flex items-center gap-4 p-1.5 bg-white/5 rounded-xl border border-white/5">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theo DPS" originalValue={originalDps} testValue={testDps} color="text-orange-400" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
+                                <div className="w-px h-6 bg-white/10" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Theo HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
                             </div>
-                            <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real-Time" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
-                            </div>
-                            <div className="shrink-0">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Total HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
+
+                            {/* Grouped Real-Time */}
+                            <div className="shrink-0 flex items-center gap-4 p-1.5 bg-orange-500/5 rounded-xl border border-orange-500/10 ring-1 ring-orange-500/10">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
+                                <div className="w-px h-6 bg-orange-500/10" />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-500" />} label="Real HPS" originalValue={originalRealHps} testValue={testRealHps} color="text-emerald-500" />
                             </div>
                         </>
                     ) : (
@@ -825,7 +882,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                             <div className="shrink-0">
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Sparkles className="w-4 h-4 text-yellow-400" />} label="Crit Hit" originalValue={originalStats?.hitDamageCrit ?? 0} testValue={testStats?.hitDamageCrit ?? 0} color="text-yellow-400" />
                             </div>
-                            {testStats && testStats.hitDamageBuffed !== testStats.hitDamage && (
+                            {testStats && (testStats.hitDamageBuffed !== testStats.hitDamage || originalStats?.hitDamageBuffed !== originalStats?.hitDamage) && (
                                 <>
                                     <div className="shrink-0">
                                         <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Buffed Hit" originalValue={originalStats?.hitDamageBuffed ?? 0} testValue={testStats?.hitDamageBuffed ?? 0} color="text-orange-400" />
@@ -835,7 +892,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                     </div>
                                 </>
                             )}
-
                         </>
                     )}
                 </div>
@@ -980,8 +1036,37 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
                 {(isComparing && originalStats && testStats) ? (
                     <div className="space-y-6">
-                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-200 text-center font-medium">
-                            Comparing Equipped vs Test Build
+                        <div className="flex bg-bg-secondary border border-border/50 rounded-xl p-1 shadow-lg">
+                            <button
+                                onClick={() => setViewTab('general')}
+                                className={cn(
+                                    "flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider",
+                                    viewTab === 'general' ? "bg-accent-primary text-white shadow-md" : "text-text-muted hover:text-text-primary"
+                                )}
+                            >
+                                <Layout className="w-3.5 h-3.5" />
+                                <span>General</span>
+                            </button>
+                            <button
+                                onClick={() => setViewTab('metrics')}
+                                className={cn(
+                                    "flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider",
+                                    viewTab === 'metrics' ? "bg-orange-500 text-white shadow-md" : "text-text-muted hover:text-text-primary"
+                                )}
+                            >
+                                <Zap className="w-3.5 h-3.5" />
+                                <span>Metrics</span>
+                            </button>
+                            <button
+                                onClick={() => setViewTab('hits')}
+                                className={cn(
+                                    "flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider",
+                                    viewTab === 'hits' ? "bg-red-500 text-white shadow-md" : "text-text-muted hover:text-text-primary"
+                                )}
+                            >
+                                <Swords className="w-3.5 h-3.5" />
+                                <span>Hits</span>
+                            </button>
                         </div>
                         {comparisonContent}
                     </div>
@@ -1025,29 +1110,56 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                     </>
                                 );
                             })()}
-                            <StatRow
-                                icon={<TrendingUp className="w-4 h-4" />}
-                                label="Effective HPS"
-                                value={formatValue(effectiveHps)}
-                                subValue={`Regen: ${formatCompactNumber(regenHps)}, LifeSteal: ${formatCompactNumber(lifestealHps)}, Skills: ${formatCompactNumber(skillHps)}${blockBenefitHps > 0 ? `, Block Benefit: +${formatCompactNumber(blockBenefitHps)}` : ''}`}
-                                color="text-emerald-400"
-                            />
-                            <StatRow
-                                icon={<Zap className="w-4 h-4" />}
-                                label="Theoretical DPS"
-                                value={formatValue(effectiveDps)}
-                                subValue={`Weapon: ${formatCompactNumber(weaponDps)}, Skills: ${formatCompactNumber(stats.skillDps + (stats.skillBuffDps || 0))}`}
-                                color="text-orange-400"
-                                onInfoPointsClick={() => setShowDpsModal(true)}
-                            />
-                            <StatRow
-                                icon={<Zap className="w-4 h-4" />}
-                                label="Real-Time DPS"
-                                value={formatValue(stats.realTotalDps)}
-                                subValue={`Weapon: ${formatCompactNumber(stats.realWeaponDps)}, Skills: ${formatCompactNumber(stats.skillDps + (stats.skillBuffDps || 0))}`}
-                                color="text-orange-500"
-                                onInfoPointsClick={() => setShowDpsModal(true)}
-                            />
+                        <div className="space-y-4">
+                            {/* Theoretical Block */}
+                            <div className="bg-white/5 rounded-xl border border-white/5 overflow-hidden">
+                                <div className="px-3 py-1.5 bg-white/5 border-b border-white/5 flex items-center gap-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Theoretical Metrics</span>
+                                </div>
+                                <div className="p-2 space-y-1">
+                                    <StatRow
+                                        icon={<Zap className="w-4 h-4" />}
+                                        label="Theoretical DPS"
+                                        value={formatValue(effectiveDps)}
+                                        subValue={`Weapon: ${formatCompactNumber(weaponDps)}, Skills: ${formatCompactNumber(stats.skillDps + (stats.skillBuffDps || 0))}`}
+                                        color="text-orange-400"
+                                        onInfoPointsClick={() => setShowDpsModal(true)}
+                                    />
+                                    <StatRow
+                                        icon={<TrendingUp className="w-4 h-4" />}
+                                        label="Theoretical HPS"
+                                        value={formatValue(effectiveHps)}
+                                        subValue={`Regen: ${formatCompactNumber(currentHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentHpsDetails.skills)}${currentHpsDetails.blockBenefit > 0 ? `, Block Benefit: +${formatCompactNumber(currentHpsDetails.blockBenefit)}` : ''}`}
+                                        color="text-emerald-400"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Real-Time Block */}
+                            <div className="bg-orange-500/5 rounded-xl border border-orange-500/10 overflow-hidden ring-1 ring-orange-500/10">
+                                <div className="px-3 py-1.5 bg-orange-500/10 border-b border-orange-500/10 flex items-center gap-2">
+                                    <Zap className="w-3 h-3 text-orange-400" />
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Real-Time Metrics</span>
+                                </div>
+                                <div className="p-2 space-y-1">
+                                    <StatRow
+                                        icon={<Zap className="w-4 h-4" />}
+                                        label="Real-Time DPS"
+                                        value={formatValue(stats.realTotalDps)}
+                                        subValue={`Weapon: ${formatCompactNumber(stats.realWeaponDps)}, Skills: ${formatCompactNumber(stats.skillDps + (stats.skillBuffDps || 0))}`}
+                                        color="text-orange-500"
+                                        onInfoPointsClick={() => setShowDpsModal(true)}
+                                    />
+                                    <StatRow
+                                        icon={<TrendingUp className="w-4 h-4" />}
+                                        label="Real-Time HPS"
+                                        value={formatValue(realHps)}
+                                        subValue={`Regen: ${formatCompactNumber(currentRealHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentRealHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentRealHpsDetails.skills)}${currentRealHpsDetails.blockBenefit > 0 ? `, Block Benefit: +${formatCompactNumber(currentRealHpsDetails.blockBenefit)}` : ''}`}
+                                        color="text-emerald-500"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         </div>
 
                         {/* Single Hit Damage Section */}
@@ -1209,10 +1321,17 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                 />
                                 <StatRow
                                     icon={<TrendingUp className="w-4 h-4 text-text-primary" />}
-                                    label="Total HPS"
+                                    label="Theo HPS"
                                     value={formatCompactNumber(effectiveHps)}
-                                    subValue={`Regen: ${formatCompactNumber(regenHps)}, Life: ${formatCompactNumber(lifestealHps)}, Skills: ${formatCompactNumber(skillHps)}`}
+                                    subValue={`Regen: ${formatCompactNumber(currentHpsDetails.regen)}, Life: ${formatCompactNumber(currentHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentHpsDetails.skills)}`}
                                     color="text-emerald-400"
+                                />
+                                <StatRow
+                                    icon={<TrendingUp className="w-4 h-4 text-text-primary" />}
+                                    label="Real HPS"
+                                    value={formatCompactNumber(realHps)}
+                                    subValue={`Regen: ${formatCompactNumber(currentRealHpsDetails.regen)}, Life: ${formatCompactNumber(currentRealHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentRealHpsDetails.skills)}`}
+                                    color="text-emerald-500"
                                 />
 
                                 <StatRow

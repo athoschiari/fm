@@ -113,6 +113,8 @@ export interface AggregatedStats {
     skillDps: number;
     skillBuffDps: number;
     skillHps: number;
+    theoreticalTotalHps: number;
+    realTotalHps: number;
     weaponDps: number;
     realWeaponDps: number;  // Stepped DPS (breakpoints)
     realTotalDps: number;   // Total with stepped weapon DPS
@@ -216,6 +218,8 @@ export const DEFAULT_STATS: AggregatedStats = {
     skillDps: 0,
     skillBuffDps: 0,
     skillHps: 0,
+    theoreticalTotalHps: 0,
+    realTotalHps: 0,
     weaponDps: 0,
     realWeaponDps: 0,
     realTotalDps: 0,
@@ -572,7 +576,7 @@ export class StatEngine {
     private collectTechModifiers() {
         if (!this.libs.techTreeLibrary || !this.libs.techTreePositionLibrary) return;
 
-        const trees: ('Forge' | 'Power' | 'SkillsPetTech')[] = ['Forge', 'Power', 'SkillsPetTech'];
+        const trees: ('Forge' | 'Power' | 'SkillsPetTech' | 'Clan')[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
         for (const tree of trees) {
             const treeLevels = this.profile.techTree[tree] || {};
             const treeData = this.libs.techTreePositionLibrary[tree];
@@ -1104,7 +1108,7 @@ export class StatEngine {
         // Iterate again but SKIP Modifier types we already handled in `collectGlobalModifiers`
         // Modifier Types: WeaponStatTarget, EquipmentStatTarget, PetStatTarget, MountStatTarget.
 
-        const trees: ('Forge' | 'Power' | 'SkillsPetTech')[] = ['Forge', 'Power', 'SkillsPetTech'];
+        const trees: ('Forge' | 'Power' | 'SkillsPetTech' | 'Clan')[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
         for (const tree of trees) {
             const treeLevels = this.profile.techTree[tree] || {};
             const treeData = this.libs.techTreePositionLibrary[tree];
@@ -1694,7 +1698,22 @@ export class StatEngine {
         this.stats.realWeaponDps = this.stats.totalDamage * weightedAps * critMult;
         this.stats.realTotalDps = this.stats.realWeaponDps + this.stats.skillDps + (this.stats.skillBuffDps || 0);
 
+        // --- HPS CALCULATION (Theoretical vs Real-Time) ---
+        const regen = this.stats.totalHealth * this.stats.healthRegen;
+        const skills = this.stats.skillHps;
+        const blockChance = Math.min(this.stats.blockChance || 0, 0.95);
+        const blockFactor = 1 / (1 - blockChance);
+
+        // Theoretical HPS (based on Theoretical Weapon DPS)
+        const lifestealTheo = this.stats.weaponDps * this.stats.lifeSteal;
+        this.stats.theoreticalTotalHps = (regen + lifestealTheo + skills) * blockFactor;
+
+        // Real-Time HPS (based on Real Weapon DPS)
+        const lifestealReal = this.stats.realWeaponDps * this.stats.lifeSteal;
+        this.stats.realTotalHps = (regen + lifestealReal + skills) * blockFactor;
+
         this.debugLogs.push(`FINAL DPS: Weapon=${this.stats.weaponDps.toFixed(0)}, RealWeapon=${this.stats.realWeaponDps.toFixed(0)}, Total=${this.stats.averageTotalDps.toFixed(0)}`);
+        this.debugLogs.push(`FINAL HPS: Theo=${this.stats.theoreticalTotalHps.toFixed(0)}, Real=${this.stats.realTotalHps.toFixed(0)}`);
     } // end finalizeCalculation
 } // end class
 

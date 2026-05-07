@@ -77,6 +77,7 @@ export interface UserProfile {
         Forge: { [nodeId: number]: number };
         Power: { [nodeId: number]: number };
         SkillsPetTech: { [nodeId: number]: number };
+        Clan: { [nodeId: number]: number };
     };
 
     pets: {
@@ -173,6 +174,7 @@ export const INITIAL_PROFILE: UserProfile = {
         Forge: {},
         Power: {},
         SkillsPetTech: {},
+        Clan: {},
     },
     pets: {
         active: [],

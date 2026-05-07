@@ -27,7 +27,7 @@ export function useTreeModifiers() {
         const modifiers: TechModifiers = {};
 
         // Get effective tree levels based on mode
-        const getTreeLevels = (tree: 'Forge' | 'Power' | 'SkillsPetTech'): Record<string, number> => {
+        const getTreeLevels = (tree: 'Forge' | 'Power' | 'SkillsPetTech' | 'Clan'): Record<string, number> => {
             if (treeMode === 'empty') return {};
 
             const treeData = techTreePositionLibrary[tree];
@@ -91,7 +91,7 @@ export function useTreeModifiers() {
             return true;
         };
 
-        const trees: ('Forge' | 'Power' | 'SkillsPetTech')[] = ['Forge', 'Power', 'SkillsPetTech'];
+        const trees: ('Forge' | 'Power' | 'SkillsPetTech' | 'Clan')[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
         for (const tree of trees) {
             const treeLevels = getTreeLevels(tree);
             const treeData = techTreePositionLibrary[tree];

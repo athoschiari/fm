@@ -14,7 +14,7 @@ const NODE_WIDTH = 200;
 const LAYER_GAP = 80;
 const COL_GAP = 40;
 
-type TreeName = 'Forge' | 'Power' | 'SkillsPetTech';
+type TreeName = 'Forge' | 'Power' | 'SkillsPetTech' | 'Clan';
 
 export default function TechTree() {
     const { profile } = useProfile();
@@ -45,7 +45,7 @@ export default function TechTree() {
 
     // Get tree data from mapping
     const treesData = useMemo(() => treeMapping?.trees || {}, [treeMapping]);
-    const treeKeys = Object.keys(treesData);
+    const treeKeys = ['Forge', 'Power', 'SkillsPetTech', 'Clan'] as TreeName[];
 
     // Get all nodes for active tree
     const { nodes, nodeById, layers } = useMemo(() => {
@@ -247,7 +247,7 @@ export default function TechTree() {
         if (!treeEffects || !techTreePositionLibrary || !treeMapping) return {};
 
         const mods: Record<string, number> = {};
-        const trees: TreeName[] = ['Forge', 'Power', 'SkillsPetTech']; // Should match keys in localRanks/mapping
+        const trees: TreeName[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan']; // Should match keys in localRanks/mapping
 
         trees.forEach(treeName => {
             const treeRanks = localRanks[treeName] || {};
