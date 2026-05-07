@@ -63,7 +63,7 @@ export default function Items() {
                 for (const stat of configs[i].StatContributions || []) {
                     const statType = stat.StatNode?.UniqueStat?.StatType;
                     if (statType === 'Damage' || statType === 'AscensionDamage' || statType === 'Health' || statType === 'AscensionHealth') {
-                        total += (stat.Value)
+                        total += (stat.Value + 1)
                         break;
                     }
                 }
