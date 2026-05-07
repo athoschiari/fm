@@ -203,7 +203,7 @@ export default function Colors() {
                 fullHex += startAlpha.toString(16).padStart(2, '0');
             }
             const hex = useShortHex ? shortenHex(fullHex) : tryShortenHex(fullHex);
-            const code = `<#${hex}>` + segments.map(item => item.text).join('');
+            const code = `<#${hex}%>` + segments.map(item => item.text).join('');
             setGeneratedCode(code);
             return;
         }
@@ -212,7 +212,7 @@ export default function Colors() {
             if (item.isSprite) return item.text;
             if (item.isSpace || !item.color) return item.text;
             const hex = useShortHex ? shortenHex(item.color) : tryShortenHex(item.color);
-            return `<#${hex}>${item.text}`;
+            return `<#${hex}%>${item.text}`;
         }).join('');
 
         setGeneratedCode(code);
