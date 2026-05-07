@@ -13,7 +13,7 @@ export function Card({ className, children, variant = 'default', ...props }: Car
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-                "glass-panel rounded-2xl  relative overflow-hidden",
+                "glass-panel   relative overflow-hidden",
                 variant === 'hover' && "glass-panel-hover",
                 className
             )}
