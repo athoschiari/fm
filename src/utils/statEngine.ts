@@ -1681,7 +1681,7 @@ export class StatEngine {
         // DOUBLE HIT SEQUENTIAL TIMING (0.25s base delay)
         const baseDoubleDelay = 0.25;
         this.stats.doubleHitDelay = baseDoubleDelay;
-        const steppedDoubleDelay = Math.floor((baseDoubleDelay / speedMult) * 10) / 10;
+        const steppedDoubleDelay = Math.max(0.1, Math.floor((baseDoubleDelay / speedMult) * 10) / 10);
         const doubleHitCycle = steppedCycle + steppedDoubleDelay;
 
         // WEIGHTED AVERAGE REAL DPS (The "Second Table" logic)

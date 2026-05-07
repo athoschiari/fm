@@ -26,6 +26,10 @@ export const BreakpointTables = memo(({
 
     const realWindup = providedRealWindup !== undefined ? providedRealWindup : (Math.floor((weaponWindupTime / currentAttackSpeedMultiplier) * 10) / 10);
 
+    let renderedImpossiblePrimary = false;
+    let renderedImpossibleWindup = false;
+    let renderedImpossibleDouble = false;
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Primary Cycle Table */}
@@ -41,7 +45,7 @@ export const BreakpointTables = memo(({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {[1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]
+                            {[2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3]
                                 .filter(target => target <= weaponAttackDuration + 0.201)
                                 .map(target => {
                                     let reqBonus = 0;
@@ -57,17 +61,26 @@ export const BreakpointTables = memo(({
                                         else low = mid;
                                     }
                                     reqBonus = (high - 1) * 100;
+                                    
+                                    const isImpossible = reqBonus > 480.1;
+                                    if (isImpossible) {
+                                        if (renderedImpossiblePrimary) return null;
+                                        renderedImpossiblePrimary = true;
+                                    }
+
                                     const isReached = currentBonus >= reqBonus - 0.01;
-                                    const isNext = !isReached && (target >= realCycleTime - 0.11);
+                                    const isNext = !isReached && !isImpossible && (target >= realCycleTime - 0.11);
 
                                     return (
-                                        <tr key={target} className={`group ${isReached ? 'text-green-400/80' : isNext ? 'text-orange-400 bg-orange-400/5' : 'text-white/40'}`}>
+                                        <tr key={target} className={`group ${isReached ? 'text-green-400/80' : isImpossible ? 'text-red-500/40' : isNext ? 'text-orange-400 bg-orange-400/5' : 'text-white/40'}`}>
                                             <td className="py-2.5 font-bold">
                                                 {target.toFixed(1)}s
                                                 {Math.abs(target - realCycleTime) < 0.01 && <span className="text-[8px] bg-orange-500/20 px-1 rounded uppercase font-sans text-orange-400 ml-1">Current</span>}
                                             </td>
                                             <td className="py-2.5">+{reqBonus.toFixed(1)}%</td>
-                                            <td className="py-2.5 text-right font-bold text-[9px]">{isReached ? 'REACHED' : `+${(reqBonus - currentBonus).toFixed(1)}%`}</td>
+                                            <td className="py-2.5 text-right font-bold text-[9px]">
+                                                {isReached ? 'REACHED' : isImpossible ? 'IMPOSSIBLE (>480%)' : `+${(reqBonus - currentBonus).toFixed(1)}%`}
+                                            </td>
                                         </tr>
                                     );
                                 })}
@@ -89,7 +102,7 @@ export const BreakpointTables = memo(({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {[0.5, 0.4, 0.3, 0.2, 0.1]
+                            {[0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0]
                                 .filter(target => target <= weaponWindupTime + 0.001)
                                 .map(target => {
                                     let reqBonus = 0;
@@ -102,18 +115,28 @@ export const BreakpointTables = memo(({
                                         else low = mid;
                                     }
                                     reqBonus = (high - 1) * 100;
+                                    
+                                    const isImpossible = reqBonus > 480.1;
+                                    if (isImpossible) {
+                                        if (renderedImpossibleWindup) return null;
+                                        renderedImpossibleWindup = true;
+                                    }
+
                                     const isReached = currentBonus >= reqBonus - 0.01;
-                                    const isNext = !isReached && (target >= realWindup - 0.11);
+                                    const isNext = !isReached && !isImpossible && (target >= realWindup - 0.11);
 
                                     return (
-                                        <tr key={target} className={`group ${isReached ? 'text-green-400/80' : isNext ? 'text-orange-400 bg-orange-400/5' : 'text-white/40'}`}>
+                                        <tr key={target} className={`group ${isReached ? 'text-green-400/80' : isImpossible ? 'text-red-500/40' : isNext ? 'text-orange-400 bg-orange-400/5' : 'text-white/40'}`}>
                                             <td className="py-2.5 font-bold">
                                                 {target.toFixed(1)}s
                                                 {Math.abs(target - realWindup) < 0.01 && <span className="text-[8px] bg-orange-500/20 px-1 rounded uppercase font-sans text-orange-400 ml-1">Current</span>}
                                                 {target === 0.3 && <span className="ml-1 text-[7px] text-blue-400 font-sans uppercase">Meta</span>}
+                                                {target === 0.0 && <span className="ml-1 text-[7px] text-orange-400/80 font-sans uppercase font-bold border border-orange-400/20 px-1 rounded">Math correct, needs testing</span>}
                                             </td>
                                             <td className="py-2.5">+{reqBonus.toFixed(1)}%</td>
-                                            <td className="py-2.5 text-right font-bold text-[9px]">{isReached ? 'REACHED' : `+${(reqBonus - currentBonus).toFixed(1)}%`}</td>
+                                            <td className="py-2.5 text-right font-bold text-[9px]">
+                                                {isReached ? 'REACHED' : isImpossible ? 'IMPOSSIBLE (>480%)' : `+${(reqBonus - currentBonus).toFixed(1)}%`}
+                                            </td>
                                         </tr>
                                     );
                                 })}
@@ -135,7 +158,7 @@ export const BreakpointTables = memo(({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {[2.0, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6]
+                            {[3.0, 2.9, 2.8, 2.7, 2.6, 2.5, 2.4, 2.3, 2.2, 2.1, 2.0, 1.9, 1.8, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4]
                                 .filter(target => target <= weaponAttackDuration + 0.5)
                                 .map(target => {
                                     let reqBonus = 0;
@@ -149,27 +172,35 @@ export const BreakpointTables = memo(({
                                         const mid = (low + high) / 2;
                                         const sum = Math.floor((baseW / mid) * 10) / 10 +
                                             Math.floor((baseR / mid) * 10) / 10 +
-                                            Math.floor((baseD / mid) * 10) / 10;
+                                            Math.max(0.1, Math.floor((baseD / mid) * 10) / 10);
                                         if (sum <= targetPhases + 0.001) high = mid;
                                         else low = mid;
                                     }
                                     reqBonus = (high - 1) * 100;
+                                    
+                                    const isImpossible = reqBonus > 480.1;
+                                    if (isImpossible) {
+                                        if (renderedImpossibleDouble) return null;
+                                        renderedImpossibleDouble = true;
+                                    }
 
                                     // Current state
-                                    const currentDDelay = Math.floor((0.25 / currentAttackSpeedMultiplier) * 10) / 10;
+                                    const currentDDelay = Math.max(0.1, Math.floor((0.25 / currentAttackSpeedMultiplier) * 10) / 10);
                                     const currentDoubleCycle = realCycleTime + currentDDelay;
 
                                     const isReached = currentBonus >= reqBonus - 0.01;
-                                    const isNext = !isReached && (target >= currentDoubleCycle - 0.11);
+                                    const isNext = !isReached && !isImpossible && (target >= currentDoubleCycle - 0.11);
 
                                     return (
-                                        <tr key={target} className={`group ${isReached ? 'text-green-400/80' : isNext ? 'text-purple-400 bg-purple-400/5' : 'text-white/40'}`}>
+                                        <tr key={target} className={`group ${isReached ? 'text-green-400/80' : isImpossible ? 'text-red-500/40' : isNext ? 'text-purple-400 bg-purple-400/5' : 'text-white/40'}`}>
                                             <td className="py-2.5 font-bold">
                                                 {target.toFixed(1)}s
                                                 {Math.abs(target - currentDoubleCycle) < 0.01 && <span className="text-[8px] bg-purple-500/20 px-1 rounded uppercase font-sans text-purple-400 ml-1">Current</span>}
                                             </td>
                                             <td className="py-2.5">+{reqBonus.toFixed(1)}%</td>
-                                            <td className="py-2.5 text-right font-bold text-[9px]">{isReached ? 'REACHED' : `+${(reqBonus - currentBonus).toFixed(1)}%`}</td>
+                                            <td className="py-2.5 text-right font-bold text-[9px]">
+                                                {isReached ? 'REACHED' : isImpossible ? 'IMPOSSIBLE (>480%)' : `+${(reqBonus - currentBonus).toFixed(1)}%`}
+                                            </td>
                                         </tr>
                                     );
                                 })}
