@@ -73,7 +73,8 @@ export function useGlobalStats(): AggregatedStats | null {
                 techTree: {
                     Forge: {},
                     Power: {},
-                    SkillsPetTech: {}
+                    SkillsPetTech: {},
+                    Clan: {}
                 }
             };
         }
@@ -83,11 +84,12 @@ export function useGlobalStats(): AggregatedStats | null {
         const maxTree: UserProfile['techTree'] = {
             Forge: {},
             Power: {},
-            SkillsPetTech: {}
+            SkillsPetTech: {},
+            Clan: {}
         };
 
         if (techTreePositionLibrary && techTreeLibrary) {
-            const trees: ('Forge' | 'Power' | 'SkillsPetTech')[] = ['Forge', 'Power', 'SkillsPetTech'];
+            const trees: ('Forge' | 'Power' | 'SkillsPetTech' | 'Clan')[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
             for (const tree of trees) {
                 const treeData = techTreePositionLibrary[tree];
                 if (treeData?.Nodes) {

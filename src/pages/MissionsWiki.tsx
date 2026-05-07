@@ -444,7 +444,7 @@ function CompactDropSection({ label, chance, items, autoMapping, version }: { la
             <div className="flex flex-wrap gap-1.5">
                 {items.slice(0, 4).map((item, i) => {
                     const ageName = AGES[item.Item1] || AGES[0];
-                    const iconPath = getItemImage(ageName, label, item.Item2, autoMapping, version);
+                    const iconPath = getItemImage(ageName, label, item.Item2, autoMapping, version || undefined);
                     const itemName = getItemName(ageName, label, item.Item2, autoMapping);
                     
                     return (

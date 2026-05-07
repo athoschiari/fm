@@ -842,7 +842,8 @@ export function useTreePlanner() {
         const newTree = {
             Forge: { ...profile.techTree.Forge },
             Power: { ...profile.techTree.Power },
-            SkillsPetTech: { ...profile.techTree.SkillsPetTech }
+            SkillsPetTech: { ...profile.techTree.SkillsPetTech },
+            Clan: { ...profile.techTree.Clan }
         };
 
         let totalPotionCost = 0;
