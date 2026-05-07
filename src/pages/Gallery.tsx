@@ -405,18 +405,18 @@ export default function Gallery() {
                                 <div className="text-[10px] font-black text-text-muted uppercase tracking-widest bg-bg-input px-2 py-1 rounded">
                                     Version: {activeVersion}
                                 </div>
-                                <div className="flex-1 w-full aspect-square flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative">
+                                <div className="flex-1 w-full flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative min-h-[200px] max-h-[60vh]">
                                     {md5Manifest[activeVersion]?.[selectedImage] ? (
-                                        <div className="relative flex items-center justify-center max-w-full max-h-full">
+                                        <div className="relative flex items-center justify-center w-full h-full">
                                             <img
                                                 src={`${import.meta.env.BASE_URL}Texture2D/${activeVersion}/${selectedImage}`}
-                                                className="pixelated max-w-full max-h-full"
+                                                className="pixelated max-w-full max-h-full object-contain"
                                                 alt={selectedImage}
                                             />
                                             {showDiff && diffImageUrl && (
                                                 <img
                                                     src={diffImageUrl}
-                                                    className="pixelated absolute top-0 left-0 w-full h-full opacity-80 pointer-events-none"
+                                                    className="pixelated absolute top-0 left-0 w-full h-full object-contain opacity-80 pointer-events-none"
                                                     alt="diff overlay"
                                                 />
                                             )}
@@ -440,12 +440,12 @@ export default function Gallery() {
                                     <div className="text-[10px] font-black text-accent-primary uppercase tracking-widest bg-accent-primary/10 px-2 py-1 rounded">
                                         Comparison: {compareVersion}
                                     </div>
-                                    <div className="flex-1 w-full aspect-square flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative">
+                                    <div className="flex-1 w-full flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative min-h-[200px] max-h-[60vh]">
                                         {md5Manifest[compareVersion]?.[selectedImage] ? (
-                                            <div className="relative flex items-center justify-center max-w-full max-h-full">
+                                            <div className="relative flex items-center justify-center w-full h-full">
                                                 <img
                                                     src={`${import.meta.env.BASE_URL}Texture2D/${compareVersion}/${selectedImage}`}
-                                                    className="pixelated max-w-full max-h-full"
+                                                    className="pixelated max-w-full max-h-full object-contain"
                                                     alt={`${selectedImage} comp`}
                                                     onError={(e) => {
                                                         (e.target as HTMLImageElement).style.display = 'none';
@@ -454,7 +454,7 @@ export default function Gallery() {
                                                 {showDiff && diffImageUrl && (
                                                     <img
                                                         src={diffImageUrl}
-                                                        className="pixelated absolute top-0 left-0 w-full h-full opacity-80 pointer-events-none"
+                                                        className="pixelated absolute top-0 left-0 w-full h-full object-contain opacity-80 pointer-events-none"
                                                         alt="diff overlay"
                                                     />
                                                 )}

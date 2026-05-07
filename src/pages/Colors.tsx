@@ -575,7 +575,7 @@ export default function Colors() {
                                                 display: 'inline-block',
                                                 width: '100%',
                                                 height: '100%',
-                                                backgroundImage: `url('/Texture2D/${selectedVersion}/Icons.png')`,
+                                                backgroundImage: `url('./Texture2D/${selectedVersion}/Icons.png')`,
                                                 backgroundSize: '800% 800%',
                                                 backgroundPosition: `${(gridIdx % 8) * (100 / 7)}% ${Math.floor(gridIdx / 8) * (100 / 7)}%`
                                             }}
