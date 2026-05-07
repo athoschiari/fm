@@ -5,6 +5,64 @@ import LZString from 'lz-string';
 const STORAGE_KEY = 'forgeMaster_profiles';
 const ACTIVE_PROFILE_KEY = 'forgeMaster_activeProfileId';
 
+const SLOT_TO_JSON_TYPE: Record<string, string> = {
+    'Weapon': 'Weapon',
+    'Helmet': 'Helmet',
+    'Body': 'Armour',
+    'Gloves': 'Gloves',
+    'Belt': 'Belt',
+    'Necklace': 'Necklace',
+    'Ring': 'Ring',
+    'Shoe': 'Shoes'
+};
+
+const sanitizeProfile = (profile: UserProfile): UserProfile => {
+    let itemsChanged = false;
+    const newItems = { ...profile.items };
+
+    for (const key of Object.keys(newItems)) {
+        const item = newItems[key as keyof UserProfile['items']];
+        const expectedType = SLOT_TO_JSON_TYPE[key] || key;
+        
+        if (item && item.skin && item.skin.type !== expectedType) {
+            newItems[key as keyof UserProfile['items']] = { ...item, skin: undefined };
+            itemsChanged = true;
+        }
+    }
+
+    let savedItemsChanged = false;
+    let newSavedItems = profile.savedItems;
+
+    if (newSavedItems) {
+        newSavedItems = { ...newSavedItems };
+        for (const key of Object.keys(newSavedItems)) {
+            const expectedType = SLOT_TO_JSON_TYPE[key] || key;
+            let arrayChanged = false;
+            const newArray = newSavedItems[key].map(item => {
+                if (item && item.skin && item.skin.type !== expectedType) {
+                        arrayChanged = true;
+                        return { ...item, skin: undefined };
+                    }
+                    return item;
+                });
+                if (arrayChanged) {
+                    newSavedItems[key] = newArray;
+                    savedItemsChanged = true;
+                }
+        }
+    }
+
+    if (itemsChanged || savedItemsChanged) {
+        return {
+            ...profile,
+            items: itemsChanged ? newItems : profile.items,
+            savedItems: savedItemsChanged ? newSavedItems : profile.savedItems
+        };
+    }
+
+    return profile;
+};
+
 interface ProfileContextType {
     // Current profile
     profile: UserProfile;
@@ -49,12 +107,15 @@ const getInitialProfiles = (): { profiles: UserProfile[], activeId: string } => 
 
         if (savedProfiles) {
             const parsed = JSON.parse(savedProfiles) as UserProfile[];
-            const migrated = parsed.map((p) => ({
-                ...INITIAL_PROFILE,
-                ...p,
-                id: p.id || generateProfileId(),
-                iconIndex: p.iconIndex ?? 0,
-            }));
+            const migrated = parsed.map((p) => {
+                const migratedP = {
+                    ...INITIAL_PROFILE,
+                    ...p,
+                    id: p.id || generateProfileId(),
+                    iconIndex: p.iconIndex ?? 0,
+                };
+                return sanitizeProfile(migratedP);
+            });
 
             if (migrated.length > 0) {
                 const activeId = (savedActiveId && migrated.some(p => p.id === savedActiveId))
@@ -74,8 +135,9 @@ const getInitialProfiles = (): { profiles: UserProfile[], activeId: string } => 
                 id: generateProfileId(),
                 iconIndex: 0,
             };
+            const sanitizedProfile = sanitizeProfile(migratedProfile);
             localStorage.removeItem('forgeMaster_profile');
-            return { profiles: [migratedProfile], activeId: migratedProfile.id };
+            return { profiles: [sanitizedProfile], activeId: sanitizedProfile.id };
         }
     } catch (e) {
         console.error("Failed to parse profiles", e);
@@ -115,13 +177,13 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 const parsed = JSON.parse(json);
                 // Ensure it has basic structure
                 if (parsed && typeof parsed === 'object') {
-                    const sharedProfile: UserProfile = {
+                    const sharedProfile: UserProfile = sanitizeProfile({
                         ...INITIAL_PROFILE,
                         ...parsed,
                         id: generateProfileId(),
                         name: parsed.name ? `${parsed.name} (Shared)` : 'Shared Profile',
                         isShared: true
-                    };
+                    });
                     setImportedProfile(sharedProfile);
                 }
             }
@@ -397,13 +459,13 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 const newId = generateProfileId();
 
                 // Create new profile object
-                const importedProfileData: UserProfile = {
+                const importedProfileData: UserProfile = sanitizeProfile({
                     ...INITIAL_PROFILE,
                     ...parsed,
                     id: newId,
                     iconIndex: parsed.iconIndex ?? 0,
                     isShared: undefined // Ensure not shared status
-                };
+                });
 
                 // Ensure name uniqueness
                 let newName = importedProfileData.name;
@@ -451,13 +513,13 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 const newId = generateProfileId();
 
                 // Create new profile object
-                const importedProfileData: UserProfile = {
+                const importedProfileData: UserProfile = sanitizeProfile({
                     ...INITIAL_PROFILE,
                     ...parsed,
                     id: newId,
                     iconIndex: parsed.iconIndex ?? 0,
                     isShared: undefined
-                };
+                });
 
                 // Ensure name uniqueness
                 let newName = importedProfileData.name;

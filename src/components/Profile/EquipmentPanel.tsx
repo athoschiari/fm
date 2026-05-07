@@ -345,6 +345,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
             </Card>
 
             <ItemSelectorModal
+                key={selectedSlot || 'modal'}
                 isOpen={selectedSlot !== null}
                 onClose={() => setSelectedSlot(null)}
                 onSelect={handleEquip}
