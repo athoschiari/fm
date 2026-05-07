@@ -285,7 +285,7 @@ export default function Colors() {
                             width: '1.2em',
                             height: '1.2em',
                             verticalAlign: 'text-bottom',
-                            backgroundImage: `url('/Texture2D/${selectedVersion}/Icons.png')`,
+                            backgroundImage: `url('./Texture2D/${selectedVersion}/Icons.png')`,
                             backgroundSize: '800% 800%',
                             backgroundPosition: `${(gridIdx % 8) * (100 / 7)}% ${Math.floor(gridIdx / 8) * (100 / 7)}%`
                         }}
