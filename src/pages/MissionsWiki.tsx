@@ -339,7 +339,10 @@ export default function MissionsWiki() {
                                 <RuleItem label="Daily Energy" value={baseConfig.DailyEnergy} icon={Zap} />
                                 <RuleItem label="Max Support" value={baseConfig.MaxSupportMembers} icon={Users} />
                                 <RuleItem label="Refresh Cost" value={baseConfig.RefreshGemCost} suffix=" Gems" icon={Star} />
+                                <RuleItem label="Refresh Count" value={baseConfig.RefreshMissionCount} icon={Settings} />
                                 <RuleItem label="Battle Timer" value={baseConfig.MissionBattleMatchTimerSeconds} suffix="s" icon={Clock} />
+                                <RuleItem label="Scaling Mult" value={baseConfig.HealthAndDamageLevelMultiplier.toFixed(3)} icon={Activity} />
+                                <RuleItem label="Owner Bonus" value={baseConfig.MissionOwnerRewardsCount} suffix="x" icon={Trophy} />
                             </div>
                         </Card>
                     </div>
