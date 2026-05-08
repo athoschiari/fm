@@ -91,6 +91,24 @@ export interface LibraryData {
     skillLibrary?: Record<string, any>;
     skillPassiveLibrary?: Record<string, any>;
     mainBattleLookup?: Record<string, BattleConfig>;
+    missionBaseConfig?: any;
+    missionBattleLibrary?: Record<string, any>;
+}
+
+export interface MissionBattleConfig {
+    MissionId: number;
+    MissionTitleId: string;
+    MinLevel: number;
+    BaseDamage: number;
+    BaseHealth: number;
+    UnitCount: number;
+    MapAge: number;
+    ChanceToHaveWeapon: number;
+    ChanceToHaveHelmet: number;
+    ChanceToHaveArmour: number;
+    PossibleWeapons: { Item1: number; Item2: number }[] | null;
+    PossibleHelmets: { Item1: number; Item2: number }[] | null;
+    PossibleArmours: { Item1: number; Item2: number }[] | null;
 }
 
 // --- Helper Functions ---

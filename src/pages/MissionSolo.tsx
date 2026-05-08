@@ -508,7 +508,7 @@ export default function MissionSolo() {
                     profile={profile || null}
                     libs={libs}
                     ageIdx={-2} // Mission Flag
-                    battleIdx={selectedBattleResult.battleIdx} // Mission ID
+                    battleIdx={selectedBattleResult.battleIdx ?? 0} // Mission ID
                     difficultyMode={selectedBattleResult.difficultyIdx} // Level
                 />
             )}
