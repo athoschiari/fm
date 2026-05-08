@@ -78,6 +78,7 @@ function App() {
                                     <Route path="calculators/mounts" element={<MountCalculator />} />
                                     <Route path="calculators/skills" element={<SkillCalculator />} />
                                     <Route path="calculators/tree" element={<TreeCalculator />} />
+                                    <Route path="solo-mission" element={<MissionsWiki />} />
                                     <Route path="wiki/forge" element={<ForgeWiki />} />
                                     <Route path="wiki/base-drops" element={<BaseDrops />} />
                                     <Route path="wiki/shop" element={<Shop />} />
