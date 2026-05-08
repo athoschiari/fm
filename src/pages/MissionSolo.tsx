@@ -187,9 +187,9 @@ export default function MissionSolo() {
                 <div className="space-y-2 text-center md:text-left">
                     <h1 className="text-4xl font-black text-text-primary flex items-center justify-center md:justify-start gap-4">
                         <Target className="w-10 h-10 text-accent-primary" />
-                        Mission Wiki
+                        Solo Predictor
                     </h1>
-                    <p className="text-text-secondary text-lg font-medium">Complete guide to Guild Missions, drops and scaling rewards.</p>
+                    <p className="text-text-secondary text-lg font-medium">Test your strength and see if you can defeat missions alone, without your clan's help.</p>
                 </div>
 
                 {/* Base Config Stats */}
