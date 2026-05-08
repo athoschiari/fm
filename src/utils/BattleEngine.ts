@@ -437,7 +437,10 @@ export class BattleEngine {
             } else {
                 // MOVING
                 enemy.combatState = 'MOVING';
-                enemy.position -= this.ENEMY_SPEED * dt;
+                const newPos = enemy.position - this.ENEMY_SPEED * dt;
+                // Il nemico si ferma solo se sta per sorpassare il player (posizione <= player)
+                // Non clampare alla distanza di range — lascia che il combat trigger lo gestisca
+                enemy.position = Math.max(newPos, this.player.position + 0.01);
             }
         });
 
@@ -456,8 +459,8 @@ export class BattleEngine {
         if (this.waveTimer > 0) {
             this.waveTimer -= dt;
             // Player keeps walking during wave transition
-            this.player.position += this.PLAYER_SPEED * dt;
-            this.player.combatState = 'MOVING';
+            //this.player.position += this.PLAYER_SPEED * dt;
+            //this.player.combatState = 'MOVING';
 
             if (this.waveTimer <= 0 && this.nextWaveQueue.length > 0) {
                 // Timer expired - spawn next wave
@@ -744,8 +747,9 @@ export class BattleEngine {
                             entity.recoveryTimer = effectiveRecovery + randomDelay;
                         } else {
                             // Out of Range: Hold Charge
+                            entity.combatPhase = 'IDLE';
                             entity.windupTimer = 0;
-                            entity.isWindingUp = true;
+                            entity.isWindingUp = false;
                         }
                     } else {
                         // No Target: Reset

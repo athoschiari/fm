@@ -10,7 +10,8 @@ import {
     BattleResult,
     WaveResult,
     DungeonLevelConfig,
-    LibraryData
+    LibraryData,
+    MissionBattleConfig
 } from './BattleHelper';
 
 // Re-export for compatibility
@@ -796,4 +797,175 @@ export function findMaxBeatableDungeonStage(
         }
     }
     return -1;
+}
+
+/**
+ * Simulate a Mission Battle
+ */
+export function simulateMissionBattle(
+    playerStats: AggregatedStats,
+    profile: UserProfile | null,
+    mission: MissionBattleConfig,
+    level: number,
+    libs: LibraryData,
+    debugConfig?: DebugConfig
+): BattleResult | null {
+    if (!libs || !mission) return null;
+
+    // 1. Stats scaling logic (same as MissionsWiki)
+    const baseConfig = libs.missionBaseConfig;
+    const multiplier = baseConfig?.HealthAndDamageLevelMultiplier || 1.524;
+    
+    const getScaledValue = (base: number) => {
+        if (!baseConfig) return base;
+        return Math.floor(base * Math.pow(multiplier, level - 1));
+    };
+
+    const scaledDmg = getScaledValue(mission.BaseDamage);
+    const scaledHp = getScaledValue(mission.BaseHealth);
+
+    const engine = new BattleEngine(playerStats, debugConfig);
+
+    // --- ADD SKILLS (Disabled for Missions per user request) ---
+    /*
+    if (profile && libs.skillLibrary && libs.skillPassiveLibrary) {
+        const equipped = profile.skills.equipped || [];
+        equipped.forEach(skillSlot => {
+            const skillConfig = libs.skillLibrary?.[skillSlot.id];
+            if (!skillConfig) return;
+
+            const levelIdx = Math.max(0, skillSlot.level - 1);
+            let baseDamage = (skillConfig.DamagePerLevel?.[levelIdx]) || 0;
+            let baseHeal = (skillConfig.HealthPerLevel?.[levelIdx]) || 0;
+
+            const skillFactor = playerStats.skillDamageMultiplier || 1;
+            const globalFactor = playerStats.damageMultiplier || 1;
+            const totalDamageMulti = skillFactor + globalFactor - 1;
+
+            const buffedDamage = baseDamage * totalDamageMulti;
+            const buffedHeal = baseHeal * totalDamageMulti;
+
+            const mechanics = SKILL_MECHANICS[skillSlot.id] || { count: 1 };
+            const hitCount = mechanics.count || 1;
+            const buffedDamagePerHit = mechanics.damageIsPerHit ? buffedDamage : (buffedDamage / hitCount);
+
+            const baseCooldown = skillConfig.Cooldown || 10;
+            const cdReduction = (playerStats as any).skillCooldownReduction || 0;
+            const cooldown = Math.max(0.5, baseCooldown * (1 - cdReduction));
+
+            const duration = skillConfig.ActiveDuration || 0;
+            const isBuffSkill = BUFF_SKILLS.includes(skillSlot.id);
+
+            let bonusDamage = 0, bonusMaxHealth = 0, activeDamage = 0, activeHeal = 0;
+
+            if (isBuffSkill) {
+                if (buffedDamage > 0) bonusDamage = buffedDamage;
+                if (buffedHeal > 0) bonusMaxHealth = buffedHeal;
+            } else {
+                activeDamage = buffedDamagePerHit;
+                activeHeal = buffedHeal;
+            }
+
+            engine.addSkill({
+                id: skillSlot.id,
+                damage: activeDamage,
+                cooldown: cooldown,
+                activeDuration: duration,
+                healAmount: activeHeal,
+                bonusDamage: bonusDamage,
+                bonusMaxHealth: bonusMaxHealth,
+                count: hitCount,
+                interval: mechanics.interval || 0.1,
+                delay: mechanics.delay || 0,
+                isSingleTarget: mechanics.isSingleTarget,
+                isAOE: mechanics.isAOE
+            } as any);
+        });
+    }
+    */
+
+    // --- CONFIGURE ENEMIES ---
+    const engineEnemies: any[] = [];
+    const enemyInfo: any[] = [];
+    const unitCount = mission.UnitCount || 6;
+
+    for (let k = 0; k < unitCount; k++) {
+        // Randomly pick weapon from pool
+        let weaponInfo = null;
+        if (mission.PossibleWeapons && mission.PossibleWeapons.length > 0) {
+            const randomWeapon = mission.PossibleWeapons[Math.floor(Math.random() * mission.PossibleWeapons.length)];
+            const weaponKey = `{'Age': ${randomWeapon.Item1}, 'Type': 'Weapon', 'Idx': ${randomWeapon.Item2}}`;
+            weaponInfo = libs.weaponLibrary?.[weaponKey];
+        }
+
+        engineEnemies.push({
+            id: mission.MissionId,
+            hp: scaledHp,
+            dmg: scaledDmg,
+            weaponInfo: weaponInfo,
+            projectileSpeed: 10
+        });
+    }
+
+    // Store summary for UI
+    enemyInfo.push({
+        id: mission.MissionId,
+        count: unitCount,
+        damagePerHit: scaledDmg,
+        hp: scaledHp,
+        isRanged: engineEnemies.some(e => e.weaponInfo && (e.weaponInfo.AttackRange ?? 0) > 1.0)
+    });
+
+    engine.startWave(engineEnemies);
+
+    // Simulate
+    const simResult = engine.simulate(600);
+
+    return {
+        ageIdx: -2, // Flag for Mission
+        battleIdx: mission.MissionId,
+        difficultyIdx: level,
+        waves: [{
+            waveIndex: 0,
+            enemies: enemyInfo,
+            totalEnemyHp: scaledHp * unitCount,
+            totalEnemyDps: scaledDmg * unitCount,
+            playerHealthBeforeWave: 0,
+            playerHealthAfterWave: simResult.victory ? simResult.remainingHp : 0,
+            survived: simResult.victory,
+            timeToComplete: simResult.time
+        }],
+        victory: simResult.victory,
+        winProbability: simResult.victory ? 100 : 0,
+        totalRuns: 1,
+        playerHealthRemaining: simResult.remainingHp,
+        totalTime: simResult.time,
+        playerStats: {
+            effectiveDps: simResult.time > 0 ? (simResult.totalDamageDealt / simResult.time) : 0,
+            effectiveHp: playerStats.totalHealth,
+            healingPerSecond: playerStats.healthRegen,
+            damagePerHit: playerStats.totalDamage
+        }
+    };
+}
+
+export function simulateMissionBattleMulti(
+    playerStats: AggregatedStats,
+    profile: UserProfile | null,
+    mission: MissionBattleConfig,
+    level: number,
+    libs: LibraryData,
+    runs: number = 100,
+    debugConfig?: DebugConfig
+): BattleResult | null {
+    if (!libs || !mission) return null;
+    const results: BattleResult[] = [];
+
+    for (let i = 0; i < runs; i++) {
+        const res = simulateMissionBattle(playerStats, profile, mission, level, libs, debugConfig);
+        if (res) results.push(res);
+    }
+
+    if (results.length === 0) return null;
+    return aggregateResults(results, runs);
 }

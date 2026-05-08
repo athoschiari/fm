@@ -107,8 +107,8 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
 
         const mechanicsMap: Record<string, any> = {};
 
-        // Add Skills
-        if (profile && libs.skillLibrary) {
+        // Add Skills (Disabled for Missions per user request)
+        if (profile && libs.skillLibrary && ageIdx !== -2) {
             const equipped = profile.skills.equipped || [];
             equipped.forEach(skillSlot => {
                 const skillConfig = libs.skillLibrary?.[skillSlot.id];
@@ -220,7 +220,8 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
         const wavesList: any[] = [];
         const totalWavesCount = customWaves ? customWaves.length :
             (localDungeonWaves.length > 0 ? localDungeonWaves.length :
-                (libs.mainBattleLibrary?.[`{'AgeIdx': ${ageIdx}, 'BattleIdx': ${battleIdx}}`]?.Waves.length || 1));
+                (ageIdx === -2 ? 1 : // Missions always have 1 wave
+                    (libs.mainBattleLibrary?.[`{'AgeIdx': ${ageIdx}, 'BattleIdx': ${battleIdx}}`]?.Waves.length || 1)));
 
         // Helper to get enemies for a wave index
         const getWaveEnemies = (wIdx: number) => {
@@ -252,6 +253,43 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                             id: currentId,
                             hp: config.Health,
                             dmg: config.Damage,
+                            weaponInfo: weaponInfo,
+                            projectileSpeed: 10,
+                            weaponSpriteKey: weaponSpriteKey
+                        });
+                    }
+                    return engineEnemies;
+                }
+            }
+
+            // Mission Logic
+            if (ageIdx === -2) {
+                // battleIdx is MissionId, difficultyMode is level
+                const mission = libs.missionBattleLibrary?.[String(battleIdx)];
+                if (mission) {
+                    const baseConfig = libs.missionBaseConfig;
+                    const multiplier = baseConfig?.HealthAndDamageLevelMultiplier || 1.524;
+                    const getScaledValue = (base: number) => {
+                        if (!baseConfig) return base;
+                        return Math.floor(base * Math.pow(multiplier, difficultyMode - 1));
+                    };
+                    const scaledDmg = getScaledValue(mission.BaseDamage);
+                    const scaledHp = getScaledValue(mission.BaseHealth);
+                    const unitCount = mission.UnitCount || 6;
+                    const engineEnemies: any[] = [];
+                    for (let k = 0; k < unitCount; k++) {
+                        let weaponInfo = null;
+                        let weaponSpriteKey = undefined;
+                        if (mission.PossibleWeapons && mission.PossibleWeapons.length > 0) {
+                            const randomWeapon = mission.PossibleWeapons[Math.floor(Math.random() * mission.PossibleWeapons.length)];
+                            const weaponKey = `{'Age': ${randomWeapon.Item1}, 'Type': 'Weapon', 'Idx': ${randomWeapon.Item2}}`;
+                            weaponInfo = libs.weaponLibrary?.[weaponKey];
+                            weaponSpriteKey = `${randomWeapon.Item1}_5_${randomWeapon.Item2}`;
+                        }
+                        engineEnemies.push({
+                            id: mission.MissionId,
+                            hp: scaledHp,
+                            dmg: scaledDmg,
                             weaponInfo: weaponInfo,
                             projectileSpeed: 10,
                             weaponSpriteKey: weaponSpriteKey
@@ -526,12 +564,16 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
             const typeLabel = dungeonType.charAt(0).toUpperCase() + dungeonType.slice(1);
             return `${typeLabel} ${world}-${stage}`;
         }
+        if (ageIdx === -2) {
+            const mission = libs.missionBattleLibrary?.[String(battleIdx)];
+            return mission ? (mission.MissionTitleId.replace(/([A-Z])/g, ' $1').trim()) : 'Mission';
+        }
         // Main battle: format as "Age-Battle" like "5-10" for Age 5, Battle 10
         return `${difficultyMode > 0 ? 'Hard ' : ''}${ageIdx + 1}-${battleIdx + 1}`;
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-2 sm:p-4">
+        <div style={{ margin: '0' }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm p-2 sm:p-4">
             <div className="bg-[#0d0d11] w-full max-w-4xl max-h-[95vh] rounded-xl border border-gray-800 flex flex-col overflow-hidden shadow-2xl">
 
                 {/* Compact Header */}
@@ -706,31 +748,35 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                                 <span className="text-gray-400">Enemy Damage:</span>
                                 <span className="text-red-300 font-bold">{fmt(combatStats.enemyDamage)}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                                <Zap className="w-3 h-3 text-purple-400" />
-                                <span className="text-gray-400">Skill Dmg:</span>
-                                <span className="text-purple-300 font-bold">+{combatStats.skillDmgMultiTotal.toFixed(1)}%</span>
-                                <span className="text-gray-500 text-[10px]">
-                                    ({combatStats.skillDmgMultiFromTree.toFixed(1)}% tree, {combatStats.skillDmgMultiFromStats.toFixed(1)}% stats)
-                                </span>
+                            {ageIdx !== -2 && (
+                                <div className="flex items-center gap-1">
+                                    <Zap className="w-3 h-3 text-purple-400" />
+                                    <span className="text-gray-400">Skill Dmg:</span>
+                                    <span className="text-purple-300 font-bold">+{combatStats.skillDmgMultiTotal.toFixed(1)}%</span>
+                                    <span className="text-gray-500 text-[10px]">
+                                        ({combatStats.skillDmgMultiFromTree.toFixed(1)}% tree, {combatStats.skillDmgMultiFromStats.toFixed(1)}% stats)
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                        {ageIdx !== -2 && (
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mt-1 justify-center">
+                                {combatStats.skillDamages.map(skill => {
+                                    // If damage is already per hit, use it directly. Otherwise divide by hits.
+                                    const perHitDamage = skill.damageIsPerHit
+                                        ? skill.damage
+                                        : (skill.hits > 1 ? skill.damage / skill.hits : skill.damage);
+                                    return (
+                                        <div key={skill.id} className="flex items-center gap-1">
+                                            <Zap className="w-3 h-3 text-yellow-400" />
+                                            <span className="text-gray-400">{skill.id}:</span>
+                                            <span className="text-yellow-300 font-bold">{fmt(perHitDamage)}</span>
+                                            {skill.hits > 1 && <span className="text-gray-500">×{skill.hits}</span>}
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mt-1 justify-center">
-                            {combatStats.skillDamages.map(skill => {
-                                // If damage is already per hit, use it directly. Otherwise divide by hits.
-                                const perHitDamage = skill.damageIsPerHit
-                                    ? skill.damage
-                                    : (skill.hits > 1 ? skill.damage / skill.hits : skill.damage);
-                                return (
-                                    <div key={skill.id} className="flex items-center gap-1">
-                                        <Zap className="w-3 h-3 text-yellow-400" />
-                                        <span className="text-gray-400">{skill.id}:</span>
-                                        <span className="text-yellow-300 font-bold">{fmt(perHitDamage)}</span>
-                                        {skill.hits > 1 && <span className="text-gray-500">×{skill.hits}</span>}
-                                    </div>
-                                );
-                            })}
-                        </div>
+                        )}
                     </div>
                 )}
 
@@ -1004,7 +1050,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                     </div>
 
                     {/* Skills */}
-                    {skills.length > 0 && (
+                    {skills.length > 0 && ageIdx !== -2 && (
                         <div className="px-3 py-2 flex gap-2 justify-center flex-wrap">
                             {skills.map((skill: any, idx: number) => {
                                 const isActive = skill.state === 'Active';
@@ -1034,7 +1080,7 @@ export const BattleVisualizerModal: React.FC<BattleVisualizerModalProps> = ({
                                     >
                                         {(spriteIndex >= 0 && spriteMapping) ? (
                                             <SpriteSheetIcon
-                                                textureSrc="./icons/game/SkillIcons.png"
+                                                textureSrc={`./Texture2D/${selectedVersion}/SkillIcons.png`}
                                                 spriteWidth={spriteMapping.skills.sprite_size.width}
                                                 spriteHeight={spriteMapping.skills.sprite_size.height}
                                                 sheetWidth={spriteMapping.skills.texture_size.width}

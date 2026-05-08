@@ -39,6 +39,7 @@ import ProgressPassWiki from './pages/ProgressPassWiki';
 import Gallery from './pages/Gallery';
 import SecondaryStatsWiki from './pages/SecondaryStatsWiki';
 import MissionsWiki from './pages/MissionsWiki';
+import MissionSolo from './pages/MissionSolo';
 
 
 
@@ -78,7 +79,7 @@ function App() {
                                     <Route path="calculators/mounts" element={<MountCalculator />} />
                                     <Route path="calculators/skills" element={<SkillCalculator />} />
                                     <Route path="calculators/tree" element={<TreeCalculator />} />
-                                    <Route path="solo-mission" element={<MissionsWiki />} />
+                                    <Route path="solo-mission" element={<MissionSolo />} />
                                     <Route path="wiki/forge" element={<ForgeWiki />} />
                                     <Route path="wiki/base-drops" element={<BaseDrops />} />
                                     <Route path="wiki/shop" element={<Shop />} />

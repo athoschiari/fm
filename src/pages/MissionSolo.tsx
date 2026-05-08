@@ -2,12 +2,15 @@ import { useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
-import { Target, Trophy, Sword, Settings, Clock, Users, Shield, Zap, Info, Gift, Hammer as HammerIcon, ChevronRight, Search, Activity, Heart, TrendingUp, Star, Check } from 'lucide-react';
+import { Target, Trophy, Sword, Swords, Settings, Clock, Users, Shield, Zap, Info, Gift, Hammer as HammerIcon, ChevronRight, Search, Activity, Heart, TrendingUp, Star, Check, Play } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useGameDataContext } from '../context/GameDataContext';
 import { AGES } from '../utils/constants';
 import { getItemImage, getItemName } from '../utils/itemAssets';
 import { formatNumber } from '../utils/format';
+import { useBattleSimulation } from '../hooks/useBattleSimulation';
+import { BattleVisualizerModal } from '../components/Battle/BattleVisualizerModal';
+import { BattleResult } from '../utils/BattleSimulator';
 
 interface Reward {
     Amount: number;
@@ -84,10 +87,17 @@ function formatStage(lvl: number): string {
     return `${world}-${stage}`;
 }
 
-export default function MissionsWiki() {
+export default function MissionSolo() {
     const { selectedVersion } = useGameDataContext();
     const [clanPoints, setClanPoints] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
+
+    const { simulateMission, playerStats, profile, libs } = useBattleSimulation();
+    const [selectedBattleResult, setSelectedBattleResult] = useState<BattleResult | null>(null);
+    const [simCount, setSimCount] = useState(100);
+    const [isSimulatingAll, setIsSimulatingAll] = useState(false);
+    const [missionResults, setMissionResults] = useState<Record<number, BattleResult>>({});
+    const [simulatingMissions, setSimulatingMissions] = useState<Record<number, boolean>>({});
 
     const { data: battleLibrary } = useGameData<Record<string, MissionBattle>>('MissionBattleLibrary.json');
     const { data: levelLibrary } = useGameData<Record<string, MissionLevel>>('MissionLevelLibrary.json');
@@ -98,6 +108,35 @@ export default function MissionsWiki() {
     const { data: autoMapping } = useGameData<any>('AutoItemMapping.json');
 
     const loading = !battleLibrary || !levelLibrary || !rewardLibrary || !baseConfig || !allMemberRewardLibrary;
+
+    const handleSimulate = async (battle: MissionBattle) => {
+        if (!playerStats) return;
+        setSimulatingMissions(prev => ({ ...prev, [battle.MissionId]: true }));
+
+        // Use a timeout to avoid freezing the UI
+        return new Promise<void>((resolve) => {
+            setTimeout(() => {
+                const result = simulateMission(battle, clanPoints, simCount);
+                if (result) {
+                    setMissionResults(prev => ({ ...prev, [battle.MissionId]: result }));
+                }
+                setSimulatingMissions(prev => ({ ...prev, [battle.MissionId]: false }));
+                resolve();
+            }, 10);
+        });
+    };
+
+    const handleSimulateAll = async () => {
+        if (!playerStats || isSimulatingAll) return;
+        setIsSimulatingAll(true);
+        
+        // Process one by one to avoid heavy UI freeze
+        for (const battle of filteredMissions) {
+            await handleSimulate(battle);
+        }
+        
+        setIsSimulatingAll(false);
+    };
 
     const currentClanLevelInfo = useMemo(() => {
         if (!levelLibrary) return null;
@@ -123,13 +162,11 @@ export default function MissionsWiki() {
 
     const displayRewards = useMemo(() => {
         if (!currentRewards?.Rewards) return [];
-        // Show all unique rewards from the pool
         return currentRewards.Rewards;
     }, [currentRewards]);
 
     const getScaledValue = (base: number) => {
         if (!baseConfig) return base;
-        // Formula: base * (1 + (level - 1) * (multiplier - 1))
         const multiplier = baseConfig.HealthAndDamageLevelMultiplier;
         return Math.floor(base * Math.pow(multiplier, clanPoints - 1));
     };
@@ -254,42 +291,72 @@ export default function MissionsWiki() {
                         </h2>
                         <p className="text-xs text-text-muted uppercase font-black">Stats scaled to Level {clanPoints}</p>
                     </div>
-                    <div className="relative w-full md:w-80">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
-                        <input
-                            placeholder="Filter missions by name..."
-                            className="w-full bg-bg-input border border-border rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-accent-primary outline-none transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                        <div className="flex items-center gap-2 bg-bg-secondary/40 border border-border/50 rounded-xl px-3 py-1.5 shadow-sm">
+                            <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">Global Iterations</span>
+                            <input
+                                type="number"
+                                min={1}
+                                max={10000}
+                                value={simCount}
+                                onChange={(e) => setSimCount(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="w-16 bg-bg-input/50 border border-accent-primary/20 rounded-lg px-2 py-0.5 text-[10px] font-black text-accent-primary text-center focus:border-accent-primary outline-none"
+                            />
+                        </div>
+
+                        <button
+                            onClick={handleSimulateAll}
+                            disabled={isSimulatingAll}
+                            className={cn(
+                                "flex items-center gap-2 px-6 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-300",
+                                "bg-accent-primary text-white shadow-lg shadow-accent-primary/20 hover:scale-105 active:scale-95",
+                                isSimulatingAll && "opacity-50 cursor-not-allowed"
+                            )}
+                        >
+                            {isSimulatingAll ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                            ) : (
+                                <Zap className="w-4 h-4 fill-current" />
+                            )}
+                            {isSimulatingAll ? 'Simulating...' : 'Simulate All'}
+                        </button>
+
+                        <div className="relative w-full md:w-64">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+                            <input
+                                placeholder="Filter missions..."
+                                className="w-full bg-bg-input border border-border rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-accent-primary outline-none transition-all"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredMissions.map((battle) => {
-                        // 1. Stats scale LINEARLY (Confirmed by user "K" values)
                         const scaledDmg = getScaledValue(battle.BaseDamage);
                         const scaledHp = getScaledValue(battle.BaseHealth);
-                        
-                        // 2. Power scales EXPONENTIALLY (Confirmed by user 5.4B -> 12.5B jump)
-                        // Formula: BasePower(Level 1) * (Multiplier ^ (Level - 1))
-                        // Base Power is calculated for a team of 3 (Supports)
                         const multiplier = baseConfig?.HealthAndDamageLevelMultiplier || 1.524;
                         // The game uses a fixed baseline for suggested power regardless of the specific mission stats
                         const fixedBasePower = 144000;
                         const suggestedPower = fixedBasePower * Math.pow(multiplier, clanPoints - 1);
 
+                        const result = missionResults[battle.MissionId];
+                        const winRate = result?.winProbability || 0;
+                        const hasSimulated = !!result;
+
                         return (
                             <Card key={battle.MissionId} className={cn(
                                 "flex flex-col relative overflow-hidden transition-all duration-500 group",
-                                "hover:translate-y-[-4px] hover:shadow-2xl hover:shadow-accent-primary/10 border-border/40 hover:border-accent-primary/60"
+                                "hover:translate-y-[-4px] hover:shadow-2xl border-border/40 hover:border-accent-primary/60",
+                                hasSimulated && winRate > 50 && "bg-green-500/5 border-green-500/30 hover:border-green-500/60 shadow-green-500/5",
+                                hasSimulated && winRate <= 50 && "bg-red-500/5 border-red-500/30 hover:border-red-500/60 shadow-red-500/5"
                             )}>
-                                {/* Background Decorative Elements */}
                                 <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity pointer-events-none rotate-12 group-hover:rotate-0 transition-transform duration-700">
                                     <Target size={120} />
                                 </div>
 
-                                {/* Header Card */}
                                 <div className="p-5 border-b border-border/50 flex justify-between items-start bg-gradient-to-r from-bg-secondary/40 to-transparent">
                                     <div className="space-y-1.5">
                                         <div className="flex items-center gap-2">
@@ -305,7 +372,6 @@ export default function MissionsWiki() {
                                     </div>
                                 </div>
 
-                                {/* Stats Body */}
                                 <div className="p-5 space-y-6 flex-1">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
@@ -326,7 +392,6 @@ export default function MissionsWiki() {
                                         </div>
                                     </div>
 
-                                    {/* Suggested Power Badge */}
                                     <div className="bg-bg-input/50 border border-border/50 rounded-xl p-3 flex flex-col items-center justify-center text-center group/power relative overflow-hidden">
                                         <div className="absolute inset-0 bg-accent-primary/5 opacity-0 group-hover/power:opacity-100 transition-opacity" />
                                         <div className="flex items-center gap-2 text-[9px] font-black text-accent-primary uppercase tracking-widest relative z-10">
@@ -340,7 +405,6 @@ export default function MissionsWiki() {
                                         </div>
                                     </div>
 
-                                    {/* Enemy Gear Section */}
                                     <div className="space-y-4 pt-2">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
@@ -374,15 +438,80 @@ export default function MissionsWiki() {
                                             />
                                         </div>
                                     </div>
+                                    <div className="pt-4 mt-auto border-t border-border/30 space-y-2">
+                                        {missionResults[battle.MissionId] && (
+                                            <div className={cn(
+                                                "flex items-center justify-between p-2 rounded-lg text-[10px] font-black uppercase tracking-widest border",
+                                                missionResults[battle.MissionId].winProbability > 50 ? "bg-green-500/10 text-green-400 border-green-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"
+                                            )}>
+                                                <span>Win Rate: {missionResults[battle.MissionId].winProbability.toFixed(1)}%</span>
+                                                <span>{missionResults[battle.MissionId].winProbability > 50 ? 'Likely Victory' : 'Likely Defeat'}</span>
+                                            </div>
+                                        )}
+
+                                        <div className="flex flex-col gap-1.5 mb-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[9px] font-black text-text-muted uppercase tracking-widest">Iterations</span>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    max={10000}
+                                                    value={simCount}
+                                                    onChange={(e) => setSimCount(Math.max(1, parseInt(e.target.value) || 1))}
+                                                    className="w-16 bg-bg-input/50 border border-border/30 rounded-lg px-2 py-0.5 text-[10px] font-black text-accent-primary text-center focus:border-accent-primary outline-none"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleSimulate(battle)}
+                                                disabled={simulatingMissions[battle.MissionId]}
+                                                className={cn(
+                                                    "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-300",
+                                                    "bg-accent-primary/10 text-accent-primary border border-accent-primary/20 hover:bg-accent-primary hover:text-white hover:border-accent-primary shadow-lg shadow-accent-primary/5",
+                                                    simulatingMissions[battle.MissionId] && "opacity-50 cursor-not-allowed"
+                                                )}
+                                            >
+                                                {simulatingMissions[battle.MissionId] ? (
+                                                    <div className="w-4 h-4 border-2 border-current border-t-transparent animate-spin rounded-full" />
+                                                ) : (
+                                                    <Swords className="w-4 h-4" />
+                                                )}
+                                                {missionResults[battle.MissionId] ? 'Re-Simulate' : 'Simulate'}
+                                            </button>
+
+                                            {missionResults[battle.MissionId] && (
+                                                <button
+                                                    onClick={() => setSelectedBattleResult(missionResults[battle.MissionId])}
+                                                    className="px-3 bg-accent-secondary/10 text-accent-secondary border border-accent-secondary/20 hover:bg-accent-secondary hover:text-white rounded-xl transition-all duration-300"
+                                                    title="View Battle"
+                                                >
+                                                    <Play className="w-4 h-4 fill-current" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
                                 </div>
-
-
                             </Card>
                         );
                     })}
                 </div>
             </div>
 
+            {selectedBattleResult && (
+                <BattleVisualizerModal
+                    isOpen={!!selectedBattleResult}
+                    onClose={() => setSelectedBattleResult(null)}
+                    playerStats={playerStats!}
+                    profile={profile || null}
+                    libs={libs}
+                    ageIdx={-2} // Mission Flag
+                    battleIdx={selectedBattleResult.battleIdx} // Mission ID
+                    difficultyMode={selectedBattleResult.difficultyIdx} // Level
+                />
+            )}
         </div>
     );
 }

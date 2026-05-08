@@ -13,7 +13,8 @@ import {
 } from '../utils/BattleHelper';
 import {
     simulateBattleMulti,
-    simulateDungeonBattleMulti
+    simulateDungeonBattleMulti,
+    simulateMissionBattleMulti
 } from '../utils/BattleSimulator';
 import { DebugConfig } from '../utils/BattleEngine';
 
@@ -41,8 +42,10 @@ export function useBattleSimulation() {
     const { data: skillLibrary, loading: loading12 } = useGameData<any>('SkillLibrary.json');
     const { data: skillPassiveLibrary, loading: loading13 } = useGameData<any>('SkillPassiveLibrary.json');
     const { data: dungeonBaseConfig, loading: loading14 } = useGameData<any>('DungeonBaseConfig.json');
+    const { data: missionBaseConfig, loading: loading15 } = useGameData<any>('MissionBaseConfig.json');
+    const { data: missionBattleLibrary, loading: loading16 } = useGameData<any>('MissionBattleLibrary.json');
 
-    const isLoading = loading1 || loading2 || loading3 || loading4 || loading5 || loading6 || loading7 || loading8 || loading9 || loading10 || loading11 || loading12 || loading13 || loading14;
+    const isLoading = loading1 || loading2 || loading3 || loading4 || loading5 || loading6 || loading7 || loading8 || loading9 || loading10 || loading11 || loading12 || loading13 || loading14 || loading15 || loading16;
 
     // Derived Constants
     const maxDungeonLevel = useMemo(() => dungeonBaseConfig?.MaxDungeonLevel ?? 399, [dungeonBaseConfig]);
@@ -74,6 +77,8 @@ export function useBattleSimulation() {
         skillLibrary,
         skillPassiveLibrary,
         dungeonBaseConfig,
+        missionBaseConfig,
+        missionBattleLibrary,
         // Build generic lookup map
         mainBattleLookup: (() => {
             if (!mainBattleLibrary) return undefined;
@@ -103,7 +108,9 @@ export function useBattleSimulation() {
         projectilesLibrary,
         skillLibrary,
         skillPassiveLibrary,
-        dungeonBaseConfig
+        dungeonBaseConfig,
+        missionBaseConfig,
+        missionBattleLibrary
     ]);
 
     // Simulate a specific main battle (Averaged over configurable runs for prediction)
@@ -128,6 +135,17 @@ export function useBattleSimulation() {
     ): BattleResult | null => {
         if (!playerStats) return null;
         return simulateDungeonBattleMulti(playerStats, profile, dungeonType, level, libs, runs, debugConfig);
+    }, [playerStats, profile, libs]);
+
+    // Simulate a mission battle
+    const simulateMission = useCallback((
+        mission: any,
+        level: number,
+        runs: number = 100,
+        debugConfig?: DebugConfig
+    ): BattleResult | null => {
+        if (!playerStats) return null;
+        return simulateMissionBattleMulti(playerStats, profile, mission, level, libs, runs, debugConfig);
     }, [playerStats, profile, libs]);
 
     // Calculate win probability for a stage
@@ -207,6 +225,7 @@ export function useBattleSimulation() {
         findMaxBeatableDungeon,
         getAvailableStages,
         getBattleCountForAge,
+        simulateMission,
         libs,
         isLoading,
         maxDungeonLevel,
