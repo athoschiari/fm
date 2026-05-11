@@ -288,7 +288,7 @@ export default function Mounts() {
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="text-[10px] font-bold text-text-muted uppercase">Skills</div>
                                     <div className="bg-accent-primary/10 text-accent-primary px-2 py-0.5 rounded text-xs font-mono font-bold">
-                                        {petUnlockLib?.[mount.rarity]?.NumberOfSecondStats || 0}
+                                        {ascensionLevel > 0 ? 2 : (petUnlockLib?.[mount.rarity]?.NumberOfSecondStats || 0)}
                                     </div>
                                 </div>
 

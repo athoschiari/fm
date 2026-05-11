@@ -404,7 +404,7 @@ export default function Pets() {
                                 <div className="flex items-center justify-between mt-4 pb-1">
                                     <div className="text-[10px] font-bold text-text-muted uppercase">Skills</div>
                                     <div className="bg-accent-primary/10 text-accent-primary px-2 py-0.5 rounded text-xs font-mono font-bold">
-                                        {petUnlockLib?.[pet.rarity]?.NumberOfSecondStats || 0}
+                                        {ascensionLevel > 0 ? 2 : (petUnlockLib?.[pet.rarity]?.NumberOfSecondStats || 0)}
                                     </div>
                                 </div>
                             </Card>
