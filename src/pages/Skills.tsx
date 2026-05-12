@@ -30,7 +30,7 @@ export default function Skills() {
 
     // Compute ascension multipliers from JSON (active + passive)
     const ascensionMulti = useMemo(() => {
-        let activeDmg = 0, activeHp = 0, passiveDmg = 0, passiveHp = 0;
+        let activeDmg = 1, activeHp = 1, passiveDmg = 1, passiveHp = 1;
         if (ascensionLevel > 0 && ascensionConfigs?.Skills?.AscensionConfigPerLevel) {
             const configs = ascensionConfigs.Skills.AscensionConfigPerLevel;
             const config = configs[Math.min(ascensionLevel - 1, configs.length - 1)];
@@ -226,11 +226,11 @@ export default function Skills() {
                         const hpIdx = Math.min(Math.max(1, globalLevel) - 1, skill.healthPerLevel.length - 1);
 
                         const dmgAtLevel = dmgIdx >= 0
-                            ? (skill.damagePerLevel[dmgIdx] || 0) * (1 + ascensionMulti.activeDmg)
+                            ? (skill.damagePerLevel[dmgIdx] || 0) * ascensionMulti.activeDmg
                             : 0;
 
                         const hpAtLevel = hpIdx >= 0
-                            ? (skill.healthPerLevel[hpIdx] || 0) * (1 + ascensionMulti.activeHp)
+                            ? (skill.healthPerLevel[hpIdx] || 0) * ascensionMulti.activeHp
                             : 0;
 
                         return (

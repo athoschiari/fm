@@ -55,21 +55,21 @@ export default function Items() {
 
     // Ascension Multiplier calculation
     const forgeAscensionMulti = useMemo(() => {
-        let total = 0;
+        let multi = 1;
         if (ascensionLevel > 0 && ascensionConfigs?.Forge?.AscensionConfigPerLevel) {
             const configs = ascensionConfigs.Forge.AscensionConfigPerLevel;
-            // The config values are per level, we sum them up to get the cumulative multiplier increment
-            for (let i = 0; i < ascensionLevel && i < configs.length; i++) {
-                for (const stat of configs[i].StatContributions || []) {
+            const config = configs[Math.min(ascensionLevel - 1, configs.length - 1)];
+            if (config) {
+                for (const stat of config.StatContributions || []) {
                     const statType = stat.StatNode?.UniqueStat?.StatType;
                     if (statType === 'Damage' || statType === 'AscensionDamage' || statType === 'Health' || statType === 'AscensionHealth') {
-                        total += (stat.Value + 1)
+                        multi = stat.Value + 1;
                         break;
                     }
                 }
             }
         }
-        return total;
+        return multi;
     }, [ascensionLevel, ascensionConfigs]);
 
     // Scaling factor from config
@@ -276,7 +276,7 @@ export default function Items() {
                                             scaledValue *= statMultiplier;
 
                                             // Apply Forge Ascension multiplier
-                                            scaledValue *= (1 + forgeAscensionMulti);
+                                            scaledValue *= forgeAscensionMulti;
 
                                             // Apply Melee multiplier for weapons if applicable
                                             if (selectedSlot === 'Weapon' && (statType === 'Damage' || statType === 'Attack')) {

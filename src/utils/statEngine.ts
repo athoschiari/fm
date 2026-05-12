@@ -825,13 +825,14 @@ export class StatEngine {
             const petType = petData?.Type || 'Balanced';
             const typeMulti = this.libs.petBalancingLibrary?.[petType] || { DamageMultiplier: 1, HealthMultiplier: 1 };
 
-            let ascensionDmgMulti = 0;
-            let ascensionHpMulti = 0;
+            let ascensionDmgMulti = 1;
+            let ascensionHpMulti = 1;
             const petAscensionLevel = this.profile.misc.petAscensionLevel || 0;
             if (petAscensionLevel > 0 && this.libs.ascensionConfigsLibrary?.Pets?.AscensionConfigPerLevel) {
                 const ascConfigs = this.libs.ascensionConfigsLibrary.Pets.AscensionConfigPerLevel;
-                for (let i = 0; i < petAscensionLevel && i < ascConfigs.length; i++) {
-                    const stats = ascConfigs[i].StatContributions || [];
+                const config = ascConfigs[Math.min(petAscensionLevel - 1, ascConfigs.length - 1)];
+                if (config) {
+                    const stats = config.StatContributions || [];
                     for (const s of stats) {
                         const sType = s.StatNode?.UniqueStat?.StatType;
                         const sVal = s.Value + 1;
@@ -848,12 +849,12 @@ export class StatEngine {
 
                 if (statType === 'Damage') {
                     value *= typeMulti.DamageMultiplier;
-                    value *= (1 + petDamageBonus + ascensionDmgMulti);
+                    value *= (1 + petDamageBonus) * ascensionDmgMulti;
                     dmg += value;
                 }
                 if (statType === 'Health') {
                     value *= typeMulti.HealthMultiplier;
-                    value *= (1 + petHealthBonus + ascensionHpMulti);
+                    value *= (1 + petHealthBonus) * ascensionHpMulti;
                     hp += value;
                 }
             }
@@ -899,8 +900,9 @@ export class StatEngine {
         const mountAscensionLevel = this.profile.misc.mountAscensionLevel || 0;
         if (mountAscensionLevel > 0 && this.libs.ascensionConfigsLibrary?.Mounts?.AscensionConfigPerLevel) {
             const ascConfigs = this.libs.ascensionConfigsLibrary.Mounts.AscensionConfigPerLevel;
-            for (let i = 0; i < mountAscensionLevel && i < ascConfigs.length; i++) {
-                const stats = ascConfigs[i].StatContributions || [];
+            const config = ascConfigs[Math.min(mountAscensionLevel - 1, ascConfigs.length - 1)];
+            if (config) {
+                const stats = config.StatContributions || [];
                 for (const s of stats) {
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     const sVal = s.Value + 1;

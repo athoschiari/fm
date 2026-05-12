@@ -65,7 +65,7 @@ export default function Pets() {
 
     // Compute ascension multiplier from JSON
     const ascensionMulti = useMemo(() => {
-        let dmg = 0, hp = 0;
+        let dmg = 1, hp = 1;
         if (ascensionLevel > 0 && ascensionConfigs?.Pets?.AscensionConfigPerLevel) {
             const configs = ascensionConfigs.Pets.AscensionConfigPerLevel;
             const config = configs[Math.min(ascensionLevel - 1, configs.length - 1)];
@@ -297,8 +297,8 @@ export default function Pets() {
                         const baseHp = baseStats.find((s: any) => s.StatNode?.UniqueStat?.StatType === 'Health')?.Value || 0;
 
                         const typeMod = petBalancing?.[pet.type] || { DamageMultiplier: 1, HealthMultiplier: 1 };
-                        const finalDmg = baseDmg * (typeMod.DamageMultiplier || 1) * (1 + ascensionMulti.dmg);
-                        const finalHp = baseHp * (typeMod.HealthMultiplier || 1) * (1 + ascensionMulti.hp);
+                        const finalDmg = baseDmg * (typeMod.DamageMultiplier || 1) * ascensionMulti.dmg;
+                        const finalHp = baseHp * (typeMod.HealthMultiplier || 1) * ascensionMulti.hp;
 
                         const spriteStyle = getSpriteStyle(pet.spriteIndex);
 

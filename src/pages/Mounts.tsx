@@ -29,7 +29,7 @@ export default function Mounts() {
 
     // Compute ascension multiplier from JSON
     const ascensionMulti = useMemo(() => {
-        let dmg = 0, hp = 0;
+        let dmg = 1, hp = 1;
         if (ascensionLevel > 0 && ascensionConfigs?.Mounts?.AscensionConfigPerLevel) {
             const configs = ascensionConfigs.Mounts.AscensionConfigPerLevel;
             const config = configs[Math.min(ascensionLevel - 1, configs.length - 1)];
@@ -271,13 +271,13 @@ export default function Mounts() {
                                                 <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
                                                     <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Base Dmg</span>
                                                     <span className="font-mono font-bold text-red-200">
-                                                        +{((damageStat?.Value || 0) * (1 + ascensionMulti.dmg)).toFixed(2)}
+                                                        +{((damageStat?.Value || 0) * ascensionMulti.dmg).toFixed(2)}
                                                     </span>
                                                 </div>
                                                 <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
                                                     <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Base HP</span>
                                                     <span className="font-mono font-bold text-green-200">
-                                                        +{((healthStat?.Value || 0) * (1 + ascensionMulti.hp)).toFixed(2)}
+                                                        +{((healthStat?.Value || 0) * ascensionMulti.hp).toFixed(2)}
                                                     </span>
                                                 </div>
                                             </>
