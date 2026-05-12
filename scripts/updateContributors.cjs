@@ -19,7 +19,7 @@ async function getContributorStats() {
     console.log('Fetching git history...');
     
     const gitCmd = 'git log --numstat --pretty="FORMAT:%aN|%aE" --all';
-    const output = execSync(gitCmd).toString();
+    const output = execSync(gitCmd, { maxBuffer: 10 * 1024 * 1024 }).toString();
 
     const stats = {};
     let currentAuthor = null;
