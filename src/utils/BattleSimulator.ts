@@ -221,12 +221,18 @@ export function simulateBattle(
             });
 
             for (let k = 0; k < enemy.Count; k++) {
+                let projectileSpeed = 10;
+                if (weaponInfo && Boolean(weaponInfo.IsRanged) && weaponInfo.ProjectileId !== undefined && weaponInfo.ProjectileId !== -1) {
+                    const proj = libs.projectilesLibrary?.[String(weaponInfo.ProjectileId)];
+                    if (proj) projectileSpeed = proj.Speed;
+                }
+
                 engineEnemies.push({
                     id: enemy.Id,
                     hp: enemyHp,
                     dmg: enemyDmg,
                     weaponInfo: weaponInfo,
-                    projectileSpeed: 10
+                    projectileSpeed: projectileSpeed
                 });
                 totalEnemies++;
             }
@@ -442,6 +448,12 @@ export function simulateDungeonBattle(
             const weaponKey = enemyConfig?.WeaponId ? `{'Age': ${enemyConfig.WeaponId.Age}, 'Type': 'Weapon', 'Idx': ${enemyConfig.WeaponId.Idx}}` : null;
             const weaponInfo = (weaponKey && libs.weaponLibrary) ? libs.weaponLibrary[weaponKey] : null;
 
+            let projectileSpeed = 10;
+            if (weaponInfo && Boolean(weaponInfo.IsRanged) && weaponInfo.ProjectileId !== undefined && weaponInfo.ProjectileId !== -1) {
+                const proj = libs.projectilesLibrary?.[String(weaponInfo.ProjectileId)];
+                if (proj) projectileSpeed = proj.Speed;
+            }
+
             // Engine Config
             // For Dungeon, HP/Dmg are fixed in Config
             engineEnemies.push({
@@ -449,7 +461,7 @@ export function simulateDungeonBattle(
                 hp: config.Health,
                 dmg: config.Damage,
                 weaponInfo: weaponInfo,
-                projectileSpeed: 10
+                projectileSpeed: projectileSpeed
             });
         }
         allWaves.push(engineEnemies);

@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { useGameData } from '../hooks/useGameData';
-import { Unlock, AlertCircle } from 'lucide-react';
+import { Unlock, AlertCircle, Shield, Info } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 // Constants for Ages as they might not be in a simple config list
 const AGES = ['Primitive', 'Medieval', 'Early-Modern', 'Modern', 'Space', 'Interstellar', 'Multiverse', 'Quantum', 'Underworld', 'Divine'];
@@ -35,13 +36,18 @@ const FEATURE_NAMES: Record<string, string> = {
     Hammer_1: 'Extra Hammer 1',
     PetSlot2: 'Pet Slot 3',
     Hammer_2: 'Extra Hammer 2',
-    RateUs_1: 'Rate Us (Phase 1)',
     RateUs_2: 'Rate Us (Phase 2)',
+    Missions: 'Missions',
+    SwitchWorlds: 'Switch Worlds',
+    PrivacySettings: 'Privacy Settings',
+    GuildAnnouncement: 'Guild Announcement',
 };
 
 interface UnlockCondition {
     AgeIdx: number;
     BattleIdx: number;
+    RequireCompliance?: boolean;
+    FeatureToggle?: boolean;
 }
 
 export default function Unlocks() {
@@ -96,6 +102,33 @@ export default function Unlocks() {
                 </div>
             </div>
 
+            {/* Legend / Info Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-bg-secondary/30 p-6 rounded-2xl border border-border">
+                <div className="space-y-4">
+                    <h3 className="text-sm font-bold uppercase tracking-widest text-accent-primary flex items-center gap-2">
+                        <Info className="w-4 h-4" /> Understanding Unlocks
+                    </h3>
+                    <p className="text-xs text-text-muted leading-relaxed">
+                        Features unlock as you progress through the ages and battle stages. 
+                        Each age consists of multiple stages you must conquer to advance.
+                    </p>
+                </div>
+                <div className="flex flex-col gap-3 justify-center">
+                    <div className="flex items-center gap-3 text-xs">
+                        <div className="w-8 h-8 rounded bg-accent-primary/10 flex items-center justify-center shrink-0">
+                            <Shield className="w-4 h-4 text-blue-400" />
+                        </div>
+                        <span className="text-text-secondary"><span className="font-bold text-blue-400">Compliance Required:</span> This feature requires platform login or social verification.</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs opacity-50">
+                        <div className="w-8 h-8 rounded bg-bg-tertiary flex items-center justify-center shrink-0 border border-red-500/20">
+                            <AlertCircle className="w-4 h-4 text-red-400" />
+                        </div>
+                        <span className="text-text-secondary"><span className="font-bold text-red-400">Disabled:</span> Feature is present in game files but currently toggled off.</span>
+                    </div>
+                </div>
+            </div>
+
             <div className="relative pl-8 border-l-2 border-border space-y-12">
                 {timeline.map((group) => (
                     <div key={group.age} className="relative">
@@ -114,16 +147,31 @@ export default function Unlocks() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {group.features.map(({ feature, data }) => (
-                                <Card key={feature} className="flex items-center gap-4 p-4 hover:border-accent-primary/50 transition-colors">
+                                <Card key={feature} className={cn(
+                                    "flex items-center gap-4 p-4 hover:border-accent-primary/50 transition-colors relative group",
+                                    data.FeatureToggle && "opacity-40 grayscale pointer-events-none"
+                                )}>
                                     <div className="w-10 h-10 rounded bg-accent-primary/10 flex items-center justify-center shrink-0">
                                         <GameIcon name={getFeatureIcon(feature)} className="w-6 h-6" />
                                     </div>
-                                    <div className="overflow-hidden">
-                                        <div className="font-semibold truncate" title={FEATURE_NAMES[feature] || feature}>
-                                            {FEATURE_NAMES[feature] || feature}
+                                    <div className="overflow-hidden flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="font-semibold truncate" title={FEATURE_NAMES[feature] || feature}>
+                                                {FEATURE_NAMES[feature] || feature}
+                                            </div>
+                                            {Boolean(data.RequireCompliance) && (
+                                                <div className="shrink-0 group-hover:scale-110 transition-transform" title="Requires Compliance / Social Login">
+                                                    <Shield className="w-3.5 h-3.5 text-blue-400" />
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="text-sm text-text-muted">
-                                            Stage {group.age + 1}-{data.BattleIdx + 1}
+                                        <div className="text-sm text-text-muted flex items-center justify-between">
+                                            <span>Stage {group.age + 1}-{data.BattleIdx + 1}</span>
+                                            {data.FeatureToggle && (
+                                                <span className="text-[10px] font-black uppercase tracking-tighter text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/20">
+                                                    Locked / Off
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 </Card>

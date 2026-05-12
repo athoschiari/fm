@@ -57,7 +57,7 @@ export default function GuildWar() {
     const tiers = useMemo(() => {
         if (!tierConfig) return [];
         return Object.values(tierConfig).sort((a: any, b: any) => {
-            const order = ['S', 'A', 'B', 'C', 'D', 'E'];
+            const order = ['SSS', 'SS', 'S', 'A', 'B', 'C', 'D', 'E'];
             return order.indexOf(a.Tier) - order.indexOf(b.Tier);
         });
     }, [tierConfig]);
@@ -352,13 +352,13 @@ export default function GuildWar() {
                                         <div className="text-right">
                                             <div className="text-[10px] font-bold text-text-muted uppercase mb-1">War Points Gained</div>
                                             <div className="flex gap-2 justify-end">
-                                            <span className="text-green-400 font-bold text-xs">+{tier.TierPointsOnWin} Win</span>
-                                            <span className={cn(
-                                                "font-bold text-xs",
-                                                ['A', 'S'].includes(tier.Tier) ? "text-red-400" : "text-blue-400"
-                                            )}>
-                                                {['A', 'S'].includes(tier.Tier) ? '-' : '+'}{tier.TierPointsOnLose} Lose
-                                            </span>
+                                                <span className="text-green-400 font-bold text-xs">{tier.TierPointsOnWin} Win</span>
+                                                <span className={cn(
+                                                    "font-bold text-xs",
+                                                    tier.TierPointsOnLose < 0 ? "text-red-400" : "text-blue-400"
+                                                )}>
+                                                    {tier.TierPointsOnLose} Lose
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -460,12 +460,14 @@ export default function GuildWar() {
 // Helpers
 function getTierColor(tier: string): string {
     const colors: Record<string, string> = {
-        'S': '#fcd34d', // Yellow/Gold
-        'A': '#f87171', // Red
-        'B': '#c084fc', // Purple
-        'C': '#60a5fa', // Blue
-        'D': '#4ade80', // Green
-        'E': '#94a3b8', // Gray/Steel
+        'SSS': '#D946EF', // Fuchsia
+        'SS': '#EF4444',  // Red
+        'S': '#FACC15',   // Yellow
+        'A': '#22C55E',   // Green
+        'B': '#06B6D4',   // Cyan
+        'C': '#FFFFFF',   // White
+        'D': '#FFFFFF',   // White
+        'E': '#FFFFFF',   // White
     };
     return colors[tier] || '#ffffff';
 }

@@ -2,12 +2,12 @@
   "0": {
     "LeagueId": 0,
     "PromotionEnd": 90,
-    "DemotionStart": 0
+    "DemotionStart": -1
   },
   "1": {
     "LeagueId": 1,
     "PromotionEnd": 80,
-    "DemotionStart": 0
+    "DemotionStart": -1
   },
   "2": {
     "LeagueId": 2,
@@ -26,7 +26,7 @@
   },
   "5": {
     "LeagueId": 5,
-    "PromotionEnd": 0,
+    "PromotionEnd": -1,
     "DemotionStart": 60
   }
 }

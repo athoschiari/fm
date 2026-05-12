@@ -71,7 +71,7 @@ export interface WeaponInfo {
     Type: string;
     AttackDuration: number;
     WindupTime: number;
-    IsRanged: number;
+    IsRanged: boolean | number;
     ProjectileId?: number;
     AttackRange?: number;
 }
