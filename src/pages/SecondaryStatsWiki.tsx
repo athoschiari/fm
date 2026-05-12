@@ -3,6 +3,7 @@ import { Card } from '../components/UI/Card';
 import { Button } from '../components/UI/Button';
 import { TrendingUp, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { getStatName, getStatIcon } from '../utils/statNames';
 
 interface SecondaryStat {
     Stat: string;
@@ -158,13 +159,14 @@ export default function SecondaryStatsWiki() {
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted">Stat Name</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted">Lower Range (Min)</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted">Upper Range (Max)</th>
+                                <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-accent-primary">Max Total (12 Slots)</th>
                                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-text-muted text-right">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/50">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-20 text-center">
+                                    <td colSpan={5} className="px-6 py-20 text-center">
                                         <RefreshCw className="w-8 h-8 animate-spin mx-auto text-accent-primary opacity-20" />
                                         <p className="text-sm text-text-muted mt-2">Loading data...</p>
                                     </td>
@@ -181,6 +183,15 @@ export default function SecondaryStatsWiki() {
                                         Math.abs(base.UpperRange - target.UpperRange) > 0.0000000001
                                     );
 
+                                    const calculateMaxTotal = (statName: string, upperRange: number) => {
+                                        let total = upperRange * 12;
+                                        // Cap chance-based stats at 100%
+                                        if (statName.toLowerCase().includes('chance')) {
+                                            total = Math.min(total, 1.0);
+                                        }
+                                        return total;
+                                    };
+
                                     return (
                                         <tr
                                             key={name}
@@ -193,12 +204,19 @@ export default function SecondaryStatsWiki() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
                                                     <div className={cn(
-                                                        "w-1.5 h-6 rounded-full",
+                                                        "w-1.5 h-10 rounded-full",
                                                         isNew ? "bg-green-500" : isRemoved ? "bg-red-500" : isModified ? "bg-blue-500" : "bg-border"
                                                     )} />
-                                                    <span className="font-mono text-sm font-bold text-text-primary group-hover:text-accent-primary transition-colors">
-                                                        {name}
-                                                    </span>
+                                                    <div className="flex flex-col">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-bold text-text-primary group-hover:text-accent-primary transition-colors">
+                                                                {getStatName(name)}
+                                                            </span>
+                                                        </div>
+                                                        <span className="font-mono text-[10px] text-text-muted opacity-50">
+                                                            {name}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
@@ -230,6 +248,11 @@ export default function SecondaryStatsWiki() {
                                                         </span>
                                                     )}
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="text-sm font-black text-accent-primary drop-shadow-[0_0_8px_rgba(255,221,0,0.15)]">
+                                                    {target ? formatValue(calculateMaxTotal(name, target.UpperRange)) : 'N/A'}
+                                                </span>
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 {isNew && <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-0.5 rounded font-black uppercase tracking-tighter">New</span>}

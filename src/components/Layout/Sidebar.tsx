@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -72,6 +72,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const { profile } = useProfile();
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
+
+    const donationLabel = useMemo(() => {
+        const labels = [
+            "Keep Dev Awake", "Forge Fuel", "Buy Coffee", "Dev Juice",
+            "Hammer Lube", "Caffeine Boost", "Fuel the Dev", "Tips & Treats",
+            "Mythic Espresso ☕", "Ultimate Latte 🥛", "Forge Coal 🔥",
+            "Mana Potion 🧪", "Dev Energy ⚡", "Forge Master Tab",
+            "Coffee Blessing ✨", "Support Craft 🔨", "Binary Beans 🫘",
+            "Hot Dev Liquid", "Pixel Caffeine", "Legendary Brew"
+        ];
+        return labels[Math.floor(Math.random() * labels.length)];
+    }, []);
 
     const NAV_GROUPS = [
         {
@@ -183,10 +195,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 onMouseLeave={() => isCoffee && setIsHoveringCoffee(false)}
                                                 onClick={() => {
                                                     if (isCoffee) {
-                                                        toast("You're making the forge hotter! 🔥☕", { 
-                                                            icon: "🔨",
-                                                            theme: "dark"
-                                                        });
+                                                        if ((window as any).__triggerTestToast) {
+                                                            (window as any).__triggerTestToast();
+                                                        }
                                                     }
                                                     window.innerWidth < 1024 && onClose();
                                                 }}
@@ -199,7 +210,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                             >
                                                 {isCoffee && isHoveringCoffee && <CoffeeFountain />}
                                                 {Icon && <Icon size={18} className={isCoffee ? "fill-current group-hover/coffee:rotate-12 transition-transform relative z-10" : ""} />}
-                                                <span className="relative z-10">{item.name}</span>
+                                                <span className="relative z-10">
+                                                    {isCoffee ? donationLabel : item.name}
+                                                </span>
                                             </a>
                                         );
                                     }

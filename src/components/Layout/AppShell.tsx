@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
@@ -10,38 +10,46 @@ import { useProfile } from '../../context/ProfileContext';
 import { StatsSummaryPanel } from '../Profile/StatsSummaryPanel';
 import { cn } from '../../lib/utils';
 
-const FRIENDLY_MESSAGES = (userName: string) => [
-    `Hey ${userName}, still forging? Go grab a snack! 🥪`,
-    `That hammer looks heavy, ${userName}. Take a coffee break! ☕`,
-    `Did you know? Every 100 clicks, a developer drinks a double espresso. ⚡`,
-    `Forging level 100? You're a legend, ${userName}! 🔨`,
-    `If you hear a weird noise, it's just the developer's stomach growling. 🍕`,
-    `Don't tell the NPCs, but ${userName} is my favorite user. 🤫`,
-    `Success is 10% luck, 20% skill, and 70% caffeine. ☕`,
-    `Error 404: Coffee not found in developer's system. Please donate caffeine. ☕`,
-    `Rumor has it that ${userName} can forge even without sleep. 💤`,
-    `Is it getting hot in here or did you just craft another Ultimate? 🌶️`,
-    `You've been here a lot today, ${userName}. Your keyboard misses your family. 😂`,
-    `Your hammer is glowing, ${userName}! Is that magic or just friction? 🔥`,
-    `Hey ${userName}, I saw that Craft! Absolutely stunning. 🌟`,
-    `Warning: Excessive forging may lead to excessive fun. ⚠️`,
-    `If this tool was any faster, it would be a time machine. ⏳`,
-    `Mastering the forge is a marathon, not a sprint, ${userName}. 🏃‍♂️`,
-    `Is that a Mythic in your pocket or are you just happy to see me? 💎`,
-    `The forge is hot, the coffee is cold. Perfect balance. ⚖️`,
-    `${userName}, your progress is making the NPCs jealous. 😎`,
-    `Want to see your name in lights? Join our Wall of Fame! 🏆`,
-    `The Wall of Fame is waiting for its next hero... Is it you, ${userName}? ✨`,
-    `Help keep the forge running and get your spot in the Hall of Fame! 🌟`,
-    `Legend says that supporters get +10% Better Luck (not really, but maybe?) 🍀`,
-    `Every coffee donated gives the dev +50 Agility to code faster! 🏃‍♂️💨`,
-    `Support the forge and help me keep this tool free for everyone! 🔨❤️`,
-    `Your support is the coal that keeps this fire burning, ${userName}! 🔥`,
-    `If you find this tool useful, consider buying a coffee for the dev! ☕`,
-    `The NPCs told me to tell you: you'd look great on the Wall of Fame. 😉`,
-    `Coffee in, code out. Help keep the cycle going, ${userName}! ☕💻`,
-    `Be the reason the developer smiles today. Support the forge! 😊`
-];
+const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
+    const baseMessages = [
+        `Hey ${userName}, still forging? Go grab a snack! 🥪`,
+        `That hammer looks heavy, ${userName}. Take a coffee break! ☕`,
+        `Did you know? Every 100 clicks, a developer drinks a double espresso. ⚡`,
+        `Forging level 100? You're a legend, ${userName}! 🔨`,
+        `If you hear a weird noise, it's just the developer's stomach growling. 🍕`,
+        `Don't tell the NPCs, but ${userName} is my favorite user. 🤫`,
+        `Success is 10% luck, 20% skill, and 70% caffeine. ☕`,
+        `Error 404: Coffee not found in developer's system. Please donate caffeine. ☕`,
+        `Rumor has it that ${userName} can forge even without sleep. 💤`,
+        `Is it getting hot in here or did you just craft another Ultimate? 🌶️`,
+        `You've been here a lot today, ${userName}. Your keyboard misses your family. 😂`,
+        `Your hammer is glowing, ${userName}! Is that magic or just friction? 🔥`,
+        `Hey ${userName}, I saw that Craft! Absolutely stunning. 🌟`,
+        `Warning: Excessive forging may lead to excessive fun. ⚠️`,
+        `If this tool was any faster, it would be a time machine. ⏳`,
+        `Mastering the forge is a marathon, not a sprint, ${userName}. 🏃‍♂️`,
+        `Is that a Mythic in your pocket or are you just happy to see me? 💎`,
+        `The forge is hot, the coffee is cold. Perfect balance. ⚖️`,
+        `${userName}, your progress is making the NPCs jealous. 😎`,
+        `Want to see your name in lights? Join our Wall of Fame! 🏆`,
+        `The Wall of Fame is waiting for its next hero... Is it you, ${userName}? ✨`,
+        `Help keep the forge running and get your spot in the Hall of Fame! 🌟`,
+        `Legend says that supporters get +10% Better Luck (not really, but maybe?) 🍀`,
+        `Every coffee donated gives the dev +50 Agility to code faster! 🏃‍♂️💨`,
+        `Support the forge and help me keep this tool free for everyone! 🔨❤️`,
+        `Your support is the coal that keeps this fire burning, ${userName}! 🔥`,
+        `If you find this tool useful, consider buying a coffee for the dev! ☕`,
+        `The NPCs told me to tell you: you'd look great on the Wall of Fame. 😉`,
+        `Coffee in, code out. Help keep the cycle going, ${userName}! ☕💻`,
+        `Be the reason the developer smiles today. Support the forge! 😊`
+    ];
+
+    if (!hasRealName) {
+        baseMessages.push(`Hey! You can set your name in the profile to personalize these messages! 👤`);
+    }
+
+    return baseMessages;
+};
 
 export default function AppShell() {
     const { selectedVersion } = useGameDataContext();
@@ -49,6 +57,25 @@ export default function AppShell() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isStatsOpen, setIsStatsOpen] = useState(false);
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
+
+    const donationLabel = useMemo(() => {
+        const labels = [
+            "Forge Fuel", "Buy Coffee", "Dev Juice", "Hammer Lube", 
+            "Caffeine", "Boost Dev", "Fuel Me", "Coffee!", "Espresso",
+            "Mythic Brew", "Forge Coal", "Mana Potion", "Binary Beans", 
+            "Dev Energy", "Tips & Treats"
+        ];
+        return labels[Math.floor(Math.random() * labels.length)];
+    }, []);
+
+    const donationTooltip = useMemo(() => {
+        const tooltips = [
+            "FORGE NEEDS FUEL! ☕", "DEV NEEDS CAFFEINE! ⚡", "KEEP THE FIRE BURNING! 🔥",
+            "UPGRADE MY COFFEE! ☕✨", "HAMMER NEEDS LUBE! 🔨", "ADD SOME FUEL! 🚀",
+            "DONATE A BEAN! 🫘", "STAY AWAKE MODE! ⏱️"
+        ];
+        return tooltips[Math.floor(Math.random() * tooltips.length)];
+    }, []);
 
     useEffect(() => {
         // Track visit frequency
@@ -59,8 +86,8 @@ export default function AppShell() {
         const now = Date.now();
         const oneHour = 60 * 60 * 1000;
 
-        const userName = profile.name || 'Master';
-        const messages = FRIENDLY_MESSAGES(userName);
+        const userName = profile.name || 'Forge Master';
+        const messages = FRIENDLY_MESSAGES(userName, !!profile.name);
 
         // Show toast if frequent visitor (every 3rd session/refresh) and it's been an hour
         if (visitCount > 1 && visitCount % 3 === 0 && (now - lastToastTime) > oneHour) {
@@ -242,7 +269,7 @@ export default function AppShell() {
                                 exit={{ opacity: 0, y: 10, scale: 0.8 }}
                                 className="absolute bottom-full right-0 mb-4 bg-white text-black px-4 py-2 rounded-2xl shadow-xl text-xs whitespace-nowrap font-black border-2 border-[#FFDD00] origin-bottom-right"
                             >
-                                FORGE NEEDS FUEL! ☕
+                                {donationTooltip}
                                 <div className="absolute top-full right-6 -mt-1 w-3 h-3 bg-white border-r-2 border-b-2 border-[#FFDD00] rotate-45" />
                             </motion.div>
                         )}
@@ -254,7 +281,9 @@ export default function AppShell() {
 
                     <div className="relative flex items-center gap-2.5 z-10">
                         <Coffee className="w-6 h-6 group-hover:rotate-[15deg] transition-transform duration-300" />
-                        <span className="text-sm md:text-base tracking-tight uppercase">Forge Fuel</span>
+                        <span className="text-sm md:text-base tracking-tight uppercase">
+                            {donationLabel}
+                        </span>
                     </div>
                 </motion.a>
             </div>
