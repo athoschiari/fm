@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { cn } from '../../lib/utils';
 import {
-    Star, Egg, Key, Shirt, Cat, Image,
+    Star, Egg, Key, Shirt, Cat, Image, ChevronDown,
     Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee, Zap, ShoppingCart, Target
 } from 'lucide-react';
 import { GameIcon } from '../UI/GameIcon';
 import { useProfile } from '../../context/ProfileContext';
 import { ProfileIcon } from '../Profile/ProfileHeaderPanel';
+import { useGameDataContext } from '../../context/GameDataContext';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -46,17 +47,17 @@ const CoffeeFountain = () => {
                 <motion.span
                     key={i}
                     initial={{ opacity: 0, scale: 0.5, x: 0, y: 0 }}
-                    animate={{ 
+                    animate={{
                         opacity: [0, 1, 1, 0],
                         scale: [0.5, 1.2, 0.8],
                         x: (i % 2 === 0 ? 1 : -1) * (Math.random() * 40 + 20),
                         y: -(Math.random() * 100 + 50),
                         rotate: Math.random() * 360
                     }}
-                    transition={{ 
-                        duration: 2,
+                    transition={{
+                        duration: 1.2,
                         repeat: Infinity,
-                        delay: i * 0.3,
+                        delay: i * 0.2,
                         ease: "easeOut"
                     }}
                     className="absolute left-1/2 top-1/2 text-lg"
@@ -71,16 +72,35 @@ const CoffeeFountain = () => {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const { profile } = useProfile();
+    const { selectedVersion } = useGameDataContext();
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
+    const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({
+        'Calculators': true,
+        'Wiki': true
+    });
+
+    const toggleGroup = (title: string) => {
+        setCollapsedGroups(prev => ({
+            ...prev,
+            [title]: !prev[title]
+        }));
+    };
 
     const donationLabel = useMemo(() => {
         const labels = [
-            "Keep Dev Awake", "Forge Fuel", "Buy Coffee", "Dev Juice",
-            "Hammer Lube", "Caffeine Boost", "Fuel the Dev", "Tips & Treats",
+            "Keep Dev Awake ☕", "Forge Fuel 🔥", "Buy Coffee ☕", "Dev Juice 🥤",
+            "Hammer Lube 🔨", "Caffeine Boost ⚡", "Fuel the Dev 🚀", "Tips & Treats 🍬",
             "Mythic Espresso ☕", "Ultimate Latte 🥛", "Forge Coal 🔥",
-            "Mana Potion 🧪", "Dev Energy ⚡", "Forge Master Tab",
+            "Mana Potion 🧪", "Dev Energy ⚡", "Forge Master Tab 🍺",
             "Coffee Blessing ✨", "Support Craft 🔨", "Binary Beans 🫘",
-            "Hot Dev Liquid", "Pixel Caffeine", "Legendary Brew"
+            "Hot Dev Liquid ☕", "Pixel Caffeine 👾", "Legendary Brew 🍺",
+            "Anti-Sleep Serum 🧪", "Code Cruncher Fuel 🍪", "Server Hamster Snacks 🐹",
+            "Bug Repellent Fund 🦟", "Infinite Loop Coffee ♾️", "Overclock the Dev ⚡",
+            "Dark Mode Power 🌙", "Keyboard Grease ⌨️", "RNG Luck Booster 🍀",
+            "Divine Drop Rate Up 💎", "Pet Food for Dev 🍕", "Mount Stable Fund 🐎",
+            "Tech Tree Fertilizer 🌱", "XP Boost for Dev 📈", "Sleep is for the Weak 💤",
+            "Donation Crit Hit! 🎯", "Anvil Overheat 🌡️", "Magic Brew 🧙",
+            "Supporter Aura ✨", "Godly Grind Fuel ⚡", "Bring back advanced chat 💬"
         ];
         return labels[Math.floor(Math.random() * labels.length)];
     }, []);
@@ -99,6 +119,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         },
         {
             title: 'Calculators',
+            collapsible: true,
             items: [
                 { name: 'Offline', path: '/offline', icon: Coins },
                 { name: 'Dungeons', path: '/dungeons', icon: Key },
@@ -111,12 +132,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         },
         {
             title: 'Wiki',
+            collapsible: true,
             items: [
-                { name: 'Items', path: '/items', icon: Shirt }, 
+                { name: 'Items', path: '/items', icon: Shirt },
                 { name: 'Skins', path: '/skins', icon: Shirt },
                 { name: 'Pets', path: '/pets', icon: Cat },
                 { name: 'Mounts', path: '/mounts', icon: Star },
                 { name: 'Skills', path: '/skills', icon: Star },
+                { name: 'Unlocks', path: '/unlocks', icon: Lock },
                 { name: 'Base Drops', path: '/wiki/base-drops', icon: HelpCircle },
                 { name: 'Forge', path: '/wiki/forge', icon: Hammer },
                 { name: 'Tech Tree', path: '/tech-tree', icon: Cpu },
@@ -131,20 +154,36 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {
             title: 'Info',
             items: [
-                { name: 'Gallery', path: '/gallery', icon: Image },
-                { name: 'Unlocks', path: '/unlocks', icon: Lock },
-                { name: 'Configs', path: '/configs', icon: FileJson },
-                { name: 'FAQ', path: '/faq', icon: HelpCircle },
-                { name: 'GitHub', path: 'https://github.com/1vcian/fm', icon: Github, external: true },
+                { name: 'Gallery', path: '/gallery', icon: Image, theme: 'interstellar' },
+                { name: 'Configs', path: '/configs', icon: FileJson, theme: 'multiverse' },
+                { name: 'FAQ', path: '/faq', icon: HelpCircle, theme: 'quantum' },
+                { name: 'GitHub', path: 'https://github.com/1vcian/fm', icon: Github, external: true, theme: 'underworld' },
             ]
         },
         {
             title: 'Support',
             items: [
-                { name: 'Keep the Developer Awake', path: 'https://www.buymeacoffee.com/1vcian', icon: Coffee, external: true },
+                { name: 'Keep the Developer Awake', path: 'https://www.buymeacoffee.com/1vcian', icon: Coffee, external: true, theme: 'divine' },
             ]
         }
     ];
+
+    const getThemeInfo = (themeName?: string) => {
+        if (!themeName) return null;
+        const info: Record<string, { className: string, asset?: string }> = {
+            divine: { className: 'divine-animation', asset: 'DivineBackground.png' },
+            underworld: { className: 'underworld-animation', asset: 'UnderworldBackground.png' },
+            multiverse: { className: 'multiverse-animation', asset: 'MultiverseBackground.png' },
+            interstellar: { className: 'interstellar-animation', asset: 'InterstellarBackground.png' },
+            quantum: { className: 'quantum-animation' }
+        };
+        const theme = info[themeName];
+        if (!theme) return null;
+        return {
+            className: theme.className,
+            style: theme.asset ? { '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${theme.asset})` } : {}
+        };
+    };
 
     return (
         <>
@@ -172,86 +211,156 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
                 {/* Links */}
                 <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8 custom-scrollbar">
-                    {NAV_GROUPS.map((group) => (
-                        <div key={group.title}>
-                            <h3 className="text-xs font-semibold text-accent-primary uppercase tracking-wider mb-3 px-2">
-                                {group.title}
-                            </h3>
-                            <div className="space-y-1">
-                                {group.items.map((item) => {
-                                    const isActive = location.pathname === item.path;
-                                    const Icon = item.icon;
-                                    const recommended = isRecommended(item.path);
+                    {NAV_GROUPS.map((group) => {
+                        const isCollapsed = collapsedGroups[group.title];
+                        const isCollapsible = (group as any).collapsible;
 
-                                    if ('external' in item && item.external) {
-                                        const isCoffee = item.name.toLowerCase().includes('awake');
-                                        return (
-                                            <a
-                                                key={item.path}
-                                                href={item.path}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                onMouseEnter={() => isCoffee && setIsHoveringCoffee(true)}
-                                                onMouseLeave={() => isCoffee && setIsHoveringCoffee(false)}
-                                                onClick={() => {
-                                                    if (isCoffee) {
-                                                        if ((window as any).__triggerTestToast) {
-                                                            (window as any).__triggerTestToast();
-                                                        }
-                                                    }
-                                                    window.innerWidth < 1024 && onClose();
-                                                }}
-                                                className={cn(
-                                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative group/coffee overflow-visible",
-                                                    isCoffee
-                                                        ? "bg-[#FFDD00]/10 text-[#FFDD00] hover:bg-[#FFDD00]/20 border border-[#FFDD00]/20"
-                                                        : "text-text-secondary hover:text-text-primary hover:bg-white/5"
-                                                )}
-                                            >
-                                                {isCoffee && isHoveringCoffee && <CoffeeFountain />}
-                                                {Icon && <Icon size={18} className={isCoffee ? "fill-current group-hover/coffee:rotate-12 transition-transform relative z-10" : ""} />}
-                                                <span className="relative z-10">
-                                                    {isCoffee ? donationLabel : item.name}
-                                                </span>
-                                            </a>
-                                        );
-                                    }
-
-                                    return (
-                                        <Link
-                                            key={item.path}
-                                            to={item.path}
-                                            onClick={() => window.innerWidth < 1024 && onClose()}
+                        return (
+                            <div key={group.title}>
+                                <button 
+                                    onClick={() => isCollapsible && toggleGroup(group.title)}
+                                    className={cn(
+                                        "w-full flex items-center justify-between mb-3 px-2 group/title transition-colors",
+                                        isCollapsible ? "cursor-pointer" : "cursor-default"
+                                    )}
+                                >
+                                    <h3 className="text-xs font-semibold text-accent-primary uppercase tracking-wider">
+                                        {group.title}
+                                    </h3>
+                                    {isCollapsible && (
+                                        <ChevronDown 
+                                            size={14} 
                                             className={cn(
-                                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
-                                                isActive
-                                                    ? "bg-gradient-to-r from-accent-primary/20 to-transparent text-accent-primary border border-accent-primary/20"
-                                                    : recommended
-                                                        ? group.title === 'Calculators'
-                                                            ? "text-red-400 hover:bg-white/5 border border-dashed border-red-500/40 bg-red-500/10 shadow-[inset_0_0_10px_rgba(239,68,68,0.1)]"
-                                                            : "text-text-primary hover:bg-white/5 border border-dashed border-accent-primary/20 bg-accent-primary/5"
-                                                        : "text-text-secondary hover:text-text-primary hover:bg-white/5"
-                                            )}
+                                                "text-accent-primary transition-transform duration-200",
+                                                isCollapsed ? "-rotate-90" : "rotate-0"
+                                            )} 
+                                        />
+                                    )}
+                                </button>
+
+                                <AnimatePresence initial={false}>
+                                    {!isCollapsed && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="space-y-1"
                                         >
-                                            {'isProfile' in item && item.isProfile ? (
-                                                <ProfileIcon iconIndex={profile.iconIndex} size={18} className="border-0" />
-                                            ) : Icon ? (
-                                                <Icon size={18} className={cn(
-                                                    recommended && !isActive && (group.title === 'Calculators' ? "text-red-500" : "text-accent-primary")
-                                                )} />
-                                            ) : null}
-                                            <span className="flex-1">{item.name}</span>
-                                            {recommended && !isActive && (
-                                                group.title === 'Calculators' 
-                                                    ? <Swords size={12} className="text-red-500 animate-bounce" />
-                                                    : <Zap size={12} className="text-accent-primary fill-accent-primary animate-pulse" />
-                                            )}
-                                        </Link>
-                                    );
-                                })}
+                                            {group.items.map((item) => {
+                                                const isActive = location.pathname === item.path;
+                                                const Icon = item.icon;
+                                                const recommended = isRecommended(item.path);
+
+                                                if ('external' in item && item.external) {
+                                                    const isCoffee = item.name.toLowerCase().includes('awake');
+                                                    const themeInfo = getThemeInfo((item as any).theme);
+                                                    return (
+                                                        <a
+                                                            key={item.path}
+                                                            href={item.path}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            onMouseEnter={() => isCoffee && setIsHoveringCoffee(true)}
+                                                            onMouseLeave={() => isCoffee && setIsHoveringCoffee(false)}
+                                                            onClick={() => {
+                                                                if (isCoffee) {
+                                                                    if ((window as any).__triggerTestToast) {
+                                                                        (window as any).__triggerTestToast();
+                                                                    }
+                                                                }
+                                                                window.innerWidth < 1024 && onClose();
+                                                            }}
+                                                            className={cn(
+                                                                "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative group/coffee overflow-visible",
+                                                                isCoffee
+                                                                    ? "coffee-btn-animated"
+                                                                    : themeInfo ? "text-white" : "text-text-secondary hover:text-text-primary hover:bg-white/5"
+                                                            )}
+                                                        >
+                                                            {themeInfo && (
+                                                                <div
+                                                                    className={cn(themeInfo.className, "rounded-lg")}
+                                                                    style={themeInfo.style as React.CSSProperties}
+                                                                >
+                                                                    {themeInfo.className === 'quantum-animation' && (
+                                                                        <>
+                                                                            <span></span><span></span><span></span><span></span>
+                                                                            <span></span><span></span><span></span><span></span>
+                                                                            <span></span><span></span><span></span><span></span>
+                                                                            <span></span><span></span><span></span><span></span><span></span><span></span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            {isCoffee && isHoveringCoffee && <CoffeeFountain />}
+                                                            {Icon && <Icon size={18} className={cn(
+                                                                "transition-transform relative z-10 text-white",
+                                                                (themeInfo || isCoffee) ? "icon-stroke-sm" : "",
+                                                                isCoffee && "group-hover/coffee:rotate-12"
+                                                            )} />}
+                                                            <span className={cn("relative z-10 font-bold", themeInfo || isCoffee ? "text-stroke-sm" : "")}>
+                                                                {isCoffee ? donationLabel : item.name}
+                                                            </span>
+                                                        </a>
+                                                    );
+                                                }
+
+                                                const themeInfo = getThemeInfo((item as any).theme);
+
+                                                return (
+                                                    <Link
+                                                        key={item.path}
+                                                        to={item.path}
+                                                        onClick={() => window.innerWidth < 1024 && onClose()}
+                                                        className={cn(
+                                                            "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
+                                                            isActive
+                                                                ? "bg-gradient-to-r from-accent-primary/20 to-transparent text-accent-primary border border-accent-primary/20"
+                                                                : recommended
+                                                                    ? group.title === 'Calculators'
+                                                                        ? "text-red-400 hover:bg-white/5 border border-dashed border-red-500/40 bg-red-500/10 shadow-[inset_0_0_10px_rgba(239,68,68,0.1)]"
+                                                                        : "text-text-primary hover:bg-white/5 border border-dashed border-accent-primary/20 bg-accent-primary/5"
+                                                                    : themeInfo ? "text-white" : "text-text-secondary hover:text-text-primary hover:bg-white/5"
+                                                        )}
+                                                    >
+                                                        {themeInfo && (
+                                                            <div
+                                                                className={cn(themeInfo.className, "rounded-lg")}
+                                                                style={themeInfo.style as React.CSSProperties}
+                                                            >
+                                                                {themeInfo.className === 'quantum-animation' && (
+                                                                    <>
+                                                                        <span></span><span></span><span></span><span></span>
+                                                                        <span></span><span></span><span></span><span></span>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                        {'isProfile' in item && item.isProfile ? (
+                                                            <ProfileIcon iconIndex={profile.iconIndex} size={18} className="border-0" />
+                                                        ) : Icon ? (
+                                                            <Icon size={18} className={cn(
+                                                                "relative z-10",
+                                                                recommended && !isActive && (group.title === 'Calculators' ? "text-red-500" : "text-accent-primary"),
+                                                                themeInfo && "text-white icon-stroke-sm"
+                                                            )} />
+                                                        ) : null}
+                                                        <span className={cn("flex-1 relative z-10", themeInfo ? "text-stroke-sm" : "")}>{item.name}</span>
+                                                        {recommended && !isActive && (
+                                                            group.title === 'Calculators'
+                                                                ? <Swords size={12} className="text-red-500 animate-bounce relative z-10" />
+                                                                : <Zap size={12} className="text-accent-primary fill-accent-primary animate-pulse relative z-10" />
+                                                        )}
+                                                    </Link>
+                                                );
+                                            })}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Footer */}

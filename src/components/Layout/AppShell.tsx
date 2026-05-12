@@ -41,7 +41,25 @@ const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
         `If you find this tool useful, consider buying a coffee for the dev! ☕`,
         `The NPCs told me to tell you: you'd look great on the Wall of Fame. 😉`,
         `Coffee in, code out. Help keep the cycle going, ${userName}! ☕💻`,
-        `Be the reason the developer smiles today. Support the forge! 😊`
+        `Be the reason the developer smiles today. Support the forge! 😊`,
+        `The Dev is starting to see code in his sleep. Send help (and coffee)! 😵‍💫`,
+        `Warning: Critical Caffeine Levels detected. Please replenish. ⚡`,
+        `Your RNG luck is directly proportional to the amount of coffee I drink. 🍀`,
+        `I just found a bug. It was actually a coffee bean. We're safe. 🪲`,
+        `The server hamster is tired. Buy it some seeds (or me some coffee)! 🐹`,
+        `Legendary drops are 0.00001% more likely if you click this toast! 💎`,
+        `I'm coding this from a local tavern. Send some gold for a pint! 🍺`,
+        `My keyboard is starting to smoke. I need cooling liquid (Espresso). ⌨️🔥`,
+        `Did you know? 1 donation = 1 bug fixed (somewhere, probably). 🛠️`,
+        `The anvil is cold. Put some fire (money) in the furnace! 🌋`,
+        `Masterpiece in progress... please wait... caffeine required. ⏳`,
+        `I see you're using the calculators. Are they helping? Give a tip! 📈`,
+        `The FAQ is lonely. Go read it, or just buy me a drink! 🍺`,
+        `I'm building a robot to code for me. It runs on lattes. 🤖`,
+        `Sleep is for the weak, but coffee is for the Forge Masters! ⚔️`,
+        `If you find a bug, buy me a coffee and I'll call it a feature. 😉`,
+        `Bring back advanced chat! (But first, bring back the coffee!) 💬`,
+        `The developer has a dedicated server for your support. It's called 'Hope'. 🕊️`
     ];
 
     if (!hasRealName) {
@@ -60,10 +78,19 @@ export default function AppShell() {
 
     const donationLabel = useMemo(() => {
         const labels = [
-            "Forge Fuel", "Buy Coffee", "Dev Juice", "Hammer Lube", 
-            "Caffeine", "Boost Dev", "Fuel Me", "Coffee!", "Espresso",
-            "Mythic Brew", "Forge Coal", "Mana Potion", "Binary Beans", 
-            "Dev Energy", "Tips & Treats"
+            "Keep Dev Awake ☕", "Forge Fuel 🔥", "Buy Coffee ☕", "Dev Juice 🥤",
+            "Hammer Lube 🔨", "Caffeine Boost ⚡", "Fuel the Dev 🚀", "Tips & Treats 🍬",
+            "Mythic Espresso ☕", "Ultimate Latte 🥛", "Forge Coal 🔥",
+            "Mana Potion 🧪", "Dev Energy ⚡", "Forge Master Tab 🍺",
+            "Coffee Blessing ✨", "Support Craft 🔨", "Binary Beans 🫘",
+            "Hot Dev Liquid ☕", "Pixel Caffeine 👾", "Legendary Brew 🍺",
+            "Anti-Sleep Serum 🧪", "Code Cruncher Fuel 🍪", "Server Hamster Snacks 🐹",
+            "Bug Repellent Fund 🦟", "Infinite Loop Coffee ♾️", "Overclock the Dev ⚡",
+            "Dark Mode Power 🌙", "Keyboard Grease ⌨️", "RNG Luck Booster 🍀",
+            "Divine Drop Rate Up 💎", "Pet Food for Dev 🍕", "Mount Stable Fund 🐎",
+            "Tech Tree Fertilizer 🌱", "XP Boost for Dev 📈", "Sleep is for the Weak 💤",
+            "Donation Crit Hit! 🎯", "Anvil Overheat 🌡️", "Magic Brew 🧙",
+            "Supporter Aura ✨", "Godly Grind Fuel ⚡", "Bring back advanced chat 💬"
         ];
         return labels[Math.floor(Math.random() * labels.length)];
     }, []);
@@ -72,7 +99,14 @@ export default function AppShell() {
         const tooltips = [
             "FORGE NEEDS FUEL! ☕", "DEV NEEDS CAFFEINE! ⚡", "KEEP THE FIRE BURNING! 🔥",
             "UPGRADE MY COFFEE! ☕✨", "HAMMER NEEDS LUBE! 🔨", "ADD SOME FUEL! 🚀",
-            "DONATE A BEAN! 🫘", "STAY AWAKE MODE! ⏱️"
+            "DONATE A BEAN! 🫘", "STAY AWAKE MODE! ⏱️", "FORGE MUST GROW! 🔨📈",
+            "SUPPORT THE ANVIL! ⚒️", "ENERGY FOR UPDATES! ⚡💻", "GIVE THE DEV A SNACK! 🥪",
+            "CLICK TO PREVENT BURN-OUT! 🕯️", "FEED THE CODING BEAST! 🦁",
+            "ERROR 404: COFFEE NOT FOUND! ☕🚫", "WILL CODE FOR CAFFEINE! 💻☕",
+            "UNLOCKED: SUPPORTER BADGE! 🏅", "YOUR LUCK JUST INCREASED! (maybe) 🍀",
+            "FORGE EFFICIENCY +5% 🔨", "DEV FOCUS MODE: ACTIVATED! 🧘",
+            "THE ANVIL IS COLD! HEAT IT UP! 🔥", "BUY A BEAN, SAVE A DEV! 🫘",
+            "MAY YOUR DROPS BE LEGENDARY! 💎", "SHARPEN THE DEV'S TOOLS! ⚔️"
         ];
         return tooltips[Math.floor(Math.random() * tooltips.length)];
     }, []);
@@ -92,7 +126,7 @@ export default function AppShell() {
         // Show toast if frequent visitor (every 3rd session/refresh) and it's been an hour
         if (visitCount > 1 && visitCount % 3 === 0 && (now - lastToastTime) > oneHour) {
             const randomMsg = messages[Math.floor(Math.random() * messages.length)];
-            
+
             setTimeout(() => {
                 toast(
                     <div className="flex flex-col gap-0.5 select-none">
@@ -107,7 +141,7 @@ export default function AppShell() {
                             Click to support the developer <span className="animate-bounce text-xs">☕❤️</span>
                         </div>
                     </div>,
-                    { 
+                    {
                         icon: <div className="text-xl">🛠️</div>,
                         autoClose: 10000,
                         position: "bottom-left",
@@ -136,7 +170,7 @@ export default function AppShell() {
                         Click to support the developer <span className="animate-bounce text-xs">☕❤️</span>
                     </div>
                 </div>,
-                { 
+                {
                     icon: <div className="text-xl">🛠️</div>,
                     autoClose: 10000,
                     position: "bottom-left",
@@ -158,16 +192,16 @@ export default function AppShell() {
                 <motion.span
                     key={i}
                     initial={{ opacity: 0, scale: 0.5, x: 0, y: 0 }}
-                    animate={{ 
+                    animate={{
                         opacity: [0, 1, 1, 0],
                         scale: [0.5, 1.2, 0.8],
                         x: (i % 2 === 0 ? 1 : -1) * (Math.random() * 30 + 15),
                         y: -(Math.random() * 80 + 40),
                     }}
-                    transition={{ 
-                        duration: 1.5,
+                    transition={{
+                        duration: 1,
                         repeat: Infinity,
-                        delay: i * 0.2,
+                        delay: i * 0.15,
                     }}
                     className="absolute left-1/2 top-1/2 text-lg"
                 >
@@ -259,8 +293,17 @@ export default function AppShell() {
                     animate={{ scale: 1, opacity: 1 }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="fixed bottom-8 right-8 z-[100] group flex items-center gap-3 overflow-visible px-5 md:px-6 py-3 md:py-4 rounded-full bg-[#FFDD00] text-black font-extrabold shadow-[0_8px_25px_-5px_rgba(255,221,0,0.4)] hover:shadow-[0_12px_35px_-5px_rgba(255,221,0,0.6)] transition-shadow duration-300"
+                    layout
+                    className={cn(
+                        "fixed bottom-8 right-8 z-[100] group flex items-center gap-3 py-3 md:py-4 rounded-full coffee-btn-animated overflow-visible shadow-[0_8px_25px_-5px_rgba(255,158,13,0.4)] hover:shadow-[0_12px_35px_-5px_rgba(255,158,13,0.6)] transition-all duration-300",
+                        isSidebarOpen ? "px-3 md:px-4" : "px-5 md:px-6"
+                    )}
                 >
+                    <div 
+                        className="divine-animation rounded-full" 
+                        style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}DivineBackground.png)` } as React.CSSProperties} 
+                    />
+
                     <AnimatePresence>
                         {isHoveringCoffee && (
                             <motion.div
@@ -276,14 +319,22 @@ export default function AppShell() {
                     </AnimatePresence>
 
                     {isHoveringCoffee && <CoffeeFountain />}
-                    
-                    <div className="absolute inset-0 rounded-full animate-shimmer pointer-events-none opacity-30 bg-gradient-to-r from-transparent via-white to-transparent" />
 
                     <div className="relative flex items-center gap-2.5 z-10">
-                        <Coffee className="w-6 h-6 group-hover:rotate-[15deg] transition-transform duration-300" />
-                        <span className="text-sm md:text-base tracking-tight uppercase">
-                            {donationLabel}
-                        </span>
+                        <Coffee className="w-6 h-6 group-hover:rotate-[15deg] transition-transform duration-300 text-white icon-stroke-sm shrink-0" />
+                        <AnimatePresence mode="wait">
+                            {!isSidebarOpen && (
+                                <motion.span 
+                                    initial={{ width: 0, opacity: 0, x: -10 }}
+                                    animate={{ width: "auto", opacity: 1, x: 0 }}
+                                    exit={{ width: 0, opacity: 0, x: -10 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="text-sm md:text-base tracking-tight uppercase font-black text-white text-stroke-sm whitespace-nowrap overflow-hidden"
+                                >
+                                    {donationLabel}
+                                </motion.span>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </motion.a>
             </div>

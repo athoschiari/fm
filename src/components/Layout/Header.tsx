@@ -7,6 +7,7 @@ import { useProfile } from '../../context/ProfileContext';
 import { ProfileIcon } from '../Profile/ProfileHeaderPanel';
 import { ConfirmModal } from '../UI/ConfirmModal';
 import { cn } from '../../lib/utils';
+import { AnimatedClock } from '../UI/AnimatedClock';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { formatCompactNumber } from '../../utils/statsCalculator';
 import { useGameDataContext } from '../../context/GameDataContext';
@@ -235,8 +236,8 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                             : "from-red-600 to-rose-700 shadow-red-500/20"
                     )}
                 >
-                    <TrendingUp className="w-4 h-4" />
-                    <span className="hidden sm:inline">Stats & Tree</span>
+                    <AnimatedClock className="w-5 h-5" />
+                    <span className="hidden sm:inline">Character Stats</span>
                 </Button>
 
             </div>

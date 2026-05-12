@@ -926,8 +926,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
             {/* Unified Header */}
             <div className="p-5 border-b border-border bg-bg-secondary/30">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-black uppercase tracking-wider flex items-center gap-2">
-                        <TrendingUp className="w-6 h-6 text-accent-primary" />
+                    <h3 className="text-xl font-black uppercase tracking-wider flex items-center gap-3">
+                        <AnimatedClock className="w-8 h-8 text-accent-primary" />
                         <span className="bg-gradient-to-r from-white to-text-muted bg-clip-text text-transparent">
                             Character Stats
                         </span>

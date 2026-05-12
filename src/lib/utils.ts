@@ -9,8 +9,8 @@ export function cn(...inputs: ClassValue[]) {
 const RARITY_COLORS: Record<string, string> = {
     common: '241, 241, 241',
     rare: '93, 216, 255',
-    epic: '92, 254, 137',
-    legendary: '253, 255, 93',
+    epic: '93, 255, 138',
+    legendary: '252, 255, 93',
     ultimate: '255, 93, 93',
     mythic: '213, 93, 255',
 };
@@ -39,13 +39,13 @@ export function getRarityBorderStyle(rarity: string): React.CSSProperties {
 const AGE_COLORS: Record<string, string> = {
     primitive: '241, 241, 241',
     medieval: '93, 216, 255',
-    earlymodern: '92, 254, 137',
-    modern: '253, 255, 93',
+    earlymodern: '93, 255, 138',
+    modern: '252, 255, 93',
     space: '255, 93, 93',
     interstellar: '213, 93, 255',
     multiverse: '117, 255, 238',
-    quantum: '136, 109, 255',
-    underworld: '167, 115, 115',
+    quantum: '125, 93, 255',
+    underworld: '176, 120, 121',
     divine: '255, 158, 13',
 };
 

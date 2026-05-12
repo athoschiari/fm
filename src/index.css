@@ -1,3 +1,37 @@
+:root {
+    /* RGB Components (for rgba usage) */
+    --color-primitive-rgb: 241, 241, 241;
+    --color-medieval-rgb: 93, 216, 255;
+    --color-early-modern-rgb: 93, 255, 138;
+    --color-modern-rgb: 252, 255, 93;
+    --color-space-rgb: 255, 93, 93;
+    --color-interstellar-rgb: 213, 93, 255;
+    --color-multiverse-rgb: 117, 255, 238;
+    --color-quantum-rgb: 125, 93, 255;
+    --color-underworld-rgb: 176, 120, 121;
+    --color-divine-rgb: 255, 158, 13;
+
+    /* Hex Variables */
+    --age-primitive: #F1F1F1;
+    --age-medieval: #5DD8FF;
+    --age-early-modern: #5DFF8A;
+    --age-modern: #FCFF5D;
+    --age-space: #FF5D5D;
+    --age-interstellar: #D55DFF;
+    --age-multiverse: #75FFEE;
+    --age-quantum: #7D5DFF;
+    --age-underworld: #B07879;
+    --age-divine: #FF9E0D;
+
+    /* Legacy Rarity Mappings */
+    --rarity-common: var(--color-primitive-rgb);
+    --rarity-rare: var(--color-medieval-rgb);
+    --rarity-epic: var(--color-early-modern-rgb);
+    --rarity-legendary: var(--color-modern-rgb);
+    --rarity-ultimate: var(--color-space-rgb);
+    --rarity-mythic: var(--color-interstellar-rgb);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,47 +48,11 @@
         --text-secondary: 180 180 200;
         --text-muted: 100 100 120;
 
-        --accent-primary: 236 72 153;
-        --accent-secondary: 168 85 247;
-        --accent-tertiary: 59 130 246;
+        --accent-primary-rgb: var(--color-divine-rgb);
+        --accent-secondary-rgb: var(--color-space-rgb);
+        --accent-tertiary-rgb: 59, 130, 246;
 
         --border: 50 50 70;
-
-        /* Rarity Colors (First 6 Age Colors) */
-        --rarity-common: 241 241 241;
-        /* #F1F1F1 */
-        --rarity-rare: 93 216 255;
-        /* #5DD8FF */
-        --rarity-epic: 92 254 137;
-        /* #5CFE89 */
-        --rarity-legendary: 253 255 93;
-        /* #FDFF5D */
-        --rarity-ultimate: 255 93 93;
-        /* #FF5D5D */
-        --rarity-mythic: 213 93 255;
-        /* #D55DFF */
-
-        /* Age Colors (Age 1-10) */
-        --age-primitive: 241 241 241;
-        /* Age 1 */
-        --age-medieval: 93 216 255;
-        /* Age 2 */
-        --age-earlymodern: 92 254 137;
-        /* Age 3 */
-        --age-modern: 253 255 93;
-        /* Age 4 */
-        --age-space: 255 93 93;
-        /* Age 5 */
-        --age-interstellar: 213 93 255;
-        /* Age 6 */
-        --age-multiverse: 117 255 238;
-        /* Age 7 */
-        --age-quantum: 136 109 255;
-        /* Age 8 */
-        --age-underworld: 167 115 115;
-        /* Age 9 */
-        --age-divine: 255 158 13;
-        /* Age 10 */
     }
 }
 
@@ -195,19 +193,41 @@
         background: rgb(var(--border));
     }
 }
+
 @keyframes pulse-subtle {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.85; transform: scale(1.02); }
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.85;
+        transform: scale(1.02);
+    }
 }
 
 @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
 }
 
 .animate-pulse-subtle {
@@ -232,4 +252,262 @@
 
 .coffee-btn-glow:hover {
     box-shadow: 0 0 25px rgba(255, 221, 0, 0.8);
+}
+
+@keyframes slide-diagonal {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 0 30px;
+    }
+}
+
+@keyframes slide-down {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 0 70px;
+    }
+}
+
+@keyframes slide-up-right {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 70px -70px;
+    }
+}
+
+@keyframes slide-down-right {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 150px 150px;
+    }
+}
+
+@keyframes ripple {
+    0% {
+        transform: scale(0.1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+.text-stroke-sm {
+    text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         0px  2px 4px rgba(0,0,0,0.8);
+}
+
+.icon-stroke-sm {
+    filter: drop-shadow(0px 0px 1px #000) drop-shadow(0px 1px 2px rgba(0,0,0,0.8));
+}
+
+.coffee-btn-animated {
+    background-color: #ff9e0d !important;
+    color: white !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.coffee-btn-animated:hover {
+    background-color: #FF9E0D !important;
+    transform: translateY(-1px);
+}
+
+.coffee-btn-animated:active {
+    transform: translateY(0);
+}
+
+.divine-animation {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.divine-animation::after {
+    content: '';
+    position: absolute;
+    top: -150%;
+    left: -150%;
+    width: 400%;
+    height: 400%;
+    background-image: var(--theme-url);
+    background-size: 30px 30px;
+    background-repeat: repeat;
+    opacity: 0.2;
+    transform: rotate(45deg);
+    transform-origin: center;
+    animation: slide-diagonal 2s linear infinite;
+}
+
+.underworld-animation {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+    background-color: var(--age-underworld);
+}
+
+.underworld-animation::after {
+    content: '';
+    position: absolute;
+    top: -150%;
+    left: -150%;
+    width: 400%;
+    height: 400%;
+    background-image: var(--theme-url);
+    background-size: 150px 150px;
+    background-repeat: repeat;
+    opacity: 0.2;
+    filter: invert(1);
+    mix-blend-mode: multiply;
+    transform-origin: center;
+    animation: slide-down-right 30s linear infinite;
+}
+
+.multiverse-animation {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+    background-color: var(--age-multiverse);
+}
+
+.multiverse-animation::after {
+    content: '';
+    position: absolute;
+    top: -150%;
+    left: -150%;
+    width: 400%;
+    height: 400%;
+    background-image: var(--theme-url);
+    background-size: 40px 40px;
+    background-repeat: repeat;
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    transform-origin: center;
+    animation: slide-down 7s linear infinite;
+}
+
+.interstellar-animation {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+    background-color: var(--age-interstellar);
+}
+
+.interstellar-animation::after {
+    content: '';
+    position: absolute;
+    top: -150%;
+    left: -150%;
+    width: 400%;
+    height: 400%;
+    background-image: var(--theme-url);
+    background-size: 100px 100px;
+    background-repeat: repeat;
+    opacity: 0.2;
+    mix-blend-mode: overlay;
+    transform-origin: center;
+    animation: slide-up-right 7s linear infinite;
+}
+
+.quantum-animation {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    z-index: 0;
+    pointer-events: none;
+    background-color: var(--age-quantum);
+}
+
+.quantum-animation span {
+    border-radius: 50%;
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform-origin: 50% 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px;
+    animation: expand 8s infinite linear;
+}
+
+.quantum-animation span:nth-child(odd) {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.quantum-animation span:nth-child(even) {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.quantum-animation span:nth-child(1) {
+    animation-delay: -0s;
+}
+
+.quantum-animation span:nth-child(2) {
+    animation-delay: -1s;
+}
+
+.quantum-animation span:nth-child(3) {
+    animation-delay: -2s;
+}
+
+.quantum-animation span:nth-child(4) {
+    animation-delay: -3s;
+}
+
+.quantum-animation span:nth-child(5) {
+    animation-delay: -4s;
+}
+
+.quantum-animation span:nth-child(6) {
+    animation-delay: -5s;
+}
+
+.quantum-animation span:nth-child(7) {
+    animation-delay: -6s;
+}
+
+.quantum-animation span:nth-child(8) {
+    animation-delay: -7s;
+}
+
+@keyframes expand {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.2;
+    }
+
+    100% {
+        transform: scale(20);
+        opacity: 0;
+    }
 }

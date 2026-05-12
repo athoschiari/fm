@@ -87,6 +87,14 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         return profile.items;
     }, [variant, originalItems, testItems, profile.items]);
 
+    const handleEnterCompare = () => {
+        enterCompareMode();
+        // Trigger the donation toast
+        if (typeof (window as any).__triggerTestToast === 'function') {
+            (window as any).__triggerTestToast();
+        }
+    };
+
     const handleEquip = (item: ItemSlot | null) => {
         if (selectedSlot) {
             if (variant === 'original') {
@@ -263,7 +271,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                             <Button
                                 variant="primary"
                                 size="sm"
-                                onClick={enterCompareMode}
+                                onClick={handleEnterCompare}
                                 className="shadow-lg shadow-accent-primary/20 animate-pulse-subtle flex-1 sm:flex-none py-1.5"
                             >
                                 <GitCompare className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
