@@ -270,6 +270,40 @@ export function useMountsCalculator() {
         setProgress(results.endProgress);
     };
 
+    // Target Calculation
+    const calculateNeededCurrency = (targetLevel: number, targetAscension: number) => {
+        if (!levels.length) return 0;
+
+        let totalGainedNeeded = 0;
+        let currLevel = level;
+        let currAscension = profile?.misc?.mountAscensionLevel || 0;
+
+        // If target is already reached or passed
+        if (targetAscension < currAscension || (targetAscension === currAscension && targetLevel <= currLevel)) {
+            return 0;
+        }
+
+        // Subtract current progress from the first level's requirement
+        totalGainedNeeded -= progress;
+
+        while (currAscension < targetAscension || (currAscension === targetAscension && currLevel < targetLevel)) {
+            const threshold = levels[Math.min(currLevel - 1, levels.length - 1)]?.SummonsRequired || 0;
+            totalGainedNeeded += threshold;
+
+            currLevel++;
+            if (currLevel > maxPossibleLevel && currAscension < 3) {
+                currLevel = 1;
+                currAscension++;
+            } else if (currLevel > maxPossibleLevel) {
+                currLevel = maxPossibleLevel;
+                break;
+            }
+        }
+
+        const summonsNeeded = Math.ceil(totalGainedNeeded / MOUNTS_PER_SUMMON);
+        return summonsNeeded * finalCostPerSummon;
+    };
+
     return {
         level, setLevel,
         progress, setProgress,
@@ -279,6 +313,7 @@ export function useMountsCalculator() {
         maxPossibleLevel,
         levels,
         applyResultsToProfile,
+        calculateNeededCurrency,
         currency,
         baseCost: BASE_COST,
         finalCostPerSummon,

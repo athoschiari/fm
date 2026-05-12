@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
 import { cn } from '../../lib/utils';
 import {
     Star, Egg, Key, Shirt, Cat, Image,
@@ -36,9 +39,39 @@ const isRecommended = (path: string) => {
     return false;
 };
 
+const CoffeeFountain = () => {
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-visible">
+            {Array.from({ length: 6 }).map((_, i) => (
+                <motion.span
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.5, x: 0, y: 0 }}
+                    animate={{ 
+                        opacity: [0, 1, 1, 0],
+                        scale: [0.5, 1.2, 0.8],
+                        x: (i % 2 === 0 ? 1 : -1) * (Math.random() * 40 + 20),
+                        y: -(Math.random() * 100 + 50),
+                        rotate: Math.random() * 360
+                    }}
+                    transition={{ 
+                        duration: 2,
+                        repeat: Infinity,
+                        delay: i * 0.3,
+                        ease: "easeOut"
+                    }}
+                    className="absolute left-1/2 top-1/2 text-lg"
+                >
+                    {i % 2 === 0 ? '☕' : '❤️'}
+                </motion.span>
+            ))}
+        </div>
+    );
+};
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const location = useLocation();
     const { profile } = useProfile();
+    const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
 
     const NAV_GROUPS = [
         {
@@ -67,7 +100,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {
             title: 'Wiki',
             items: [
-                { name: 'Items', path: '/items', icon: Shirt }, // Shirt as placeholder for Items/Chest
+                { name: 'Items', path: '/items', icon: Shirt }, 
                 { name: 'Skins', path: '/skins', icon: Shirt },
                 { name: 'Pets', path: '/pets', icon: Cat },
                 { name: 'Mounts', path: '/mounts', icon: Star },
@@ -96,7 +129,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {
             title: 'Support',
             items: [
-                { name: 'Buy me a coffee', path: 'https://www.buymeacoffee.com/1vcian', icon: Coffee, external: true },
+                { name: 'Keep the Developer Awake', path: 'https://www.buymeacoffee.com/1vcian', icon: Coffee, external: true },
             ]
         }
     ];
@@ -115,7 +148,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Sidebar Container */}
             <aside className={cn(
                 "fixed top-0 left-0 bottom-0 w-64 bg-bg-secondary border-r border-border z-50 transition-transform duration-300 ease-in-out flex flex-col",
-                isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0" // Hidden on mobile unless open, always visible on desktop
+                isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
             )}>
                 {/* Logo */}
                 <div className="h-16 flex items-center gap-3 px-6 border-b border-border bg-bg-secondary/50 backdrop-blur-sm">
@@ -139,23 +172,34 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     const recommended = isRecommended(item.path);
 
                                     if ('external' in item && item.external) {
-                                        const isCoffee = item.name.toLowerCase().includes('coffee');
+                                        const isCoffee = item.name.toLowerCase().includes('awake');
                                         return (
                                             <a
                                                 key={item.path}
                                                 href={item.path}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                onClick={() => window.innerWidth < 1024 && onClose()}
+                                                onMouseEnter={() => isCoffee && setIsHoveringCoffee(true)}
+                                                onMouseLeave={() => isCoffee && setIsHoveringCoffee(false)}
+                                                onClick={() => {
+                                                    if (isCoffee) {
+                                                        toast("You're making the forge hotter! 🔥☕", { 
+                                                            icon: "🔨",
+                                                            theme: "dark"
+                                                        });
+                                                    }
+                                                    window.innerWidth < 1024 && onClose();
+                                                }}
                                                 className={cn(
-                                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative group/coffee overflow-visible",
                                                     isCoffee
-                                                        ? "bg-[#FFDD00]/10 text-[#FFDD00] hover:bg-[#FFDD00]/20 border border-[#FFDD00]/20 animate-pulse-subtle"
+                                                        ? "bg-[#FFDD00]/10 text-[#FFDD00] hover:bg-[#FFDD00]/20 border border-[#FFDD00]/20"
                                                         : "text-text-secondary hover:text-text-primary hover:bg-white/5"
                                                 )}
                                             >
-                                                {Icon && <Icon size={18} className={isCoffee ? "fill-current" : ""} />}
-                                                {item.name}
+                                                {isCoffee && isHoveringCoffee && <CoffeeFountain />}
+                                                {Icon && <Icon size={18} className={isCoffee ? "fill-current group-hover/coffee:rotate-12 transition-transform relative z-10" : ""} />}
+                                                <span className="relative z-10">{item.name}</span>
                                             </a>
                                         );
                                     }
@@ -170,21 +214,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                 isActive
                                                     ? "bg-gradient-to-r from-accent-primary/20 to-transparent text-accent-primary border border-accent-primary/20"
                                                     : recommended
-                                                        ? "text-text-primary hover:bg-white/5 border border-dashed border-accent-primary/20 bg-accent-primary/5"
+                                                        ? group.title === 'Calculators'
+                                                            ? "text-red-400 hover:bg-white/5 border border-dashed border-red-500/40 bg-red-500/10 shadow-[inset_0_0_10px_rgba(239,68,68,0.1)]"
+                                                            : "text-text-primary hover:bg-white/5 border border-dashed border-accent-primary/20 bg-accent-primary/5"
                                                         : "text-text-secondary hover:text-text-primary hover:bg-white/5"
                                             )}
                                         >
                                             {'isProfile' in item && item.isProfile ? (
                                                 <ProfileIcon iconIndex={profile.iconIndex} size={18} className="border-0" />
                                             ) : Icon ? (
-                                                <Icon size={18} className={cn(recommended && !isActive && "text-accent-primary")} />
+                                                <Icon size={18} className={cn(
+                                                    recommended && !isActive && (group.title === 'Calculators' ? "text-red-500" : "text-accent-primary")
+                                                )} />
                                             ) : null}
                                             <span className="flex-1">{item.name}</span>
                                             {recommended && !isActive && (
-                                                <Zap size={12} className="text-accent-primary fill-accent-primary animate-pulse" />
+                                                group.title === 'Calculators' 
+                                                    ? <Swords size={12} className="text-red-500 animate-bounce" />
+                                                    : <Zap size={12} className="text-accent-primary fill-accent-primary animate-pulse" />
                                             )}
                                         </Link>
-                                    )
+                                    );
                                 })}
                             </div>
                         </div>

@@ -87,27 +87,27 @@
 
     /* Rarity Background Gradients */
     .bg-rarity-common {
-        background: linear-gradient(135deg, rgba(var(--rarity-common), 0.2) 0%, rgba(var(--rarity-common), 0.05) 100%);
+        background: linear-gradient(135deg, rgba(var(--rarity-common), 0.3) 0%, rgba(var(--rarity-common), 0.1) 100%);
     }
 
     .bg-rarity-rare {
-        background: linear-gradient(135deg, rgba(var(--rarity-rare), 0.25) 0%, rgba(var(--rarity-rare), 0.08) 100%);
+        background: linear-gradient(135deg, rgba(var(--rarity-rare), 0.4) 0%, rgba(var(--rarity-rare), 0.15) 100%);
     }
 
     .bg-rarity-epic {
-        background: linear-gradient(135deg, rgba(var(--rarity-epic), 0.25) 0%, rgba(var(--rarity-epic), 0.08) 100%);
+        background: linear-gradient(135deg, rgba(var(--rarity-epic), 0.4) 0%, rgba(var(--rarity-epic), 0.15) 100%);
     }
 
     .bg-rarity-legendary {
-        background: linear-gradient(135deg, rgba(var(--rarity-legendary), 0.25) 0%, rgba(var(--rarity-legendary), 0.08) 100%);
+        background: linear-gradient(135deg, rgba(var(--rarity-legendary), 0.4) 0%, rgba(var(--rarity-legendary), 0.15) 100%);
     }
 
     .bg-rarity-ultimate {
-        background: linear-gradient(135deg, rgba(var(--rarity-ultimate), 0.25) 0%, rgba(var(--rarity-ultimate), 0.08) 100%);
+        background: linear-gradient(135deg, rgba(var(--rarity-ultimate), 0.4) 0%, rgba(var(--rarity-ultimate), 0.15) 100%);
     }
 
     .bg-rarity-mythic {
-        background: linear-gradient(135deg, rgba(var(--rarity-mythic), 0.3) 0%, rgba(var(--rarity-mythic), 0.1) 100%);
+        background: linear-gradient(135deg, rgba(var(--rarity-mythic), 0.5) 0%, rgba(var(--rarity-mythic), 0.2) 100%);
     }
 
     /* Rarity Border Colors */

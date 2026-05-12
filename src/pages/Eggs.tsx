@@ -58,7 +58,9 @@ export default function Eggs() {
 
     const eggSummon = useEggSummonCalculator();
 
-
+    // Target Calculator State
+    const [targetLevel, setTargetLevel] = useState(eggSummon.maxPossibleLevel || 100);
+    const [targetAscension, setTargetAscension] = useState(3);
 
     // Helpers
     const [activeTab, setActiveTab] = useState<'summon' | 'calculator'>(eggSummon.available ? 'summon' : 'calculator');
@@ -262,6 +264,60 @@ export default function Eggs() {
                                         </div>
                                         <div className="text-[10px] text-text-muted px-1">
                                             Estimated cost per summon: <span className="text-accent-primary font-bold">{eggSummon.finalCostPerSummon}</span> 🥚
+                                        </div>
+                                    </div>
+
+                                    {/* Target Calculator */}
+                                    <div className="p-4 bg-bg-primary/30 rounded-xl border border-white/5 space-y-4">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase">
+                                            <Calculator className="w-4 h-4 text-accent-primary" />
+                                            Target Goal Calculator
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] text-text-muted uppercase font-bold">Target Ascension</label>
+                                                <select
+                                                    value={targetAscension}
+                                                    onChange={(e) => setTargetAscension(Number(e.target.value))}
+                                                    className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
+                                                >
+                                                    {[0, 1, 2, 3].map(a => (
+                                                        <option key={a} value={a}>Ascension {a}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-[10px] text-text-muted uppercase font-bold">Target Level</label>
+                                                <select
+                                                    value={targetLevel}
+                                                    onChange={(e) => setTargetLevel(Number(e.target.value))}
+                                                    className="w-full bg-bg-input border border-border rounded-lg p-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors cursor-pointer"
+                                                >
+                                                    {Array.from({ length: eggSummon.maxPossibleLevel }, (_, i) => i + 1).map(lv => {
+                                                        const config = eggSummon.levels[lv - 1];
+                                                        const rarities = ['Mythic', 'Ultimate', 'Legendary', 'Epic', 'Rare', 'Common'];
+                                                        const maxRarity = config ? (rarities.find(r => config[r] > 0) || 'Common') : 'Common';
+                                                        const val = config ? (config[maxRarity] * 100) : 0;
+                                                        const percentage = val < 0.1 ? val.toFixed(2) : val.toFixed(1);
+                                                        return (
+                                                            <option key={lv} value={lv}>
+                                                                Level {lv} ({maxRarity} {percentage}%)
+                                                            </option>
+                                                        );
+                                                    })}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                                            <div className="text-[10px] text-text-muted">
+                                                Required: <span className="text-white font-bold">{eggSummon.calculateNeededCurrency(targetLevel, targetAscension).toLocaleString()}</span> {eggSummon.currency}
+                                            </div>
+                                            <button
+                                                onClick={() => eggSummon.setEggshellCount(eggSummon.calculateNeededCurrency(targetLevel, targetAscension))}
+                                                className="text-[10px] bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary px-3 py-1 rounded border border-accent-primary/30 transition-colors font-bold uppercase active:scale-95"
+                                            >
+                                                Set as Available
+                                            </button>
                                         </div>
                                     </div>
 

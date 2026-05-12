@@ -104,7 +104,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
             if (context === 'pvp') setActiveTab('library');
             setMobileTab('mounts');
         }
-    }, [isOpen, currentMount, context, profile.mount.savedBuilds]);
+    }, [isOpen]);
 
     const maxSlots = useMemo(() => {
         const currentAsc = mountAscensionLevel !== undefined ? mountAscensionLevel : (profile.misc.mountAscensionLevel || 0);
@@ -187,7 +187,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
     // Auto-sync for saved mounts (uses ref to avoid re-triggering on savedBuilds change)
     useEffect(() => {
         if (!isOpen) return;
-        if (selectedSavedIndex !== null) {
+        if (selectedSavedIndex !== null && activeTab === 'saved') {
             const currentSaved = savedBuildsRef.current;
             const savedMount = currentSaved[selectedSavedIndex];
             if (savedMount) {
@@ -222,7 +222,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                 }
             }
         }
-    }, [mountLevel, manualStats, activeTab, selectedSavedIndex, updateNestedProfile, profile.mount.active]);
+    }, [mountLevel, manualStats, activeTab, selectedSavedIndex, updateNestedProfile, profile.mount.active, isOpen]);
 
     const mountsConfig = spriteMapping?.mounts;
 
@@ -444,6 +444,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                         setActiveTab('library');
                                         setSelectedRarity(rarity);
                                         setSelectedMountId(null);
+                                        setSelectedSavedIndex(null);
                                         setManualStats([]);
                                         setMobileTab('mounts');
                                     }}

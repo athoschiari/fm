@@ -112,11 +112,9 @@ export function ItemSelectionCard({
                 hasDiff && "ring-2 ring-yellow-500 ring-offset-2 ring-offset-bg-primary"
             )}
             style={
-                !isSelected ? (
-                    hideAgeStyles
-                        ? (rarity ? { background: getRarityBgStyle(rarity).background?.toString().replace('0.3', '0.1').replace('0.1', '0.05') } : { backgroundColor: 'var(--bg-secondary)' })
-                        : { background: getAgeBgStyle((item as ItemSlot)?.age || 0).background?.toString().replace('0.3', '0.1').replace('0.1', '0.05') }
-                ) : {}
+                hideAgeStyles
+                    ? (rarity ? { background: getRarityBgStyle(rarity).background?.toString().replace('0.5', isSelected ? '0.3' : '0.15').replace('0.2', isSelected ? '0.15' : '0.08') } : { backgroundColor: isSelected ? 'rgba(var(--accent-primary-rgb), 0.2)' : 'var(--bg-secondary)' })
+                    : { background: getAgeBgStyle((item as ItemSlot)?.age || 0).background?.toString().replace('0.5', isSelected ? '0.3' : '0.15').replace('0.2', isSelected ? '0.15' : '0.08') }
             }
         >
             {/* Top Row Overlay: Level/Ascension (Left) and Actions (Right) */}

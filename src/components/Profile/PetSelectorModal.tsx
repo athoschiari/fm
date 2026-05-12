@@ -116,12 +116,12 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
             setMobileTab('rarity');
             if (context === 'pvp') setActiveTab('library');
         }
-    }, [isOpen, currentPet, context]);
+    }, [isOpen]);
 
     // Auto-sync for saved pets (uses ref to avoid re-triggering on savedBuilds change)
     useEffect(() => {
         if (!isOpen) return;
-        if (selectedSavedIndex !== null) {
+        if (selectedSavedIndex !== null && activeTab === 'saved') {
             const currentSaved = savedBuildsRef.current;
             const savedPet = currentSaved[selectedSavedIndex];
             if (savedPet) {
@@ -158,7 +158,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                 }
             }
         }
-    }, [petLevel, manualStats, activeTab, selectedSavedIndex, updateNestedProfile, profile.pets.active]);
+    }, [petLevel, manualStats, activeTab, selectedSavedIndex, updateNestedProfile, profile.pets.active, isOpen]);
 
 
     const filteredPets = useMemo(() => {
@@ -494,6 +494,7 @@ export function PetSelectorModal({ isOpen, onClose, onSelect, currentPet, contex
                                         setActiveTab('library');
                                         setSelectedRarity(rarity);
                                         setSelectedPetId(null);
+                                        setSelectedSavedIndex(null);
                                         setManualStats([]);
                                         setMobileTab('pets');
                                     }}

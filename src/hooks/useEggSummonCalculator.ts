@@ -245,6 +245,40 @@ export function useEggSummonCalculator() {
         setProgress(results.endProgress);
     };
 
+    // Target Calculation
+    const calculateNeededCurrency = (targetLevel: number, targetAscension: number) => {
+        if (!levels.length) return 0;
+
+        let totalGainedNeeded = 0;
+        let currLevel = level;
+        let currAscension = profile?.misc?.petAscensionLevel || 0;
+
+        // If target is already reached or passed
+        if (targetAscension < currAscension || (targetAscension === currAscension && targetLevel <= currLevel)) {
+            return 0;
+        }
+
+        // Subtract current progress from the first level's requirement
+        totalGainedNeeded -= progress;
+
+        while (currAscension < targetAscension || (currAscension === targetAscension && currLevel < targetLevel)) {
+            const threshold = levels[Math.min(currLevel - 1, levels.length - 1)]?.SummonsRequired || 0;
+            totalGainedNeeded += threshold;
+
+            currLevel++;
+            if (currLevel > maxPossibleLevel && currAscension < 3) {
+                currLevel = 1;
+                currAscension++;
+            } else if (currLevel > maxPossibleLevel) {
+                currLevel = maxPossibleLevel;
+                break;
+            }
+        }
+
+        const summonsNeeded = Math.ceil(totalGainedNeeded / EGGS_PER_SUMMON);
+        return summonsNeeded * finalCostPerSummon;
+    };
+
     return {
         available: !!eggSummonConfig, // Whether the new system is available for this version
         level, setLevel,
@@ -255,6 +289,7 @@ export function useEggSummonCalculator() {
         maxPossibleLevel,
         levels,
         applyResultsToProfile,
+        calculateNeededCurrency,
         currency: eggSummonConfig?.SingleSummonCost?.Currency || 'Eggshells',
         baseCost: BASE_COST,
         finalCostPerSummon,

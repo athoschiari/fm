@@ -5,7 +5,7 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
 import { Button } from '../UI/Button';
 import { Input } from '../UI/Input';
-import { Pencil, Check, X, Trophy } from 'lucide-react';
+import { Pencil, Check, X, Trophy, Coffee } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useSkinSets } from '../../hooks/useSkinSets';
 
@@ -25,6 +25,23 @@ interface ProfileIconProps {
 
 export function ProfileIcon({ iconIndex, size = 48, className, onClick }: ProfileIconProps) {
     const { selectedVersion } = useGameDataContext();
+    
+    if (iconIndex === -1) {
+        return (
+            <div
+                onClick={onClick}
+                className={cn(
+                    "rounded-lg overflow-hidden bg-bg-secondary border-2 border-border shrink-0 flex items-center justify-center text-[#FFDD00]",
+                    onClick && "cursor-pointer hover:border-[#FFDD00] transition-colors",
+                    className
+                )}
+                style={{ width: size, height: size }}
+            >
+                <Coffee size={size * 0.6} className="fill-current" />
+            </div>
+        );
+    }
+
     const col = iconIndex % ICONS_PER_ROW;
     const row = Math.floor(iconIndex / ICONS_PER_ROW);
 
@@ -78,6 +95,20 @@ function IconSelectorModal({ isOpen, onClose, onSelect, currentIndex }: IconSele
                     </button>
                 </div>
                 <div className="p-4 grid grid-cols-8 gap-1.5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    {/* Secret Supporter Icon */}
+                    <ProfileIcon
+                        iconIndex={-1}
+                        size={44}
+                        onClick={() => {
+                            onSelect(-1);
+                            onClose();
+                        }}
+                        className={cn(
+                            "hover:scale-110 transition-transform bg-[#FFDD00]/10 border-[#FFDD00]/30",
+                            currentIndex === -1 && "ring-2 ring-[#FFDD00]"
+                        )}
+                    />
+                    
                     {Array.from({ length: TOTAL_ICONS }, (_, i) => (
                         <ProfileIcon
                             key={i}

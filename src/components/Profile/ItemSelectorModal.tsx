@@ -202,7 +202,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     // Auto-sync for saved items (uses ref to avoid re-triggering on savedItems change)
     useEffect(() => {
         if (!isOpen) return;
-        if (selectedSavedItemIndex !== null) {
+        if (selectedSavedItemIndex !== null && ageIdx === -1) {
             const currentSaved = savedItemsRef.current?.[slot] || [];
             const savedItem = currentSaved[selectedSavedItemIndex];
             if (savedItem) {
@@ -255,9 +255,9 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 }
             }
         }
-    }, [level, manualStats, skinIdx, skinStatsList, ageIdx, selectedSavedItemIndex, slot, skinsLibrary, updateNestedProfile, profile.items]);
+    }, [level, manualStats, skinIdx, skinStatsList, ageIdx, selectedSavedItemIndex, slot, skinsLibrary, updateNestedProfile, profile.items, isOpen]);
 
-    // Sync state when modal opens or current item changes
+    // Sync state when modal opens
     useEffect(() => {
         if (isOpen) {
             // Recalculate best default age only if no current item
@@ -299,7 +299,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             }
             setMobileTab('age');
         }
-    }, [isOpen, current]);
+    }, [isOpen]);
 
     // Get drop chance for display
     const getDropChance = (ageIndex: number): number => {
@@ -1031,6 +1031,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         onClick={() => {
                             if (isUnlocked) {
                                 setAgeIdx(idx);
+                                setSelectedSavedItemIndex(null);
                                 setSelectedItemIdx(0);
                                 setMobileTab('items');
                             }
@@ -1244,6 +1245,13 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                         ? "border-accent-primary shadow-lg shadow-accent-primary/20 bg-accent-primary/5"
                                         : "border-border hover:border-accent-primary/50"
                                 )}
+                                style={
+                                    ageForBg >= 0 ? { 
+                                        background: getAgeBgStyle(ageForBg).background?.toString()
+                                            .replace('0.5', isSelected ? '0.3' : '0.15')
+                                            .replace('0.2', isSelected ? '0.15' : '0.08') 
+                                    } : {}
+                                }
                             >
                                 {ageIdx === -1 && (
                                     <button
@@ -1410,6 +1418,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                             onClick={() => {
                                                 if (isUnlocked) {
                                                     setAgeIdx(idx);
+                                                    setSelectedSavedItemIndex(null);
                                                     setSelectedItemIdx(0);
                                                 }
                                             }}
@@ -1524,6 +1533,13 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                     ? "border-accent-primary shadow-lg shadow-accent-primary/20 bg-accent-primary/5"
                                                     : "border-border hover:border-accent-primary/50"
                                             )}
+                                            style={
+                                                ageForBg >= 0 ? { 
+                                                    background: getAgeBgStyle(ageForBg).background?.toString()
+                                                        .replace('0.5', isSelected ? '0.3' : '0.15')
+                                                        .replace('0.2', isSelected ? '0.15' : '0.08') 
+                                                } : {}
+                                            }
                                         >
                                             <div
                                                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center pointer-events-none"
@@ -1557,10 +1573,10 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                         <div className="text-center bg-bg-primary/30 rounded-2xl p-4 border border-border/50 mb-6">
                             <div
                                 className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-xl border-2 overflow-hidden relative"
-                                style={ageIdx === -1 && (selectedItemData as any)?.rarity ?
-                                    { ...getRarityBgStyle((selectedItemData as any).rarity), borderColor: `var(--rarity-${(selectedItemData as any).rarity.toLowerCase()})` } :
-                                    { ...getAgeBgStyle(ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx), borderColor: `rgb(var(--age-${AGES[ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx].toLowerCase().replace(' ', '')}))` }
-                                }
+                                style={{ 
+                                    ...getAgeBgStyle(ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx), 
+                                    borderColor: `rgb(var(--age-${AGES[ageIdx === -1 ? ((selectedItemData as any)?.age || 0) : ageIdx].toLowerCase().replace(' ', '')}))` 
+                                }}
                             >
                                 {(() => {
                                     const fileSlot = IMAGE_SLOT_MAP[slot] || slot;

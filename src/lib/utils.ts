@@ -21,7 +21,7 @@ const RARITY_COLORS: Record<string, string> = {
 export function getRarityBgStyle(rarity: string): React.CSSProperties {
     const color = RARITY_COLORS[rarity.toLowerCase()] || RARITY_COLORS.common;
     return {
-        background: `linear-gradient(135deg, rgba(${color}, 0.3) 0%, rgba(${color}, 0.1) 100%)`,
+        background: `linear-gradient(135deg, rgba(${color}, 0.5) 0%, rgba(${color}, 0.2) 100%)`,
     };
 }
 
@@ -59,7 +59,7 @@ export function getAgeBgStyle(ageIndex: number): React.CSSProperties {
     const ageName = AGE_NAMES[ageIndex] || 'primitive';
     const color = AGE_COLORS[ageName] || AGE_COLORS.primitive;
     return {
-        background: `linear-gradient(135deg, rgba(${color}, 0.3) 0%, rgba(${color}, 0.1) 100%)`,
+        background: `linear-gradient(135deg, rgba(${color}, 0.5) 0%, rgba(${color}, 0.2) 100%)`,
     };
 }
 
