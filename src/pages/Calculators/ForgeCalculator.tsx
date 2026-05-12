@@ -75,10 +75,11 @@ function getTechTreeIconStyle(spriteIndex: number, size: number = 32, version?: 
     const spriteSize = 128;
     const sheetSize = 1024;
     const scale = size / spriteSize;
+    const { selectedVersion } = useGameDataContext();
 
-    const versionPath = version ? `${version}/` : '';
+    const versionPath = version || selectedVersion;
     return {
-        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}TechTreeIcons.png)`,
+        backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}/TechTreeIcons.png)`,
         backgroundPosition: `-${col * spriteSize * scale}px -${row * spriteSize * scale}px`,
         backgroundSize: `${sheetSize * scale}px ${sheetSize * scale}px`,
         width: `${size}px`,
