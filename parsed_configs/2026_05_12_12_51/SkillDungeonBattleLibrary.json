@@ -4,17 +4,17 @@
     "Damage": 15,
     "Health": 120,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "1": {
     "Level": 1,
     "Damage": 45,
     "Health": 360,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -24,7 +24,7 @@
     "Damage": 135,
     "Health": 1080,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -34,7 +34,7 @@
     "Damage": 405,
     "Health": 3240,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -44,7 +44,7 @@
     "Damage": 1215,
     "Health": 9720,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -54,7 +54,7 @@
     "Damage": 1337,
     "Health": 10696,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -64,7 +64,7 @@
     "Damage": 1470,
     "Health": 11760,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -74,7 +74,7 @@
     "Damage": 1617,
     "Health": 12936,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -84,7 +84,7 @@
     "Damage": 1779,
     "Health": 14232,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -94,7 +94,7 @@
     "Damage": 1957,
     "Health": 15656,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -107,7 +107,7 @@
     "EnemyId2": 1003,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "11": {
     "Level": 11,
@@ -207,7 +207,7 @@
     "EnemyId2": 1005,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "21": {
     "Level": 21,
@@ -307,7 +307,7 @@
     "EnemyId2": 1007,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "31": {
     "Level": 31,
@@ -407,7 +407,7 @@
     "EnemyId2": 1009,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "41": {
     "Level": 41,
@@ -504,17 +504,17 @@
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "51": {
     "Level": 51,
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -524,7 +524,7 @@
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -534,7 +534,7 @@
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -544,7 +544,7 @@
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -554,7 +554,7 @@
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -564,7 +564,7 @@
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -574,7 +574,7 @@
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -584,7 +584,7 @@
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -594,7 +594,7 @@
     "Damage": 450000,
     "Health": 3600000,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -607,7 +607,7 @@
     "EnemyId2": 1012,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "61": {
     "Level": 61,
@@ -707,7 +707,7 @@
     "EnemyId2": 1014,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "71": {
     "Level": 71,
@@ -804,17 +804,17 @@
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "81": {
     "Level": 81,
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -824,7 +824,7 @@
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -834,7 +834,7 @@
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -844,7 +844,7 @@
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -854,7 +854,7 @@
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -864,7 +864,7 @@
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -874,7 +874,7 @@
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -884,7 +884,7 @@
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -894,7 +894,7 @@
     "Damage": 2000000,
     "Health": 16000000,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -904,17 +904,17 @@
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "91": {
     "Level": 91,
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -924,7 +924,7 @@
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -934,7 +934,7 @@
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -944,7 +944,7 @@
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -954,7 +954,7 @@
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -964,7 +964,7 @@
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -974,7 +974,7 @@
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -984,7 +984,7 @@
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -994,7 +994,7 @@
     "Damage": 4000000,
     "Health": 32000000,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -1004,17 +1004,17 @@
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "101": {
     "Level": 101,
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -1024,7 +1024,7 @@
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -1034,7 +1034,7 @@
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -1044,7 +1044,7 @@
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -1054,7 +1054,7 @@
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -1064,7 +1064,7 @@
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -1074,7 +1074,7 @@
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -1084,7 +1084,7 @@
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -1094,7 +1094,7 @@
     "Damage": 6000000,
     "Health": 48000000,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -1107,7 +1107,7 @@
     "EnemyId2": 1003,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "111": {
     "Level": 111,
@@ -1207,7 +1207,7 @@
     "EnemyId2": 1005,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "121": {
     "Level": 121,
@@ -1307,7 +1307,7 @@
     "EnemyId2": 1007,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "131": {
     "Level": 131,
@@ -1407,7 +1407,7 @@
     "EnemyId2": 1009,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "141": {
     "Level": 141,
@@ -1504,17 +1504,17 @@
     "Damage": 22779583,
     "Health": 182236662,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "151": {
     "Level": 151,
     "Damage": 24146358,
     "Health": 193170861,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -1524,7 +1524,7 @@
     "Damage": 25595139,
     "Health": 204761113,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -1534,7 +1534,7 @@
     "Damage": 27130847,
     "Health": 217046780,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -1544,7 +1544,7 @@
     "Damage": 28758698,
     "Health": 230069587,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -1554,7 +1554,7 @@
     "Damage": 30484220,
     "Health": 243873762,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -1564,7 +1564,7 @@
     "Damage": 32313273,
     "Health": 258506187,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -1574,7 +1574,7 @@
     "Damage": 34252070,
     "Health": 274016559,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -1584,7 +1584,7 @@
     "Damage": 36307194,
     "Health": 290457552,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -1594,7 +1594,7 @@
     "Damage": 38485626,
     "Health": 307885005,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -1607,7 +1607,7 @@
     "EnemyId2": 1012,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "161": {
     "Level": 161,
@@ -1707,7 +1707,7 @@
     "EnemyId2": 1014,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "171": {
     "Level": 171,
@@ -1804,17 +1804,17 @@
     "Damage": 130834332,
     "Health": 1046674657,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "181": {
     "Level": 181,
     "Damage": 138684392,
     "Health": 1109475137,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -1824,7 +1824,7 @@
     "Damage": 147005456,
     "Health": 1176043645,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -1834,7 +1834,7 @@
     "Damage": 155825783,
     "Health": 1246606264,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -1844,7 +1844,7 @@
     "Damage": 165175330,
     "Health": 1321402639,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -1854,7 +1854,7 @@
     "Damage": 175085850,
     "Health": 1400686798,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -1864,7 +1864,7 @@
     "Damage": 185591001,
     "Health": 1484728006,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -1874,7 +1874,7 @@
     "Damage": 196726461,
     "Health": 1573811686,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -1884,7 +1884,7 @@
     "Damage": 208530048,
     "Health": 1668240387,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -1894,7 +1894,7 @@
     "Damage": 221041851,
     "Health": 1768334810,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -1904,17 +1904,17 @@
     "Damage": 234304362,
     "Health": 1874434899,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "191": {
     "Level": 191,
     "Damage": 248362624,
     "Health": 1986900993,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -1924,7 +1924,7 @@
     "Damage": 263264382,
     "Health": 2106115053,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -1934,7 +1934,7 @@
     "Damage": 279060244,
     "Health": 2232481956,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -1944,7 +1944,7 @@
     "Damage": 295803859,
     "Health": 2366430873,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -1954,7 +1954,7 @@
     "Damage": 313552091,
     "Health": 2508416725,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -1964,7 +1964,7 @@
     "Damage": 332365216,
     "Health": 2658921729,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -1974,7 +1974,7 @@
     "Damage": 352307129,
     "Health": 2818457033,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -1984,7 +1984,7 @@
     "Damage": 373445557,
     "Health": 2987564455,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -1994,7 +1994,7 @@
     "Damage": 395852290,
     "Health": 3166818322,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -2004,17 +2004,17 @@
     "Damage": 419603428,
     "Health": 3356827421,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "201": {
     "Level": 201,
     "Damage": 444779633,
     "Health": 3558237067,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -2024,7 +2024,7 @@
     "Damage": 471466411,
     "Health": 3771731290,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -2034,7 +2034,7 @@
     "Damage": 499754396,
     "Health": 3998035168,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -2044,7 +2044,7 @@
     "Damage": 529739660,
     "Health": 4237917278,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -2054,7 +2054,7 @@
     "Damage": 561524039,
     "Health": 4492192315,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -2064,7 +2064,7 @@
     "Damage": 595215482,
     "Health": 4761723854,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -2074,7 +2074,7 @@
     "Damage": 630928411,
     "Health": 5047427285,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -2084,7 +2084,7 @@
     "Damage": 668784115,
     "Health": 5350272922,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -2094,7 +2094,7 @@
     "Damage": 708911162,
     "Health": 5671289297,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -2107,7 +2107,7 @@
     "EnemyId2": 1003,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "211": {
     "Level": 211,
@@ -2207,7 +2207,7 @@
     "EnemyId2": 1005,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "221": {
     "Level": 221,
@@ -2307,7 +2307,7 @@
     "EnemyId2": 1007,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "231": {
     "Level": 231,
@@ -2407,7 +2407,7 @@
     "EnemyId2": 1009,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "241": {
     "Level": 241,
@@ -2504,17 +2504,17 @@
     "Damage": 7729159872,
     "Health": 61833278974,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "251": {
     "Level": 251,
     "Damage": 8192909464,
     "Health": 65543275712,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -2524,7 +2524,7 @@
     "Damage": 8684484032,
     "Health": 69475872255,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -2534,7 +2534,7 @@
     "Damage": 9205553074,
     "Health": 73644424590,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -2544,7 +2544,7 @@
     "Damage": 9757886258,
     "Health": 78063090066,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -2554,7 +2554,7 @@
     "Damage": 10343359434,
     "Health": 82746875469,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -2564,7 +2564,7 @@
     "Damage": 10963961000,
     "Health": 87711687998,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -2574,7 +2574,7 @@
     "Damage": 11621798660,
     "Health": 92974389277,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -2584,7 +2584,7 @@
     "Damage": 12319106579,
     "Health": 98552852634,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -2594,7 +2594,7 @@
     "Damage": 13058252974,
     "Health": 104466023792,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -2607,7 +2607,7 @@
     "EnemyId2": 1012,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "261": {
     "Level": 261,
@@ -2707,7 +2707,7 @@
     "EnemyId2": 1014,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "271": {
     "Level": 271,
@@ -2804,17 +2804,17 @@
     "Damage": 44392361497,
     "Health": 355138891978,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "281": {
     "Level": 281,
     "Damage": 47055903187,
     "Health": 376447225496,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -2824,7 +2824,7 @@
     "Damage": 49879257378,
     "Health": 399034059026,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -2834,7 +2834,7 @@
     "Damage": 52872012821,
     "Health": 422976102568,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -2844,7 +2844,7 @@
     "Damage": 56044333590,
     "Health": 448354668722,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -2854,7 +2854,7 @@
     "Damage": 59406993606,
     "Health": 475255948845,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -2864,7 +2864,7 @@
     "Damage": 62971413222,
     "Health": 503771305776,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -2874,7 +2874,7 @@
     "Damage": 66749698015,
     "Health": 533997584122,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -2884,7 +2884,7 @@
     "Damage": 70754679896,
     "Health": 566037439169,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -2894,7 +2894,7 @@
     "Damage": 74999960690,
     "Health": 599999685520,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -2904,17 +2904,17 @@
     "Damage": 79499958331,
     "Health": 635999666651,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "291": {
     "Level": 291,
     "Damage": 84269955831,
     "Health": 674159646650,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -2924,7 +2924,7 @@
     "Damage": 89326153181,
     "Health": 714609225449,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -2934,7 +2934,7 @@
     "Damage": 94685722372,
     "Health": 757485778976,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -2944,7 +2944,7 @@
     "Damage": 100366865714,
     "Health": 802934925714,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -2954,7 +2954,7 @@
     "Damage": 106388877657,
     "Health": 851111021257,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -2964,7 +2964,7 @@
     "Damage": 112772210317,
     "Health": 902177682533,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -2974,7 +2974,7 @@
     "Damage": 119538542936,
     "Health": 956308343485,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -2984,7 +2984,7 @@
     "Damage": 126710855512,
     "Health": 1013686844094,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -2994,7 +2994,7 @@
     "Damage": 134313506842,
     "Health": 1074508054739,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -3004,17 +3004,17 @@
     "Damage": 142372317253,
     "Health": 1138978538024,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "301": {
     "Level": 301,
     "Damage": 150914656288,
     "Health": 1207317250305,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -3024,7 +3024,7 @@
     "Damage": 159969535665,
     "Health": 1279756285323,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -3034,7 +3034,7 @@
     "Damage": 169567707805,
     "Health": 1356541662443,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -3044,7 +3044,7 @@
     "Damage": 179741770274,
     "Health": 1437934162189,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -3054,7 +3054,7 @@
     "Damage": 190526276490,
     "Health": 1524210211921,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -3064,7 +3064,7 @@
     "Damage": 201957853079,
     "Health": 1615662824636,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -3074,7 +3074,7 @@
     "Damage": 214075324264,
     "Health": 1712602594114,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -3084,7 +3084,7 @@
     "Damage": 226919843720,
     "Health": 1815358749761,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -3094,7 +3094,7 @@
     "Damage": 240535034343,
     "Health": 1924280274747,
     "EnemyId1": 1001,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -3107,7 +3107,7 @@
     "EnemyId2": 1003,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "311": {
     "Level": 311,
@@ -3207,7 +3207,7 @@
     "EnemyId2": 1005,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "321": {
     "Level": 321,
@@ -3307,7 +3307,7 @@
     "EnemyId2": 1007,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "331": {
     "Level": 331,
@@ -3407,7 +3407,7 @@
     "EnemyId2": 1009,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "341": {
     "Level": 341,
@@ -3504,17 +3504,17 @@
     "Damage": 2622520048287,
     "Health": 20980160386300,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "351": {
     "Level": 351,
     "Damage": 2779871251185,
     "Health": 22238970009478,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -3524,7 +3524,7 @@
     "Damage": 2946663526256,
     "Health": 23573308210046,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -3534,7 +3534,7 @@
     "Damage": 3123463337831,
     "Health": 24987706702649,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -3544,7 +3544,7 @@
     "Damage": 3310871138101,
     "Health": 26486969104808,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -3554,7 +3554,7 @@
     "Damage": 3509523406387,
     "Health": 28076187251097,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -3564,7 +3564,7 @@
     "Damage": 3720094810770,
     "Health": 29760758486162,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -3574,7 +3574,7 @@
     "Damage": 3943300499417,
     "Health": 31546403995332,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -3584,7 +3584,7 @@
     "Damage": 4179898529381,
     "Health": 33439188235052,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -3594,7 +3594,7 @@
     "Damage": 4430692441144,
     "Health": 35445539529155,
     "EnemyId1": 1010,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -3607,7 +3607,7 @@
     "EnemyId2": 1012,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "361": {
     "Level": 361,
@@ -3707,7 +3707,7 @@
     "EnemyId2": 1014,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "371": {
     "Level": 371,
@@ -3804,17 +3804,17 @@
     "Damage": 15062420748127,
     "Health": 120499365985017,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "381": {
     "Level": 381,
     "Damage": 15966165993015,
     "Health": 127729327944118,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -3824,7 +3824,7 @@
     "Damage": 16924135952596,
     "Health": 135393087620765,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -3834,7 +3834,7 @@
     "Damage": 17939584109751,
     "Health": 143516672878011,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -3844,7 +3844,7 @@
     "Damage": 19015959156336,
     "Health": 152127673250692,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -3854,7 +3854,7 @@
     "Damage": 20156916705717,
     "Health": 161255333645733,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -3864,7 +3864,7 @@
     "Damage": 21366331708060,
     "Health": 170930653664477,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -3874,7 +3874,7 @@
     "Damage": 22648311610543,
     "Health": 181186492884346,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -3884,7 +3884,7 @@
     "Damage": 24007210307176,
     "Health": 192057682457406,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -3894,7 +3894,7 @@
     "Damage": 25447642925606,
     "Health": 203581143404851,
     "EnemyId1": 1015,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4
@@ -3904,17 +3904,17 @@
     "Damage": 26974501501143,
     "Health": 215796012009142,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
-    "Wave3": 0
+    "Wave3": -1
   },
   "391": {
     "Level": 391,
     "Damage": 28592971591211,
     "Health": 228743772729690,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 1
@@ -3924,7 +3924,7 @@
     "Damage": 30308549886684,
     "Health": 242468399093472,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 1,
     "Wave2": 1,
     "Wave3": 2
@@ -3934,7 +3934,7 @@
     "Damage": 32127062879885,
     "Health": 257016503039080,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 2
@@ -3944,7 +3944,7 @@
     "Damage": 34054686652678,
     "Health": 272437493221425,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 2,
     "Wave3": 3
@@ -3954,7 +3954,7 @@
     "Damage": 36097967851839,
     "Health": 288783742814710,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 2,
     "Wave2": 3,
     "Wave3": 3
@@ -3964,7 +3964,7 @@
     "Damage": 38263845922949,
     "Health": 306110767383593,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 3
@@ -3974,7 +3974,7 @@
     "Damage": 40559676678326,
     "Health": 324477413426608,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 3,
     "Wave3": 4
@@ -3984,7 +3984,7 @@
     "Damage": 42993257279026,
     "Health": 343946058232205,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 3,
     "Wave2": 4,
     "Wave3": 4
@@ -3994,7 +3994,7 @@
     "Damage": 45572852715767,
     "Health": 364582821726137,
     "EnemyId1": 1016,
-    "EnemyId2": 0,
+    "EnemyId2": -1,
     "Wave1": 4,
     "Wave2": 4,
     "Wave3": 4

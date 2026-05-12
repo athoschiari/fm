@@ -8,7 +8,7 @@
     },
     "Price": null,
     "Limit": {
-      "ResetsWithNewDay": 0,
+      "ResetsWithNewDay": true,
       "CooldownInSeconds": 0,
       "AllowedPurchasesPerCooldown": 1
     }

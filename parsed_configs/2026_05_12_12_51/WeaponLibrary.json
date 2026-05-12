@@ -1,16 +1,16 @@
 {
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 5}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 5}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 5
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -20,18 +20,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 5}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 5}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 5
     },
     "AttackRange": 7.0,
     "WindupTime": 0.9499999999534339,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -41,18 +41,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 4}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 4}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 4
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7833334000315517,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -62,18 +62,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 4}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 4}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 4
     },
     "AttackRange": 7.0,
     "WindupTime": 1.0,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -83,18 +83,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 3}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 3}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 3
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.31666669994592667,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -104,18 +104,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 3}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 3}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 3
     },
     "AttackRange": 7.0,
     "WindupTime": 0.31666669994592667,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -125,18 +125,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 6}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 6}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 6
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.9333333000540733,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -146,18 +146,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 6}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 6}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 6
     },
     "AttackRange": 7.0,
     "WindupTime": 0.9333333000540733,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -167,18 +167,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 7}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 7}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 7
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7666666998993605,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -188,18 +188,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 7}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 7}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 7
     },
     "AttackRange": 7.0,
     "WindupTime": 0.7666666998993605,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -209,18 +209,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 8}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 8}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 8
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -230,18 +230,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 8}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 8}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 8
     },
     "AttackRange": 7.0,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -251,18 +251,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 9}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 9}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 9
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.9333333000540733,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -272,18 +272,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 9}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 9}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 9
     },
     "AttackRange": 7.0,
     "WindupTime": 0.9333333000540733,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -293,18 +293,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 10}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 10}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 10
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.8999999999068677,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -314,18 +314,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 10}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 10}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 10
     },
     "AttackRange": 7.0,
     "WindupTime": 0.8999999999068677,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -335,18 +335,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 11}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 11}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 11
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7333333001006395,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -356,18 +356,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 11}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 11}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 11
     },
     "AttackRange": 7.0,
     "WindupTime": 0.7333333001006395,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -377,18 +377,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 12}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 12}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 12
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.19999999995343387,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -398,18 +398,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 12}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 12}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 12
     },
     "AttackRange": 7.0,
     "WindupTime": 0.19999999995343387,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -419,18 +419,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 13}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 13}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 13
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.8999999999068677,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -440,18 +440,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 13}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 13}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 13
     },
     "AttackRange": 7.0,
     "WindupTime": 0.8999999999068677,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -461,18 +461,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 999, 'Type': 'Weapon', 'Idx': 14}": {
+  "{'Age': -1000, 'Type': 'Weapon', 'Idx': 14}": {
     "ItemId": {
-      "Age": 999,
+      "Age": -1000,
       "Type": "Weapon",
       "Idx": 14
     },
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7333333001006395,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -482,18 +482,18 @@
       "Y": 0.0
     }
   },
-  "{'Age': 1000, 'Type': 'Weapon', 'Idx': 14}": {
+  "{'Age': -1001, 'Type': 'Weapon', 'Idx': 14}": {
     "ItemId": {
-      "Age": 1000,
+      "Age": -1001,
       "Type": "Weapon",
       "Idx": 14
     },
     "AttackRange": 7.0,
     "WindupTime": 0.7333333001006395,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.0,
       "Y": 0.0
@@ -512,9 +512,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7166666390839964,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.5175996420439333,
       "Y": 0.8225679399911314
@@ -533,9 +533,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7666666510049254,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.16499984310939908,
       "Y": 0.40281254099681973
@@ -554,8 +554,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.4666666688863188,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": true,
     "ProjectileId": 0,
     "Hand": {
       "X": 0.48200000007636845,
@@ -575,9 +575,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7833333609160036,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.27863289997912943,
       "Y": 0.43912965105846524
@@ -596,9 +596,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.9333333370741457,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.16790097998455167,
       "Y": 0.4266180000267923
@@ -617,8 +617,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.6833333370741457,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 1,
     "Hand": {
       "X": -0.5800000000745058,
@@ -638,8 +638,8 @@
     "AttackRange": 7.0,
     "WindupTime": 1.0833333700429648,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 2,
     "Hand": {
       "X": 0.5800000000745058,
@@ -659,9 +659,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6000000000931323,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.23943164898082614,
       "Y": 0.3909810190089047
@@ -680,9 +680,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.5666666629258543,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": -0.2527265250682831,
       "Y": 0.31215050001628697
@@ -701,9 +701,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6499999999068677,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": -0.2023603320121765,
       "Y": 0.3610124590341002
@@ -722,9 +722,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.5666666629258543,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.06544915004633367,
       "Y": 0.39057254791259766
@@ -743,9 +743,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7833333609160036,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.09365504002198577,
       "Y": 0.4520908589474857
@@ -764,8 +764,8 @@
     "AttackRange": 7.0,
     "WindupTime": 1.0833333700429648,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 3,
     "Hand": {
       "X": 0.8700000001117587,
@@ -785,9 +785,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.8999999999068677,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.20120006799697876,
       "Y": 0.4220002288930118
@@ -806,8 +806,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.6833333370741457,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 4,
     "Hand": {
       "X": -0.511841099942103,
@@ -827,8 +827,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.5666666629258543,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": true,
     "ProjectileId": 5,
     "Hand": {
       "X": -0.10700000007636845,
@@ -848,9 +848,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.02000000001862645,
       "Y": 0.5400000000372529
@@ -869,9 +869,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.22238992201164365,
       "Y": 0.3974200999364257
@@ -890,9 +890,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.8333332999609411,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.11899999994784594,
       "Y": 0.5209999999497086
@@ -911,9 +911,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7666666510049254,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.17368260002695024,
       "Y": 0.38375500007532537
@@ -932,9 +932,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.1438802001066506,
       "Y": 0.5853534999769181
@@ -953,9 +953,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.5,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": true,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.3470000000670552,
       "Y": 0.5239999999757856
@@ -974,9 +974,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.5833332999609411,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.2287418539635837,
       "Y": 0.33655393100343645
@@ -995,9 +995,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.6407822000328451,
       "Y": 0.7378402350004762
@@ -1016,9 +1016,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.5,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": true,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.4708751440048218,
       "Y": 0.5973078610841185
@@ -1037,9 +1037,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7333333489950746,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.6822740999050438,
       "Y": 0.5868400998879224
@@ -1058,9 +1058,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.8333332999609411,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": true,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.3300000000745058,
       "Y": 0.6000000000931323
@@ -1079,9 +1079,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.33333334303461015,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": true,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.5571646690368652,
       "Y": 0.5013655419461429
@@ -1100,9 +1100,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7833333609160036,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.3239010269753635,
       "Y": 0.27925494289956987
@@ -1121,8 +1121,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": true,
     "ProjectileId": 6,
     "Hand": {
       "X": 0.2890000001061708,
@@ -1142,9 +1142,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7666666510049254,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": -0.17999999993480742,
       "Y": 0.4299999999348074
@@ -1163,9 +1163,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7833333609160036,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.35085937404073775,
       "Y": 0.3648047000169754
@@ -1184,9 +1184,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.7166666390839964,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": true,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.40357625507749617,
       "Y": 0.5970980999991298
@@ -1205,8 +1205,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.9166667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": true,
     "ProjectileId": 7,
     "Hand": {
       "X": 0.40046486305072904,
@@ -1226,9 +1226,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.75,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.2798840699251741,
       "Y": 0.4611383380834013
@@ -1247,9 +1247,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": true,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.787999999942258,
       "Y": 0.44999999995343387
@@ -1268,9 +1268,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7166666390839964,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.00058736652135849,
       "Y": 0.5413132309913635
@@ -1289,9 +1289,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.75,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.044372595846652985,
       "Y": 0.46238607191480696
@@ -1310,8 +1310,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.8333332999609411,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": true,
     "ProjectileId": 8,
     "Hand": {
       "X": 0.14400000008754432,
@@ -1331,8 +1331,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.9666666390839964,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": true,
     "ProjectileId": 9,
     "Hand": {
       "X": 0.5190000000875443,
@@ -1352,9 +1352,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6999999999534339,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.15806892490945756,
       "Y": 0.18894235789775848
@@ -1373,9 +1373,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6999999999534339,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": -0.0374983474612236,
       "Y": 0.43680825806222856
@@ -1394,9 +1394,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6999999999534339,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.17869864404201508,
       "Y": 0.7056450000964105
@@ -1415,8 +1415,8 @@
     "AttackRange": 7.0,
     "WindupTime": 1.0833333700429648,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 10,
     "Hand": {
       "X": 0.8700000001117587,
@@ -1436,9 +1436,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.8333332999609411,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": true,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.05199999990873039,
       "Y": 0.3600000001024455
@@ -1457,9 +1457,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.8833333000075072,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.35912135196849704,
       "Y": 0.2514594499953091
@@ -1478,8 +1478,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.8333332999609411,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 11,
     "Hand": {
       "X": 0.8700000001117587,
@@ -1499,9 +1499,9 @@
     "AttackRange": 7.0,
     "WindupTime": 1.0,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": true,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.4648674998898059,
       "Y": 0.54960733698681
@@ -1520,9 +1520,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 1.1000000000931323,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.21554854488931596,
       "Y": 0.4392434658948332
@@ -1541,9 +1541,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.8999999999068677,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.40604960010387003,
       "Y": 0.5181880590971559
@@ -1562,8 +1562,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.9499999999534339,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 12,
     "Hand": {
       "X": 0.5776619999669492,
@@ -1583,9 +1583,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.5666666629258543,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": -0.48313441895879805,
       "Y": 0.38245984888635576
@@ -1604,8 +1604,8 @@
     "AttackRange": 7.0,
     "WindupTime": 1.0,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 13,
     "Hand": {
       "X": 0.5073186999652535,
@@ -1625,8 +1625,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.8166666629258543,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 14,
     "Hand": {
       "X": -0.13011397398076952,
@@ -1646,9 +1646,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.8166666629258543,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.6167283649556339,
       "Y": 0.1909381600562483
@@ -1667,9 +1667,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.8999999999068677,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.2605079000350088,
       "Y": 0.31296637700870633
@@ -1688,9 +1688,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.3833333249203861,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.43790596700273454,
       "Y": 0.2375675740186125
@@ -1709,9 +1709,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.6666667000390589,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.7169999999459833,
       "Y": 0.75
@@ -1730,9 +1730,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7333333489950746,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.38718100008554757,
       "Y": 0.3088704999536276
@@ -1751,9 +1751,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.7333333489950746,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.4111275998875499,
       "Y": 0.28841486596502364
@@ -1772,9 +1772,9 @@
     "AttackRange": 0.30000000004656613,
     "WindupTime": 0.3166666629258543,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": false,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": -0.2143200000282377,
       "Y": 0.6328799999319017
@@ -1793,8 +1793,8 @@
     "AttackRange": 7.0,
     "WindupTime": 0.8333332999609411,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
+    "IsRanged": true,
+    "IsAiming": false,
     "ProjectileId": 15,
     "Hand": {
       "X": 0.5776619999669492,
@@ -1814,9 +1814,9 @@
     "AttackRange": 7.0,
     "WindupTime": 0.7166666390839964,
     "AttackDuration": 1.5,
-    "IsRanged": 0,
-    "IsAiming": 0,
-    "ProjectileId": 0,
+    "IsRanged": true,
+    "IsAiming": false,
+    "ProjectileId": -1,
     "Hand": {
       "X": 0.45968738198280334,
       "Y": 0.5115630999207497
