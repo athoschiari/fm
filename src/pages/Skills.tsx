@@ -10,6 +10,8 @@ import { AscensionStars } from '../components/UI/AscensionStars';
 
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useGameDataContext } from '../context/GameDataContext';
+import { useComparison } from '../context/ComparisonContext';
+import { formatCompactNumber } from '../utils/statsCalculator';
 
 export default function Skills() {
     const { profile } = useProfile();
@@ -154,6 +156,14 @@ export default function Skills() {
     };
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+
+    const { isCompactStats } = useComparison();
+
+    const formatStatValue = (val: number) => {
+        return isCompactStats 
+            ? formatCompactNumber(val)
+            : val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    };
 
     return (
         <div className="space-y-6 animate-fade-in pb-12 px-4 sm:px-0">
@@ -300,23 +310,20 @@ export default function Skills() {
 
                                             return currentStats.map((stat: any, idx: number) => {
                                                 const statType = stat.StatNode?.UniqueStat?.StatType || "Unknown";
-                                                let value = stat.Value || 0;
+                                                let statVal = stat.Value || 0;
                                                 // Apply passive ascension multiplier
-                                                if (statType === 'Damage') value *= (1 + ascensionMulti.passiveDmg);
-                                                if (statType === 'Health') value *= (1 + ascensionMulti.passiveHp);
-                                                const isPercent = false;
+                                                if (statType === 'Damage') statVal *= (1 + ascensionMulti.passiveDmg);
+                                                if (statType === 'Health') statVal *= (1 + ascensionMulti.passiveHp);
 
                                                 // Only show positive values
-                                                if (value <= 0) return null;
-
-                                                let valueColor = "text-accent-secondary";
-                                                if (statType === "Health") valueColor = "text-green-400";
-                                                if (statType === "Damage") valueColor = "text-red-400";
+                                                if (statVal <= 0) return null;
 
                                                 return (
-                                                    <div key={idx} className="bg-bg-input/30 px-2 py-1.5 rounded flex items-center justify-between text-[11px] border border-white/5">
-                                                        <span className="text-text-muted uppercase font-bold tracking-wider">{statType} (Passive)</span>
-                                                        <span className={cn("font-mono font-bold", valueColor)}>+{formatNumber(value)}{isPercent ? '%' : ''}</span>
+                                                    <div key={idx} className="flex justify-between items-center text-xs py-0.5 border-b border-white/5 last:border-0">
+                                                        <span className="text-text-muted">{statType} Bonus</span>
+                                                        <span className="font-mono font-bold text-accent-primary">
+                                                            +{formatStatValue(statVal)}
+                                                        </span>
                                                     </div>
                                                 );
                                             });
@@ -325,30 +332,24 @@ export default function Skills() {
                                 )}
 
                                 {/* Stats at current level */}
-                                <div className="grid grid-cols-2 gap-2 mt-auto">
+                                <div className="flex gap-2 mt-auto">
                                     {dmgAtLevel > 0 && (
-                                        <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
-                                            <div className="flex items-center gap-1 text-[10px] text-text-muted mb-0.5 uppercase font-bold">
-                                                <Sword className="w-3 h-3 text-red-400" /> Base Dmg
+                                        <div className="flex flex-col bg-bg-input/50 p-2 rounded border border-white/5 flex-1 items-center">
+                                            <div className="flex items-center gap-1 text-[10px] text-red-400 mb-1 uppercase font-bold">
+                                                <Sword className="w-3 h-3" /> Damage
                                             </div>
-                                            <div className="font-mono font-bold text-red-200 text-sm">
-                                                {formatNumber(dmgAtLevel)}
-                                            </div>
-                                            <div className="text-[9px] text-text-muted mt-0.5">
-                                                {Math.round(dmgAtLevel).toLocaleString()}
+                                            <div className="font-mono font-bold text-red-200">
+                                                +{formatStatValue(dmgAtLevel)}
                                             </div>
                                         </div>
                                     )}
                                     {hpAtLevel > 0 && (
-                                        <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
-                                            <div className="flex items-center gap-1 text-[10px] text-text-muted mb-0.5 uppercase font-bold">
-                                                <Heart className="w-3 h-3 text-green-400" /> Base HP
+                                        <div className="bg-bg-input/50 p-2 rounded border border-white/5 flex-1 items-center">
+                                            <div className="flex items-center gap-1 text-[10px] text-green-400 mb-1 uppercase font-bold">
+                                                <Heart className="w-3 h-3" /> Health
                                             </div>
-                                            <div className="font-mono font-bold text-green-200 text-sm">
-                                                {formatNumber(hpAtLevel)}
-                                            </div>
-                                            <div className="text-[9px] text-text-muted mt-0.5">
-                                                {Math.round(hpAtLevel).toLocaleString()}
+                                            <div className="font-mono font-bold text-green-200">
+                                                +{formatStatValue(hpAtLevel)}
                                             </div>
                                         </div>
                                     )}

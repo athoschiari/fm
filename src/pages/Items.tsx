@@ -11,6 +11,8 @@ import { cn, getAgeBgStyle, getAgeIconStyle, getInventoryIconStyle } from '../li
 import { AGES } from '../utils/constants';
 import { useTreeModifiers } from '../hooks/useCalculatedStats';
 import { formatNumber } from '../utils/format';
+import { formatCompactNumber } from '../utils/statsCalculator';
+import { useComparison } from '../context/ComparisonContext';
 import { AscensionStars } from '../components/UI/AscensionStars';
 import { usePersistentState } from '../hooks/usePersistentState';
 
@@ -100,6 +102,14 @@ export default function Items() {
             return iId?.Age === selectedAgeIdx && iId?.Type === selectedSlot;
         }).sort((a: any, b: any) => (a.ItemId?.Idx || 0) - (b.ItemId?.Idx || 0));
     }, [itemLibrary, selectedAgeIdx, selectedSlot]);
+
+    const { isCompactStats } = useComparison();
+
+    const formatStatValue = (val: number) => {
+        return isCompactStats 
+            ? formatCompactNumber(val)
+            : val.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    };
 
     const getIconForSlot = (slot: string) => {
         const style = getInventoryIconStyle(slot, 24);
@@ -293,11 +303,8 @@ export default function Items() {
                                                     <div className="flex justify-between items-center">
                                                         <span className="text-xs text-text-secondary">Base {statType}</span>
                                                         <span className="font-mono font-bold text-text-primary">
-                                                            {formatNumber(Math.floor(scaledValue))}
+                                                            {formatStatValue(scaledValue)}
                                                         </span>
-                                                    </div>
-                                                    <div className="text-[9px] text-text-muted text-right mt-0.5">
-                                                        {Math.floor(scaledValue).toLocaleString()}
                                                     </div>
                                                 </div>
                                             );

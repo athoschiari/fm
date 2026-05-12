@@ -6,9 +6,11 @@ import { Input } from '../components/UI/Input';
 import { cn, getRarityBgStyle } from '../lib/utils';
 import { Star, Search, BookOpen, TrendingUp } from 'lucide-react';
 import { AscensionStars } from '../components/UI/AscensionStars';
+import { formatCompactNumber } from '../utils/statsCalculator';
 
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useGameDataContext } from '../context/GameDataContext';
+import { useComparison } from '../context/ComparisonContext';
 
 export default function Mounts() {
     const { profile } = useProfile();
@@ -149,6 +151,14 @@ export default function Mounts() {
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
 
+    const { isCompactStats } = useComparison();
+
+    const formatStatValue = (val: number) => {
+        return isCompactStats 
+            ? formatCompactNumber(val)
+            : val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
     return (
         <div className="space-y-6 animate-fade-in pb-12 px-4 sm:px-0">
             <div className="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-border pb-6">
@@ -271,13 +281,13 @@ export default function Mounts() {
                                                 <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
                                                     <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Base Dmg</span>
                                                     <span className="font-mono font-bold text-red-200">
-                                                        +{((damageStat?.Value || 0) * ascensionMulti.dmg).toFixed(2)}
+                                                        +{formatStatValue((damageStat?.Value || 0) * ascensionMulti.dmg)}
                                                     </span>
                                                 </div>
                                                 <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
                                                     <span className="text-[10px] text-text-muted uppercase font-bold mb-1">Base HP</span>
                                                     <span className="font-mono font-bold text-green-200">
-                                                        +{((healthStat?.Value || 0) * ascensionMulti.hp).toFixed(2)}
+                                                        +{formatStatValue((healthStat?.Value || 0) * ascensionMulti.hp)}
                                                     </span>
                                                 </div>
                                             </>

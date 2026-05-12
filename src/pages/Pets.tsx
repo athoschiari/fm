@@ -9,6 +9,8 @@ import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
 import { getAscensionTexturePath } from '../utils/ascensionUtils';
 import { useGameDataContext } from '../context/GameDataContext';
+import { useComparison } from '../context/ComparisonContext';
+import { formatCompactNumber } from '../utils/statsCalculator';
 
 function EggIcon({ rarity, size = 48, className, ascensionLevel = 0 }: { rarity: string; size?: number; className?: string; ascensionLevel?: number }) {
     const { selectedVersion } = useGameDataContext();
@@ -183,6 +185,14 @@ export default function Pets() {
     }, [petUpgrades]);
 
     const rarities = ['Common', 'Rare', 'Epic', 'Legendary', 'Ultimate', 'Mythic'];
+
+    const { isCompactStats } = useComparison();
+
+    const formatStatValue = (val: number) => {
+        return isCompactStats 
+            ? formatCompactNumber(val)
+            : val.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    };
 
     return (
         <div className="space-y-6 animate-fade-in pb-12 px-4 sm:px-0">
@@ -361,22 +371,16 @@ export default function Pets() {
                                         <div className="flex items-center gap-1 text-[10px] text-text-muted mb-0.5 uppercase font-bold">
                                             <Sword className="w-3 h-3 text-red-400" /> Base Dmg
                                         </div>
-                                        <div className="font-mono font-bold text-red-200 text-sm">
-                                            {formatNumber(finalDmg)}
-                                        </div>
-                                        <div className="text-[9px] text-text-muted mt-0.5">
-                                            {Math.round(finalDmg).toLocaleString()}
+                                        <div className="font-mono font-bold text-red-200">
+                                            +{formatStatValue(finalDmg)}
                                         </div>
                                     </div>
                                     <div className="bg-bg-input/50 p-2 rounded flex flex-col items-center">
-                                        <div className="flex items-center gap-1 text-[10px] text-text-muted mb-0.5 uppercase font-bold">
-                                            <Heart className="w-3 h-3 text-green-400" /> Base HP
+                                        <div className="flex items-center gap-1 text-[10px] text-green-400 mb-1 uppercase font-bold">
+                                            <Heart className="w-3 h-3" /> Health
                                         </div>
-                                        <div className="font-mono font-bold text-green-200 text-sm">
-                                            {formatNumber(finalHp)}
-                                        </div>
-                                        <div className="text-[9px] text-text-muted mt-0.5">
-                                            {Math.round(finalHp).toLocaleString()}
+                                        <div className="font-mono font-bold text-green-200">
+                                            +{formatStatValue(finalHp)}
                                         </div>
                                     </div>
                                 </div>

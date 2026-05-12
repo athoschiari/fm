@@ -396,14 +396,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                         </span>
                     </a>
 
-                    <div className="space-y-1">
-                        <div className="text-[10px] text-text-muted text-center flex items-center justify-center gap-2">
-                            <Github size={10} className="opacity-50" />
-                            <a href="https://github.com/1vcian/fm" target="_blank" rel="noopener noreferrer" className="hover:text-accent-primary transition-colors uppercase tracking-widest font-bold">Source Code</a>
-                        </div>
-                        <div className="text-[10px] text-text-muted text-center uppercase tracking-widest font-medium">
-                            v2.2.0 • by <a href="https://1vcian.me" target="_blank" rel="noopener noreferrer" className="hover:text-accent-primary transition-colors font-bold">1vcian</a>
-                        </div>
+                    <div className="text-[10px] text-text-muted text-center uppercase tracking-widest font-medium opacity-60">
+                        v2.2.0 • by <a href="https://1vcian.me" target="_blank" rel="noopener noreferrer" className="hover:text-accent-primary transition-colors font-bold">1vcian</a>
                     </div>
                 </div>
             </aside>
