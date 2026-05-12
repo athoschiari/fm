@@ -210,7 +210,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </div>
 
                 {/* Links */}
-                <div className="flex-1 overflow-y-auto py-6 px-4 space-y-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto py-6 px-4 space-y-5 custom-scrollbar">
                     {NAV_GROUPS.map((group) => {
                         const isCollapsed = collapsedGroups[group.title];
                         const isCollapsible = (group as any).collapsible;
@@ -220,21 +220,33 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                 <button 
                                     onClick={() => isCollapsible && toggleGroup(group.title)}
                                     className={cn(
-                                        "w-full flex items-center justify-between mb-3 px-2 group/title transition-colors",
-                                        isCollapsible ? "cursor-pointer" : "cursor-default"
+                                        "w-full flex items-center justify-between transition-all duration-200",
+                                        isCollapsible 
+                                            ? "mb-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/[0.08] border border-white/5 hover:border-accent-primary/20 group/title shadow-sm cursor-pointer" 
+                                            : "mb-2 px-2 cursor-default"
                                     )}
                                 >
-                                    <h3 className="text-xs font-semibold text-accent-primary uppercase tracking-wider">
+                                    <h3 className={cn(
+                                        "text-xs font-bold uppercase tracking-widest transition-colors",
+                                        isCollapsible 
+                                            ? (isCollapsed ? "text-text-secondary" : "text-accent-primary")
+                                            : "text-accent-primary"
+                                    )}>
                                         {group.title}
                                     </h3>
                                     {isCollapsible && (
-                                        <ChevronDown 
-                                            size={14} 
-                                            className={cn(
-                                                "text-accent-primary transition-transform duration-200",
-                                                isCollapsed ? "-rotate-90" : "rotate-0"
-                                            )} 
-                                        />
+                                        <div className={cn(
+                                            "p-1 rounded-md transition-all duration-200",
+                                            isCollapsed ? "bg-white/5 text-text-muted" : "bg-accent-primary/10 text-accent-primary"
+                                        )}>
+                                            <ChevronDown 
+                                                size={12} 
+                                                className={cn(
+                                                    "transition-transform duration-300",
+                                                    isCollapsed ? "-rotate-90" : "rotate-0"
+                                                )} 
+                                            />
+                                        </div>
                                     )}
                                 </button>
 
