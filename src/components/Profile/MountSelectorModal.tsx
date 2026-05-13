@@ -323,8 +323,8 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 text-text-primary animate-in fade-in duration-200">
-            <div className="bg-bg-primary w-full max-w-5xl h-[85vh] rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4 text-text-primary animate-in fade-in duration-200">
+            <div className="bg-bg-primary w-full max-w-5xl h-[90vh] md:h-[85vh] rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border bg-bg-secondary/20">
                     <div className="flex items-center gap-3">
@@ -402,13 +402,13 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                     </button>
                 </div>
 
-                <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+                <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
                     {/* Sidebar */}
                     <div className={cn(
                         "w-full md:w-52 border-b md:border-b-0 md:border-r border-border flex flex-col bg-bg-secondary/10 flex-shrink-0",
                         mobileTab !== 'rarity' && "hidden md:flex"
                     )}>
-                        <div className="flex flex-col flex-1 overflow-y-auto custom-scrollbar md:no-scrollbar p-3 md:p-0 space-y-2 md:space-y-0">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-3 md:p-0 space-y-2 md:space-y-0">
                             {/* Saved Builds */}
                             {context === 'profile' && (
                                 <button
@@ -472,11 +472,14 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
 
 
                     {/* Content Area */}
-                    <div className="flex-1 flex flex-col md:flex-row h-full overflow-hidden">
+                    <div className={cn(
+                        "flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden",
+                        mobileTab !== 'mounts' && "hidden md:flex"
+                    )}>
                         {/* Grid */}
                         <div className={cn(
-                            "flex-1 overflow-y-auto custom-scrollbar p-3 md:p-4 bg-bg-primary/30",
-                            mobileTab !== 'mounts' && "hidden md:block"
+                            "overflow-y-auto custom-scrollbar p-3 md:p-4 bg-bg-primary/30",
+                            mobileTab === 'mounts' ? "flex-1 block" : "hidden md:block md:flex-1"
                         )}>
                             <div className="relative mb-4">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
@@ -694,8 +697,8 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
 
                     {/* Config Panel */}
                     <div className={cn(
-                        "w-full md:w-80 border-t md:border-t-0 md:border-l border-border bg-bg-secondary/20 flex flex-col flex-shrink-0",
-                        mobileTab !== 'config' && "hidden md:flex"
+                        "w-full md:w-80 border-t md:border-t-0 md:border-l border-border bg-bg-secondary/20 flex flex-col min-h-0",
+                        mobileTab === 'config' ? "flex-1 flex" : "hidden md:flex md:flex-initial"
                     )}>
                         <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-6">
                             {selectedMountId !== null ? (
