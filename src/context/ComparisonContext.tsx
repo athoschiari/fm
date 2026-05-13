@@ -270,7 +270,7 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             updateNestedProfile('misc', miscUpdates);
         }
         exitCompareMode();
-    }, [originalItems, originalMount, originalPets, originalSkills, originalForgeAscension, originalMountAscension, originalPetAscension, originalSkillAscension, updateNestedProfile, exitCompareMode]);
+    }, [originalItems, originalMount, originalPets, originalSkills, originalForgeAscension, originalMountAscension, originalPetAscension, originalSkillAscension, originalUseSkinWindup, updateNestedProfile, exitCompareMode]);
 
     const applyTestBuild = useCallback(() => {
         if (testItems) {
@@ -297,7 +297,7 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             updateNestedProfile('misc', miscUpdates);
         }
         exitCompareMode();
-    }, [testItems, testMount, testPets, testSkills, testForgeAscension, testMountAscension, testPetAscension, testSkillAscension, updateNestedProfile, exitCompareMode]);
+    }, [testItems, testMount, testPets, testSkills, testForgeAscension, testMountAscension, testPetAscension, testSkillAscension, testUseSkinWindup, updateNestedProfile, exitCompareMode]);
 
     return (
         <ComparisonContext.Provider value={{
