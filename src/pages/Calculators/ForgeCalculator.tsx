@@ -784,21 +784,21 @@ export default function ForgeCalculator() {
     };
 
     const renderPriceWithPrecision = (val: number) => (
-        <div className="flex flex-col">
-            <div className="text-2xl lg:text-3xl font-black text-white">{formatNumber(val)}</div>
-            <div className="text-xs text-white/50 font-mono">({val.toLocaleString(undefined, { maximumFractionDigits: 0 })})</div>
+        <div className="flex flex-col text-stroke-sm">
+            <div className="text-2xl lg:text-3xl font-black text-white text-stroke-sm">{formatNumber(val)}</div>
+            <div className="text-xs text-white/50 font-mono text-stroke-sm">({val.toLocaleString(undefined, { maximumFractionDigits: 0 })})</div>
         </div>
     );
 
     // Helper for Range Display
     const renderPriceRange = (min: number, max: number) => (
-        <div className="flex flex-col">
-            <div className="text-xl lg:text-2xl font-black text-white flex items-center gap-1">
-                <span>{formatNumber(min)}</span>
-                <span className="text-white/50">-</span>
-                <span>{formatNumber(max)}</span>
+        <div className="flex flex-col text-stroke-sm">
+            <div className="text-xl lg:text-2xl font-black text-white flex items-center gap-1 text-stroke-sm">
+                <span className="text-stroke-sm">{formatNumber(min)}</span>
+                <span className="text-white/50 text-stroke-sm">-</span>
+                <span className="text-stroke-sm">{formatNumber(max)}</span>
             </div>
-            <div className="text-[10px] text-white/50 font-mono">
+            <div className="text-[10px] text-white/50 font-mono text-stroke-sm">
                 {formatNumber((min + max) / 2)} (Avg)
             </div>
         </div>
@@ -1020,8 +1020,8 @@ export default function ForgeCalculator() {
                         {/* Calculated Reverse Result (if Gold Mode) */}
                         {mode === 'gold' && results && (
                             <div className="bg-accent-primary/10 border border-accent-primary/20 rounded-xl p-4 flex items-center justify-between">
-                                <span className="text-sm font-bold text-accent-primary uppercase">Required Hammers</span>
-                                <div className="text-right">
+                                <span className="text-sm font-bold text-accent-primary uppercase text-stroke-sm">Required Hammers</span>
+                                <div className="text-right text-stroke-sm">
                                     <span className="text-2xl font-black text-white block">{formatNumber(results.finalHammers)}</span>
                                     <span className="text-xs text-white/50 block">({Math.floor(results.finalHammers).toLocaleString()})</span>
                                 </div>
@@ -1039,7 +1039,7 @@ export default function ForgeCalculator() {
                                 </div>
                                 <span className="font-medium text-text-secondary">Forge Level</span>
                             </div>
-                            <span className="text-xl font-bold text-white">{profile.misc.forgeLevel}</span>
+                            <span className="text-xl font-bold text-white text-stroke-sm">{profile.misc.forgeLevel}</span>
                         </div>
                         {/* Sell Price */}
                         <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
@@ -1049,7 +1049,7 @@ export default function ForgeCalculator() {
                                 </div>
                                 <span className="font-medium text-text-secondary">Sell Bonus</span>
                             </div>
-                            <span className="text-xl font-bold text-green-400">+{((forgeStats?.effectiveSellPriceBonus || 0) * 100).toFixed(1)}%</span>
+                            <span className="text-xl font-bold text-green-400 text-stroke-sm">+{((forgeStats?.effectiveSellPriceBonus || 0) * 100).toFixed(1)}%</span>
                         </div>
                         {/* Free Forges */}
                         <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
@@ -1059,7 +1059,7 @@ export default function ForgeCalculator() {
                                 </div>
                                 <span className="font-medium text-text-secondary">Free Forges</span>
                             </div>
-                            <span className="text-xl font-bold text-blue-400">
+                            <span className="text-xl font-bold text-blue-400 text-stroke-sm">
                                 +{((!usePlayerItems && manualBonuses['FreeForgeChance'] !== undefined) ? (manualBonuses['FreeForgeChance'] * 100) : (bonuses.freeForgeChance * 100)).toFixed(1)}%
                             </span>
                         </div>
@@ -1075,9 +1075,11 @@ export default function ForgeCalculator() {
                         <div className="card p-6 bg-gradient-to-br from-yellow-500/10 to-transparent border-yellow-500/20 flex flex-col justify-between relative overflow-hidden group">
                             <div className="absolute right-0 top-0 p-10 bg-yellow-500/5 rounded-full blur-2xl group-hover:bg-yellow-500/10 transition-colors" />
                             <div className="relative z-10">
-                                <div className="text-sm font-bold text-yellow-500 uppercase tracking-wider mb-1">Total Gold Value</div>
+                                <div className="text-sm font-bold text-yellow-500 uppercase tracking-wider mb-1 text-stroke-sm">Total Gold Value</div>
                                 {/* Show Range instead of Single Value */}
-                                {renderPriceRange(results.totalCoinsMin, results.totalCoinsMax)}
+                                <div className="text-stroke-sm">
+                                    {renderPriceRange(results.totalCoinsMin, results.totalCoinsMax)}
+                                </div>
                             </div>
                             <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}CoinIcon.png`} alt="Gold" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
                         </div>
@@ -1085,8 +1087,10 @@ export default function ForgeCalculator() {
                         <div className="card p-6 bg-gradient-to-br from-red-500/10 to-transparent border-red-500/20 flex flex-col justify-between relative overflow-hidden group">
                             <div className="absolute right-0 top-0 p-10 bg-red-500/5 rounded-full blur-2xl group-hover:bg-red-500/10 transition-colors" />
                             <div className="relative z-10">
-                                <div className="text-sm font-bold text-red-500 uppercase tracking-wider mb-1">Total War Points</div>
-                                {renderPriceWithPrecision(results.totalWarPoints)}
+                                <div className="text-sm font-bold text-red-500 uppercase tracking-wider mb-1 text-stroke-sm">Total War Points</div>
+                                <div className="text-stroke-sm">
+                                    {renderPriceWithPrecision(results.totalWarPoints)}
+                                </div>
                             </div>
                             <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}TechTreePower.png`} alt="War Points" className="w-10 h-10 object-contain absolute right-4 bottom-4 opacity-50" />
                         </div>
@@ -1094,14 +1098,16 @@ export default function ForgeCalculator() {
                         <div className="card p-6 bg-gradient-to-br from-blue-500/10 to-transparent border-blue-500/20 flex flex-col justify-between relative overflow-hidden group">
                             <div className="absolute right-0 top-0 p-10 bg-blue-500/5 rounded-full blur-2xl group-hover:bg-blue-500/10 transition-colors" />
                             <div className="relative z-10">
-                                <div className="text-sm font-bold text-blue-500 uppercase tracking-wider mb-1">Total Actions</div>
-                                {renderPriceWithPrecision(results.totalForges)}
-                                <div className="text-xs text-blue-300/60 mt-1 flex gap-1">
+                                <div className="text-sm font-bold text-blue-500 uppercase tracking-wider mb-1 text-stroke-sm">Total Actions</div>
+                                <div className="text-stroke-sm">
+                                    {renderPriceWithPrecision(results.totalForges)}
+                                </div>
+                                <div className="text-xs text-blue-300/60 mt-1 flex gap-1 text-stroke-sm">
                                     <span>From {formatNumber(results.finalHammers)}</span>
                                     <span className="opacity-50">({Math.floor(results.finalHammers).toLocaleString()})</span>
                                     <span>Hammers</span>
                                 </div>
-                                <div className="text-xs text-blue-300 mb-1">
+                                <div className="text-xs text-blue-300 mb-1 text-stroke-sm">
                                     <span className="font-bold">+{formatNumber(results.freeForges)}</span>
                                     <span className="opacity-70"> Free Forges ({Math.floor(results.freeForges).toLocaleString()})</span>
                                 </div>
@@ -1113,8 +1119,8 @@ export default function ForgeCalculator() {
                         <div className="card p-6 bg-gradient-to-br from-green-500/10 to-transparent border-green-500/20 flex flex-col justify-between relative overflow-hidden group">
                             <div className="absolute right-0 top-0 p-10 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-colors" />
                             <div className="relative z-10">
-                                <div className="text-sm font-bold text-green-500 uppercase tracking-wider mb-1">Est. AutoForge Time</div>
-                                <div className="text-2xl lg:text-3xl font-black text-white">
+                                <div className="text-sm font-bold text-green-500 uppercase tracking-wider mb-1 text-stroke-sm">Est. AutoForge Time</div>
+                                <div className="text-2xl lg:text-3xl font-black text-white text-stroke-sm">
                                     {(() => {
                                         const s = results.autoForgeSeconds;
                                         if (s === Infinity || isNaN(s)) return '-';
@@ -1126,7 +1132,7 @@ export default function ForgeCalculator() {
                                         return `${sec}s`;
                                     })()}
                                 </div>
-                                <div className="text-xs text-green-300/60 mt-1">
+                                <div className="text-xs text-green-300/60 mt-1 text-stroke-sm">
                                     Using {autoForgeSummons} items every {autoForgeInterval}s
                                 </div>
                             </div>
@@ -1136,24 +1142,58 @@ export default function ForgeCalculator() {
 
                     {/* Detailed Breakdown */}
                     <div className="card overflow-hidden">
-                        <div className="p-4 bg-black/40 border-b border-white/5 font-bold flex items-center gap-2">
+                        <div className="p-4 bg-black/40 border-b border-white/5 font-bold flex items-center gap-2 text-stroke-sm">
                             <div className="w-1 h-4 bg-accent-primary rounded-full" />
                             Age Breakdown
                         </div>
                         <div className="divide-y divide-white/5">
                             {results.ages.map((age) => (
                                 <div key={age.name} className={cn(
-                                    "p-4 flex flex-col md:flex-row items-center gap-4 transition-colors",
-                                    age.isMax ? "bg-accent-primary/5 hover:bg-accent-primary/10" : "hover:bg-white/5"
+                                    "p-4 flex flex-col md:flex-row items-center gap-4 transition-all relative overflow-hidden group",
+                                    age.isMax ? "ring-2 ring-accent-primary/30 z-10" : "",
+                                    age.idx === 9 ? "bg-age-divine shadow-[inset_0_0_30px_rgba(0,0,0,0.2)]" :
+                                        age.idx === 8 ? "bg-age-underworld shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
+                                            age.idx === 7 ? "bg-age-quantum shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
+                                                age.idx === 6 ? "bg-age-multiverse shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
+                                                    age.idx === 5 ? "bg-age-interstellar shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
+                                                        age.idx === 4 ? "bg-age-space shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
+                                                            age.idx === 3 ? "bg-age-modern shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
+                                                                age.idx === 2 ? "bg-age-earlymodern shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
+                                                                    age.idx === 1 ? "bg-age-medieval shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]" :
+                                                                        "bg-age-primitive shadow-[inset_0_0_30px_rgba(0,0,0,0.1)]"
                                 )}>
-                                    <div className="flex-1 w-full flex items-center gap-4">
-                                        <div className="shrink-0 p-1 bg-white/5 rounded-lg border border-white/10" style={getAgeIconStyle(age.idx, 48, selectedVersion)} />
+                                    {/* Animation Layers */}
+                                    {age.idx === 9 && <div className="divine-animation" style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}DivineBackground.png)`, height: '100vh' } as React.CSSProperties} />}
+                                    {age.idx === 8 && <div className="underworld-animation opacity-30" style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}UnderworldBackground.png)` } as React.CSSProperties} />}
+                                    {age.idx === 7 && <div className="quantum-animation opacity-30"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>}
+                                    {age.idx === 6 && <div className="multiverse-animation opacity-30" style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}MultiverseBackground.png)` } as React.CSSProperties} />}
+                                    {age.idx === 5 && <div className="interstellar-animation opacity-30" style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}InterstellarBackground.png)` } as React.CSSProperties} />}
+
+                                    <div className="flex-1 w-full flex items-center gap-4 relative z-10">
+                                        <div className="shrink-0 p-1 bg-white/10 rounded-lg border border-white/20 shadow-md backdrop-blur-sm" style={getAgeIconStyle(age.idx, 48, selectedVersion)} />
                                         <div className="min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-bold text-lg text-white">{age.name}</span>
-                                                {age.isMax && <span className="text-[10px] bg-accent-primary text-black px-1.5 py-0.5 rounded font-bold uppercase">Max Unlocked</span>}
+                                            <div className="flex items-center gap-2 text-stroke-sm">
+                                                <span className={cn(
+                                                    "font-black text-lg uppercase tracking-tight text-stroke-sm",
+                                                    age.idx === 9 ? "text-white" :
+                                                        age.idx === 8 ? "text-age-underworld" :
+                                                            age.idx === 7 ? "text-age-quantum" :
+                                                                age.idx === 6 ? "text-age-multiverse" :
+                                                                    age.idx === 5 ? "text-age-interstellar" :
+                                                                        age.idx === 4 ? "text-age-space" :
+                                                                            age.idx === 3 ? "text-age-modern" :
+                                                                                age.idx === 2 ? "text-age-earlymodern" :
+                                                                                    age.idx === 1 ? "text-age-medieval" :
+                                                                                        "text-white",
+                                                    "text-stroke-sm"
+                                                )}>{age.name}</span>
+                                                {age.isMax && <span className="text-[10px] bg-accent-primary text-white px-1.5 py-0.5 rounded font-bold uppercase shadow-glow-sm text-stroke-sm">Max Unlocked</span>}
                                             </div>
-                                            <div className="text-xs text-text-muted">
+                                            <div className={cn(
+                                                "text-xs font-bold text-stroke-sm",
+                                                age.idx === 9 ? "text-white/90" : "text-text-muted",
+                                                "text-stroke-sm"
+                                            )}>
                                                 {age.chance > 100
                                                     ? `Yield: x${(age.chance / 100).toFixed(2)}`
                                                     : `Chance: ${age.chance.toFixed(2)}%`
@@ -1162,18 +1202,27 @@ export default function ForgeCalculator() {
                                         </div>
                                     </div>
 
-                                    <div className="flex-1 w-full grid grid-cols-3 gap-4">
-                                        <div className="bg-bg-primary/30 p-2 rounded-lg text-center md:text-right">
-                                            <div className="text-[10px] uppercase text-text-muted font-bold mb-1">Items</div>
-                                            <div className="text-white font-mono font-bold">{formatNumber(age.items)}</div>
+                                    <div className="flex-1 w-full grid grid-cols-3 gap-4 relative z-10 text-stroke-sm">
+                                        <div className={cn(
+                                            "p-2 rounded-lg text-center md:text-right border text-stroke-sm",
+                                            age.idx === 9 ? "bg-black/40 border-white/20" : "bg-black/20 border-white/5"
+                                        )}>
+                                            <div className={cn("text-[10px] uppercase font-bold mb-1 text-stroke-sm", age.idx === 9 ? "text-white/70" : "text-text-muted text-stroke-sm")}>Items</div>
+                                            <div className="text-white font-mono font-bold text-stroke-sm">{formatNumber(age.items)}</div>
                                         </div>
-                                        <div className="bg-bg-primary/30 p-2 rounded-lg text-center md:text-right">
-                                            <div className="text-[10px] uppercase text-text-muted font-bold mb-1">Gold Value</div>
-                                            <div className="text-yellow-400 font-mono font-bold">{formatNumber(age.coins)}</div>
+                                        <div className={cn(
+                                            "p-2 rounded-lg text-center md:text-right border text-stroke-sm",
+                                            age.idx === 9 ? "bg-black/40 border-white/20" : "bg-black/20 border-white/5"
+                                        )}>
+                                            <div className={cn("text-[10px] uppercase font-bold mb-1 text-stroke-sm", age.idx === 9 ? "text-white/70" : "text-text-muted text-stroke-sm")}>Gold Value</div>
+                                            <div className={cn("font-mono font-bold text-stroke-sm", age.idx === 9 ? "text-white" : "text-yellow-400 text-stroke-sm")}>{formatNumber(age.coins)}</div>
                                         </div>
-                                        <div className="bg-bg-primary/30 p-2 rounded-lg text-center md:text-right">
-                                            <div className="text-[10px] uppercase text-text-muted font-bold mb-1">War Points</div>
-                                            <div className="text-red-400 font-mono font-bold">{formatNumber(age.warPoints)}</div>
+                                        <div className={cn(
+                                            "p-2 rounded-lg text-center md:text-right border text-stroke-sm",
+                                            age.idx === 9 ? "bg-black/40 border-white/20" : "bg-black/20 border-white/5"
+                                        )}>
+                                            <div className={cn("text-[10px] uppercase font-bold mb-1 text-stroke-sm", age.idx === 9 ? "text-white/70" : "text-text-muted text-stroke-sm")}>War Points</div>
+                                            <div className={cn("font-mono font-bold text-stroke-sm", age.idx === 9 ? "text-white" : "text-red-400 text-stroke-sm")}>{formatNumber(age.warPoints)}</div>
                                         </div>
                                     </div>
                                 </div>

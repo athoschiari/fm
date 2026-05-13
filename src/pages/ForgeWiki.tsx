@@ -21,6 +21,19 @@ export default function ForgeWiki() {
         // Build levels list from dropData (0..34 -> Level 1..35)
         const sortedKeys = Object.keys(dropData).map(Number).sort((a, b) => a - b);
         
+        const AGES_MAPPING: Record<string, string> = {
+            "Primitive": "primitive",
+            "Medieval": "medieval",
+            "Early-Modern": "earlyModern",
+            "Modern": "modern",
+            "Space": "space",
+            "Interstellar": "interstellar",
+            "Multiverse": "multiverse",
+            "Quantum": "quantum",
+            "Underworld": "underworld",
+            "Divine": "divine"
+        };
+
         return sortedKeys.map(id => {
             const level = id + 1;
 
@@ -31,7 +44,10 @@ export default function ForgeWiki() {
                 AGES.forEach((ageName, index) => {
                     const key = `Age${index}`;
                     if (rawProbs[key] && rawProbs[key] > 0) {
-                        probs[ageName.toLowerCase().replace('-', '')] = rawProbs[key] * 100;
+                        const tierKey = AGES_MAPPING[ageName];
+                        if (tierKey) {
+                            probs[tierKey] = rawProbs[key] * 100;
+                        }
                     }
                 });
             }

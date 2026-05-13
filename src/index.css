@@ -312,7 +312,8 @@
          1px -1px 0 #000,
         -1px  1px 0 #000,
          1px  1px 0 #000,
-         0px  2px 4px rgba(0,0,0,0.8);
+         0px 2px 4px rgba(0,0,0,0.8);
+    -webkit-text-stroke: 0.5px black;
 }
 
 .icon-stroke-sm {
@@ -345,10 +346,9 @@
 .divine-animation::after {
     content: '';
     position: absolute;
-    top: -150%;
-    left: -150%;
-    width: 400%;
-    height: 400%;
+    inset: -100%;
+    width: 300%;
+    height: 300%;
     background-image: var(--theme-url);
     background-size: 30px 30px;
     background-repeat: repeat;
@@ -370,10 +370,9 @@
 .underworld-animation::after {
     content: '';
     position: absolute;
-    top: -150%;
-    left: -150%;
-    width: 400%;
-    height: 400%;
+    inset: -100%;
+    width: 300%;
+    height: 300%;
     background-image: var(--theme-url);
     background-size: 150px 150px;
     background-repeat: repeat;
@@ -396,10 +395,9 @@
 .multiverse-animation::after {
     content: '';
     position: absolute;
-    top: -150%;
-    left: -150%;
-    width: 400%;
-    height: 400%;
+    inset: -100%;
+    width: 300%;
+    height: 300%;
     background-image: var(--theme-url);
     background-size: 40px 40px;
     background-repeat: repeat;
@@ -421,10 +419,9 @@
 .interstellar-animation::after {
     content: '';
     position: absolute;
-    top: -150%;
-    left: -150%;
-    width: 400%;
-    height: 400%;
+    inset: -100%;
+    width: 300%;
+    height: 300%;
     background-image: var(--theme-url);
     background-size: 100px 100px;
     background-repeat: repeat;
@@ -507,7 +504,7 @@
     }
 
     100% {
-        transform: scale(20);
+        transform: scale(100);
         opacity: 0;
     }
 }
