@@ -10,6 +10,7 @@ import { cn } from '../lib/utils';
 export default function ForgeWiki() {
     const { data: upgradeData } = useGameData<any>('ForgeUpgradeLibrary.json');
     const { data: dropData } = useGameData<any>('ItemAgeDropChancesLibrary.json');
+    const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
     const techModifiers = useTreeModifiers();
     const forgeCostReduction = techModifiers['ForgeUpgradeCost'] || 0;
     const forgeTimerSpeed = techModifiers['ForgeTimerSpeed'] || 0;
@@ -69,7 +70,8 @@ export default function ForgeWiki() {
                     hammersPerTier: 0,
                     totalTimeSeconds: 0,
                     probs, 
-                    isMax: true
+                    isMax: true,
+                    ascensionCost: ascensionConfigs?.Forge?.AscensionConfigPerLevel?.[0]?.Cost?.Amount || 0
                 };
             }
 
@@ -108,6 +110,9 @@ export default function ForgeWiki() {
             const totalExp = baseDurationSeconds;
             const expPerTier = totalExp / tiers;
 
+            // Ascension cost if max level
+            const ascensionCost = ascensionConfigs?.Forge?.AscensionConfigPerLevel?.[0]?.Cost?.Amount || 0;
+
             return {
                 level,
                 tiers,
@@ -120,11 +125,12 @@ export default function ForgeWiki() {
                 hammersPerTier,
                 totalTimeSeconds,
                 probs,
-                isMax: false
+                isMax: false,
+                ascensionCost: level === sortedKeys.length ? ascensionCost : 0
             };
         });
 
-    }, [upgradeData, dropData, forgeCostReduction, forgeTimerSpeed, freeForgeChance]);
+    }, [upgradeData, dropData, ascensionConfigs, forgeCostReduction, forgeTimerSpeed, freeForgeChance]);
 
     const formatTime = (seconds: number) => {
         if (seconds < 60) return `${Math.ceil(seconds)}s`;
@@ -187,7 +193,16 @@ export default function ForgeWiki() {
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-right text-yellow-500 font-mono">
-                                        {row.isMax ? '-' : (
+                                        {row.isMax ? (
+                                            row.ascensionCost > 0 ? (
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-amber-400 font-black">ASCEND</span>
+                                                    <span className="text-[10px] text-yellow-500/80">
+                                                        {new Intl.NumberFormat('en-US').format(row.ascensionCost)} Coins
+                                                    </span>
+                                                </div>
+                                            ) : '-'
+                                        ) : (
                                             <>
                                                 {new Intl.NumberFormat('en-US', {
                                                     maximumFractionDigits: 0
@@ -278,6 +293,15 @@ export default function ForgeWiki() {
                                         <div className="text-text-muted font-mono text-sm">
                                             {new Intl.NumberFormat('en-US').format(row.hammersPerTier)}
                                         </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {row.isMax && row.ascensionCost > 0 && (
+                                <div className="bg-amber-400/10 p-3 rounded-xl border border-amber-400/30 flex items-center justify-between">
+                                    <div className="text-xs font-black text-amber-400 uppercase tracking-wider">Ascension Price</div>
+                                    <div className="text-yellow-500 font-mono font-bold">
+                                        {new Intl.NumberFormat('en-US').format(row.ascensionCost)} Coins
                                     </div>
                                 </div>
                             )}

@@ -414,7 +414,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                 <button
                                     onClick={() => { setActiveTab('saved'); setMobileTab('mounts'); }}
                                     className={cn(
-                                        "flex items-center justify-start gap-3 p-3 md:px-4 md:py-3.5 text-xs font-bold uppercase transition-all rounded-xl md:rounded-lg border-2",
+                                        "w-full flex items-center justify-start gap-3 p-3 md:px-4 md:py-3.5 text-xs font-bold uppercase transition-all rounded-xl md:rounded-lg border-2",
                                         activeTab === 'saved' ? "bg-accent-primary/20 text-accent-primary border-accent-primary shadow-md" : "text-text-muted hover:bg-white/5 border-transparent bg-bg-input/20 md:bg-transparent"
                                     )}
                                 >
@@ -449,7 +449,7 @@ export function MountSelectorModal({ isOpen, onClose, onSelect, currentMount, co
                                         setMobileTab('mounts');
                                     }}
                                     className={cn(
-                                        "flex items-center gap-3 p-3 md:px-4 md:py-2.5 text-xs font-bold transition-all rounded-xl md:rounded-lg border-2",
+                                        "w-full flex items-center gap-3 p-3 md:px-4 md:py-2.5 text-xs font-bold transition-all rounded-xl md:rounded-lg border-2",
                                         activeTab === 'library' && selectedRarity === rarity
                                             ? `bg-rarity-${rarity.toLowerCase()}/20 text-rarity-${rarity.toLowerCase()} border-rarity-${rarity.toLowerCase()} shadow-md`
                                             : "text-text-muted hover:bg-white/5 border-transparent bg-bg-input/20 md:bg-transparent"
