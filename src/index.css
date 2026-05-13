@@ -493,6 +493,35 @@
     animation-delay: -7s;
 }
 
+.primitive-animation, .medieval-animation, .earlymodern-animation, .modern-animation, .space-animation {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.primitive-animation::after, .medieval-animation::after, .earlymodern-animation::after, .modern-animation::after, .space-animation::after {
+    content: '';
+    position: absolute;
+    inset: -100%;
+    width: 300%;
+    height: 300%;
+    background-image: var(--theme-url);
+    background-size: 40px 40px;
+    background-repeat: repeat;
+    opacity: 0.15;
+    transform: rotate(45deg);
+    transform-origin: center;
+    animation: slide-diagonal 4s linear infinite;
+}
+
+.primitive-animation { background-color: var(--age-primitive); }
+.medieval-animation { background-color: var(--age-medieval); }
+.earlymodern-animation { background-color: var(--age-earlymodern); }
+.modern-animation { background-color: var(--age-modern); }
+.space-animation { background-color: var(--age-space); }
+
 @keyframes expand {
     0% {
         transform: scale(0);

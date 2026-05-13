@@ -76,6 +76,39 @@ export default function AppShell() {
     const [isStatsOpen, setIsStatsOpen] = useState(false);
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
 
+    const maxAgeVisuals = useMemo(() => {
+        // profile.misc.forgeLevel is 0-indexed (0 = Lvl 1 in UI)
+        const uiLevel = (profile.misc.forgeLevel || 0) + 1;
+        
+        // Determine max age index based on level (Thresholds from forgeData.ts)
+        let ageIdx = 0;
+        if (uiLevel >= 30) ageIdx = 9;
+        else if (uiLevel >= 24) ageIdx = 8;
+        else if (uiLevel >= 20) ageIdx = 7;
+        else if (uiLevel >= 17) ageIdx = 6;
+        else if (uiLevel >= 14) ageIdx = 5;
+        else if (uiLevel >= 11) ageIdx = 4;
+        else if (uiLevel >= 8) ageIdx = 3;
+        else if (uiLevel >= 5) ageIdx = 2;
+        else if (uiLevel >= 2) ageIdx = 1;
+        else ageIdx = 0;
+
+        const visuals = [
+            { id: 'primitive', name: "Primitive", anim: "primitive-animation", bg: "bg-age-primitive", texture: "PrimitiveBackground.png" },
+            { id: 'medieval', name: "Medieval", anim: "medieval-animation", bg: "bg-age-medieval", texture: "MedievalBackground.png" },
+            { id: 'earlymodern', name: "Early-Modern", anim: "earlymodern-animation", bg: "bg-age-earlymodern", texture: "EarlyModernBackground.png" },
+            { id: 'modern', name: "Modern", anim: "modern-animation", bg: "bg-age-modern", texture: "ModernBackground.png" },
+            { id: 'space', name: "Space", anim: "space-animation", bg: "bg-age-space", texture: "SpaceBackground.png" },
+            { id: 'interstellar', name: "Interstellar", anim: "interstellar-animation", bg: "bg-age-interstellar", texture: "InterstellarBackground.png" },
+            { id: 'multiverse', name: "Multiverse", anim: "multiverse-animation", bg: "bg-age-multiverse", texture: "MultiverseBackground.png" },
+            { id: 'quantum', name: "Quantum", anim: "quantum-animation", bg: "bg-age-quantum", texture: "QuantumBackground.png" },
+            { id: 'underworld', name: "Underworld", anim: "underworld-animation", bg: "bg-age-underworld", texture: "UnderworldBackground.png" },
+            { id: 'divine', name: "Divine", anim: "divine-animation", bg: "bg-age-divine", texture: "DivineBackground.png" },
+        ];
+
+        return visuals[ageIdx];
+    }, [profile.misc.forgeLevel]);
+
     const donationLabel = useMemo(() => {
         const labels = [
             "Keep Dev Awake ☕", "Forge Fuel 🔥", "Buy Coffee ☕", "Dev Juice 🥤",
@@ -295,14 +328,20 @@ export default function AppShell() {
                     whileTap={{ scale: 0.95 }}
                     layout
                     className={cn(
-                        "fixed bottom-8 right-8 z-[100] group flex items-center gap-3 py-3 md:py-4 rounded-full coffee-btn-animated overflow-visible shadow-[0_8px_25px_-5px_rgba(255,158,13,0.4)] hover:shadow-[0_12px_35px_-5px_rgba(255,158,13,0.6)] transition-all duration-300",
-                        isSidebarOpen ? "px-3 md:px-4" : "px-5 md:px-6"
+                        "fixed bottom-8 right-8 z-[100] group flex items-center gap-3 py-3 md:py-4 rounded-full overflow-visible transition-all duration-300",
+                        maxAgeVisuals.bg,
+                        isSidebarOpen ? "px-3 md:px-4" : "px-5 md:px-6",
+                        "shadow-[0_8px_25px_-5px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_35px_-5px_rgba(0,0,0,0.6)]"
                     )}
                 >
                     <div 
-                        className="divine-animation rounded-full" 
-                        style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}DivineBackground.png)` } as React.CSSProperties} 
-                    />
+                        className={cn(maxAgeVisuals.anim, "rounded-full")} 
+                        style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${maxAgeVisuals.texture})` } as React.CSSProperties} 
+                    >
+                        {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (
+                            <span key={i} />
+                        ))}
+                    </div>
 
                     <AnimatePresence>
                         {isHoveringCoffee && (
