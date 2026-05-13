@@ -626,14 +626,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                 ]}
                                 onOriginalDetailsClick={() => {
                                     if (originalStats && originalProfile) {
-                                        setModalData({ stats: originalStats, profile: originalProfile });
-                                        setShowDpsModal(true);
+                                        openDpsModal(originalStats, originalProfile, 'original');
                                     }
                                 }}
                                 onTestDetailsClick={() => {
                                     if (testStats && testProfile) {
-                                        setModalData({ stats: testStats, profile: testProfile });
-                                        setShowDpsModal(true);
+                                        openDpsModal(testStats, testProfile, 'test');
                                     }
                                 }}
                             />
@@ -682,14 +680,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                                 ]}
                                 onOriginalDetailsClick={() => {
                                     if (originalStats && originalProfile) {
-                                        setModalData({ stats: originalStats, profile: originalProfile });
-                                        setShowDpsModal(true);
+                                        openDpsModal(originalStats, originalProfile, 'original');
                                     }
                                 }}
                                 onTestDetailsClick={() => {
                                     if (testStats && testProfile) {
-                                        setModalData({ stats: testStats, profile: testProfile });
-                                        setShowDpsModal(true);
+                                        openDpsModal(testStats, testProfile, 'test');
                                     }
                                 }}
                             />

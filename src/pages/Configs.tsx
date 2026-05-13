@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn } from '../lib/utils';
-import { Search, FileJson, FolderOpen, RefreshCw, Copy, Download, Check } from 'lucide-react';
+import { Search, FileJson, FolderOpen, RefreshCw, Copy, Download, Check, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 
 export default function Configs() {
@@ -23,6 +23,9 @@ export default function Configs() {
     const [isLoadingAll, setIsLoadingAll] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [copied, setCopied] = useState(false);
+    const [matchIndex, setMatchIndex] = useState(0);
+    const [totalMatches, setTotalMatches] = useState(0);
+    const [showOnlyChanges, setShowOnlyChanges] = useState(false);
 
     // Initial fetch of versions and manifest
     useEffect(() => {
@@ -132,6 +135,21 @@ export default function Configs() {
         fetchAll();
     }, [selectedVersion, baseVersion, targetVersion, isCompareMode, configManifest]);
 
+    // Reset search navigation when term or file changes
+    useEffect(() => {
+        setMatchIndex(0);
+    }, [searchTerm, selectedFile]);
+
+    // Auto-scroll to current match
+    useEffect(() => {
+        if (searchTerm && selectedFile) {
+            const el = document.getElementById('current-search-match');
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    }, [matchIndex, searchTerm, selectedFile]);
+
     // Filter files based on Global Search (Name OR Content)
     const filteredFiles = useMemo(() => {
         if (!searchTerm) return configFiles;
@@ -148,22 +166,81 @@ export default function Configs() {
         });
     }, [searchTerm, multiFileCache, configFiles, isCompareMode, targetVersion, selectedVersion]);
 
-    // Helper to render content with highlighted search terms
+    // Helper to render content with highlighted search terms and navigation
     const renderHighlightedContent = (content: string, term: string) => {
         if (!term) return content;
 
-        // Escape regex special characters
         const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const parts = content.split(new RegExp(`(${escapedTerm})`, 'gi'));
+        
+        let matchCounter = 0;
+        const rendered = parts.map((part, i) => {
+            if (part.toLowerCase() === term.toLowerCase()) {
+                const isCurrent = matchCounter === matchIndex;
+                const id = isCurrent ? 'current-search-match' : undefined;
+                matchCounter++;
+                return (
+                    <span 
+                        key={i} 
+                        id={id}
+                        className={cn(
+                            "px-0.5 rounded border transition-all duration-200",
+                            isCurrent 
+                                ? "bg-orange-500 text-white border-orange-300 font-black shadow-[0_0_10px_rgba(249,115,22,0.5)] z-10 scale-105 inline-block" 
+                                : "bg-yellow-500/30 text-yellow-100 border-yellow-500/50"
+                        )}
+                    >
+                        {part}
+                    </span>
+                );
+            }
+            return part;
+        });
 
-        return parts.map((part, i) =>
-            part.toLowerCase() === term.toLowerCase() ? (
-                <span key={i} className="bg-yellow-500/40 text-yellow-100 font-bold px-0.5 rounded border border-yellow-500/50">
-                    {part}
-                </span>
-            ) : (
-                part
-            )
+        // Update total matches only if it changed to avoid render loops
+        if (totalMatches !== matchCounter) {
+            setTotalMatches(matchCounter);
+        }
+
+        return rendered;
+    };
+
+    const SearchNavigation = () => {
+        if (!searchTerm || totalMatches === 0) return null;
+        return (
+            <div className={cn(
+                "flex items-center gap-2 bg-bg-card/90 backdrop-blur-xl border border-border/50 px-3 py-2 rounded-full shadow-2xl animate-in fade-in slide-in-from-bottom-4 transition-all duration-300",
+                "fixed bottom-28 left-1/2 -translate-x-1/2 z-[100] md:relative md:bottom-0 md:left-0 md:translate-x-0 md:z-auto md:px-3 md:py-1.5 md:shadow-lg md:animate-in md:fade-in md:slide-in-from-top-2"
+            )}>
+                <div className="flex items-center gap-2 pr-2 border-r border-border/30 md:pr-1 md:border-r-0">
+                    <span className="text-[10px] font-bold text-text-muted uppercase tracking-tighter hidden sm:inline">
+                        Matches
+                    </span>
+                    <span className="text-xs font-mono font-bold text-accent-primary bg-bg-input px-2.5 py-1 rounded-lg min-w-[3.5rem] text-center border border-white/5">
+                        {totalMatches > 0 ? matchIndex + 1 : 0} / {totalMatches}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5 pl-1">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 rounded-full bg-white/5 hover:bg-white/10 md:h-6 md:w-6"
+                        onClick={() => setMatchIndex(prev => (prev - 1 + totalMatches) % totalMatches)}
+                        disabled={totalMatches <= 1}
+                    >
+                        <ChevronUp className="w-4 h-4" />
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0 rounded-full bg-white/5 hover:bg-white/10 md:h-6 md:w-6"
+                        onClick={() => setMatchIndex(prev => (prev + 1) % totalMatches)}
+                        disabled={totalMatches <= 1}
+                    >
+                        <ChevronDown className="w-4 h-4" />
+                    </Button>
+                </div>
+            </div>
         );
     };
 
@@ -190,14 +267,22 @@ export default function Configs() {
         return { added, removed, modified };
     }, [isCompareMode, baseVersion, targetVersion, configManifest, multiFileCache]);
 
-    // All relevant files to show in sidebar
     const displayFiles = useMemo(() => {
         if (!isCompareMode) return filteredFiles;
         
         // In compare mode, we show files from target version, but also those removed from base
         const baseFiles = configManifest[baseVersion] || [];
         const targetFiles = configManifest[targetVersion] || [];
-        const all = Array.from(new Set([...baseFiles, ...targetFiles])).sort();
+        let all = Array.from(new Set([...baseFiles, ...targetFiles])).sort();
+
+        // Filter only changed files if requested
+        if (showOnlyChanges && comparison) {
+            all = all.filter(f => 
+                comparison.added.includes(f) || 
+                comparison.removed.includes(f) || 
+                comparison.modified.includes(f)
+            );
+        }
 
         if (!searchTerm) return all;
         const lowerTerm = searchTerm.toLowerCase();
@@ -207,7 +292,7 @@ export default function Configs() {
             if (multiFileCache[baseVersion]?.[f]?.toLowerCase().includes(lowerTerm)) return true;
             return false;
         });
-    }, [isCompareMode, filteredFiles, baseVersion, targetVersion, configManifest, searchTerm, multiFileCache]);
+    }, [isCompareMode, filteredFiles, baseVersion, targetVersion, configManifest, searchTerm, multiFileCache, showOnlyChanges, comparison]);
 
     // Detailed Diff Legend
     const DiffLegend = () => (
@@ -271,6 +356,7 @@ export default function Configs() {
         // Slightly smarter line-by-line diff
         const maxLines = Math.max(baseLines.length, targetLines.length);
         const diffRows = [];
+        let matchCounter = 0;
 
         for (let i = 0; i < maxLines; i++) {
             const bLine = baseLines[i];
@@ -280,7 +366,7 @@ export default function Configs() {
                 diffRows.push(
                     <div key={`same-${i}`} className="px-2 font-mono text-xs text-text-secondary flex">
                         <span className="opacity-30 mr-4 select-none w-10 shrink-0 text-right">{i + 1}</span>
-                        <span className="whitespace-pre truncate">  {tLine}</span>
+                        <span className="whitespace-pre truncate">  {searchTerm ? renderHighlightedContentInLine(tLine, searchTerm, matchCounter, (c) => matchCounter = c) : tLine}</span>
                     </div>
                 );
             } else {
@@ -289,7 +375,7 @@ export default function Configs() {
                     diffRows.push(
                         <div key={`rem-${i}`} className="bg-red-500/10 text-red-300 px-2 font-mono text-xs flex animate-in fade-in slide-in-from-left-1">
                             <span className="opacity-50 mr-4 select-none w-10 shrink-0 text-right">{i + 1}</span>
-                            <span className="whitespace-pre truncate">- {bLine}</span>
+                            <span className="whitespace-pre truncate">- {searchTerm ? renderHighlightedContentInLine(bLine, searchTerm, matchCounter, (c) => matchCounter = c) : bLine}</span>
                         </div>
                     );
                 }
@@ -298,14 +384,51 @@ export default function Configs() {
                     diffRows.push(
                         <div key={`add-${i}`} className="bg-green-500/10 text-green-300 px-2 font-mono text-xs flex animate-in fade-in slide-in-from-right-1">
                             <span className="opacity-50 mr-4 select-none w-10 shrink-0 text-right">{i + 1}</span>
-                            <span className="whitespace-pre truncate">+ {tLine}</span>
+                            <span className="whitespace-pre truncate">+ {searchTerm ? renderHighlightedContentInLine(tLine, searchTerm, matchCounter, (c) => matchCounter = c) : tLine}</span>
                         </div>
                     );
                 }
             }
         }
+
+        if (totalMatches !== matchCounter && searchTerm) {
+            setTotalMatches(matchCounter);
+        }
         
         return <div className="space-y-0.5">{diffRows}</div>;
+    };
+
+    const renderHighlightedContentInLine = (content: string, term: string, currentCounter: number, updateCounter: (c: number) => void) => {
+        if (!term) return content;
+        const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const parts = content.split(new RegExp(`(${escapedTerm})`, 'gi'));
+        
+        let localCounter = currentCounter;
+        const rendered = parts.map((part, i) => {
+            if (part.toLowerCase() === term.toLowerCase()) {
+                const isCurrent = localCounter === matchIndex;
+                const id = isCurrent ? 'current-search-match' : undefined;
+                localCounter++;
+                return (
+                    <span 
+                        key={i} 
+                        id={id}
+                        className={cn(
+                            "px-0.5 rounded border transition-all duration-200",
+                            isCurrent 
+                                ? "bg-orange-500 text-white border-orange-300 font-black" 
+                                : "bg-yellow-500/30 text-yellow-100 border-yellow-500/50"
+                        )}
+                    >
+                        {part}
+                    </span>
+                );
+            }
+            return part;
+        });
+
+        updateCounter(localCounter);
+        return rendered;
     };
 
     const handleCopy = async () => {
@@ -375,16 +498,30 @@ export default function Configs() {
 
                     {/* Comparison Summary */}
                     {isCompareMode && comparison && (
-                        <div className="flex gap-2 text-[10px] font-bold">
-                            <span className="bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20">
-                                {comparison.added.length} NEW
-                            </span>
-                            <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20">
-                                {comparison.modified.length} MOD
-                            </span>
-                            <span className="bg-red-500/10 text-red-400 px-2 py-0.5 rounded border border-red-500/20">
-                                {comparison.removed.length} DEL
-                            </span>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex gap-2 text-[10px] font-bold">
+                                <span className="bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20">
+                                    {comparison.added.length} NEW
+                                </span>
+                                <span className="bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/20">
+                                    {comparison.modified.length} MOD
+                                </span>
+                                <span className="bg-red-500/10 text-red-400 px-2 py-0.5 rounded border border-red-500/20">
+                                    {comparison.removed.length} DEL
+                                </span>
+                            </div>
+                            <button 
+                                onClick={() => setShowOnlyChanges(!showOnlyChanges)}
+                                className={cn(
+                                    "flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter w-fit px-2 py-1 rounded border transition-all",
+                                    showOnlyChanges 
+                                        ? "bg-accent-primary/20 border-accent-primary text-accent-primary" 
+                                        : "bg-bg-input/50 border-border text-text-muted hover:text-text-primary hover:border-text-muted"
+                                )}
+                            >
+                                <Check className={cn("w-3 h-3 transition-opacity", showOnlyChanges ? "opacity-100" : "opacity-0")} />
+                                Show Only Changed Files
+                            </button>
                         </div>
                     )}
 
@@ -515,6 +652,7 @@ export default function Configs() {
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
+                                <SearchNavigation />
                                 {!isCompareMode && multiFileCache[selectedVersion]?.[selectedFile] && (
                                     <span className="text-xs text-text-muted mr-4 hidden sm:inline-block">
                                         {(JSON.parse(multiFileCache[selectedVersion][selectedFile]) as any).length || Object.keys(JSON.parse(multiFileCache[selectedVersion][selectedFile])).length} entries

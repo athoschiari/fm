@@ -89,27 +89,32 @@ export default function Skins() {
     const [breakpointModal, setBreakpointModal] = useState<{ isOpen: boolean; weapon?: any }>({ isOpen: false });
 
     const weaponTimingLookup = useMemo(() => {
-        if (!weaponLibrary) return {} as Record<number, { windup: number, duration: number }>;
+        if (!weaponLibrary) return {} as Record<number, { melee?: { windup: number, duration: number }, ranged?: { windup: number, duration: number } }>;
 
-        // Internal tracking to store the age along with the windup/duration
-        const tracking: Record<number, { age: number, windup: number, duration: number }> = {};
+        const lookup: Record<number, { melee?: { windup: number, duration: number }, ranged?: { windup: number, duration: number } }> = {};
 
         Object.entries(weaponLibrary).forEach(([_, data]: [string, any]) => {
             const idx = data.ItemId?.Idx;
             const age = data.ItemId?.Age;
-            if (data.ItemId?.Type === 'Weapon' && idx !== undefined && age !== undefined && data.WindupTime !== undefined) {
-                // Prioritize higher ages (1000, 10000, etc.) as they contain skin-specific values
-                if (tracking[idx] === undefined || age > tracking[idx].age) {
-                    tracking[idx] = { age, windup: data.WindupTime, duration: data.AttackDuration || 1.1 };
+            
+            if (data.ItemId?.Type === 'Weapon' && idx !== undefined) {
+                if (!lookup[idx]) lookup[idx] = {};
+                
+                if (age === -1000) {
+                    lookup[idx].melee = { 
+                        windup: data.WindupTime ?? 0.5, 
+                        duration: data.AttackDuration || 1.1 
+                    };
+                } else if (age === -1001) {
+                    lookup[idx].ranged = { 
+                        windup: data.WindupTime ?? 0.5, 
+                        duration: data.AttackDuration || 1.1 
+                    };
                 }
             }
         });
 
-        const finalLookup: Record<number, { windup: number, duration: number }> = {};
-        Object.entries(tracking).forEach(([idx, val]) => {
-            finalLookup[Number(idx)] = { windup: val.windup, duration: val.duration };
-        });
-        return finalLookup;
+        return lookup;
     }, [weaponLibrary]);
 
     if (loading) {
@@ -247,8 +252,7 @@ export default function Skins() {
                                         key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                         skin={skin}
                                         bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
-                                        windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
-                                        duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
+                                        timing={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx] : undefined}
                                         onShowBreakpoints={(w, d) => setBreakpointModal({
                                             isOpen: true,
                                             weapon: { Name: `${skin.BaseSetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w }
@@ -274,8 +278,7 @@ export default function Skins() {
                                 key={`${skin.SkinId.Type}-${skin.SkinId.Idx}`}
                                 skin={skin}
                                 bgStyle={getSkinSpriteStyle(skin, spriteMapping?.skins?.mapping, selectedVersion)}
-                                windup={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.windup : undefined}
-                                duration={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx]?.duration : undefined}
+                                timing={skin.SkinId.Type === 'Weapon' ? weaponTimingLookup[skin.SkinId.Idx] : undefined}
                                 onShowBreakpoints={(w, d) => setBreakpointModal({
                                     isOpen: true,
                                     weapon: { Name: `${skin.BaseSetId || 'Misc'} ${skin.SkinId.Type}`, AttackDuration: d, WindupTime: w }
@@ -289,11 +292,10 @@ export default function Skins() {
     );
 }
 
-function SkinCard({ skin, bgStyle, windup, duration, onShowBreakpoints }: {
+function SkinCard({ skin, bgStyle, timing, onShowBreakpoints }: {
     skin: SkinEntry,
     bgStyle: React.CSSProperties,
-    windup?: number,
-    duration?: number,
+    timing?: { melee?: { windup: number, duration: number }, ranged?: { windup: number, duration: number } },
     onShowBreakpoints?: (windup: number, duration: number) => void
 }) {
     return (
@@ -303,36 +305,59 @@ function SkinCard({ skin, bgStyle, windup, duration, onShowBreakpoints }: {
                     className="w-16 h-16 rounded-lg border-2 border-border shadow-inner shrink-0 bg-bg-secondary"
                     style={bgStyle}
                 />
-                <div className="flex flex-col">
-                    <span className="font-bold text-lg group-hover:text-accent-primary transition-colors">
-                        {skin.SkinId.Type}
-                    </span>
-                    <span className="text-xs text-text-muted bg-bg-input px-2 py-0.5 rounded-full w-fit mb-1">
-                        ID: {skin.SkinId.Idx}
-                    </span>
-                    <span className="text-[10px] text-text-muted uppercase border border-border px-1.5 rounded">
-                        Max Stats: {skin.MaxStatCount}
-                    </span>
-                    {typeof windup === 'number' && (
-                        <div className="mt-1 flex flex-col gap-1.5">
-                            <div className="flex items-center gap-1.5 text-accent-secondary">
-                                <Zap className="w-3 h-3" />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Windup: {windup.toFixed(2)}s</span>
-                            </div>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (windup !== undefined && duration !== undefined) {
-                                        onShowBreakpoints?.(windup, duration);
-                                    }
-                                }}
-                                className="mt-1 w-full flex items-center justify-center gap-1 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary py-1 rounded border border-accent-primary/30 text-[8px] font-bold uppercase transition-all"
-                            >
-                                <Zap className="w-2.5 h-2.5" />
-                                Breakpoints
-                            </button>
+                <div className="flex-1 min-w-0">
+                    <div className="flex flex-col">
+                        <span className="font-bold text-lg group-hover:text-accent-primary transition-colors truncate">
+                            {skin.SkinId.Type}
+                        </span>
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] text-text-muted bg-bg-input px-1.5 py-0.5 rounded border border-border/30">
+                                ID: {skin.SkinId.Idx}
+                            </span>
+                            <span className="text-[9px] text-text-muted uppercase border border-border/20 px-1 rounded">
+                                Stats: {skin.MaxStatCount}
+                            </span>
                         </div>
-                    )}
+
+                        {timing && (
+                            <div className="mt-1 space-y-1.5">
+                                {timing.melee && (
+                                    <div className="flex items-center justify-between gap-1">
+                                        <div className="flex items-center gap-1 text-orange-400">
+                                            <Sword className="w-2.5 h-2.5" />
+                                            <span className="text-[9px] font-bold uppercase">Melee: {timing.melee.windup.toFixed(2)}s</span>
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onShowBreakpoints?.(timing.melee!.windup, timing.melee!.duration);
+                                            }}
+                                            className="px-1.5 py-0.5 bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-[8px] font-bold rounded border border-orange-500/30 transition-all"
+                                        >
+                                            Breakpoints
+                                        </button>
+                                    </div>
+                                )}
+                                {timing.ranged && (
+                                    <div className="flex items-center justify-between gap-1">
+                                        <div className="flex items-center gap-1 text-cyan-400">
+                                            <Zap className="w-2.5 h-2.5" />
+                                            <span className="text-[9px] font-bold uppercase">Ranged: {timing.ranged.windup.toFixed(2)}s</span>
+                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onShowBreakpoints?.(timing.ranged!.windup, timing.ranged!.duration);
+                                            }}
+                                            className="px-1.5 py-0.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[8px] font-bold rounded border border-cyan-500/30 transition-all"
+                                        >
+                                            Breakpoints
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

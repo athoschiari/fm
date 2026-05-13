@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { Button } from '../components/UI/Button';
-import { Search, Image as ImageIcon, Download, X, Maximize2, ExternalLink, Columns, Layers, Hash } from 'lucide-react';
+import { Search, Image as ImageIcon, Download, X, Maximize2, ExternalLink, Columns, Layers, Hash, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useGameDataContext } from '../context/GameDataContext';
 
@@ -23,6 +23,7 @@ export default function Gallery() {
     const [diffImageUrl, setDiffImageUrl] = useState<string | null>(null);
     const [showDiff, setShowDiff] = useState(false);
     const [diffColor, setDiffColor] = useState('#ff00ff'); // Default Magenta
+    const [mobileView, setMobileView] = useState<'active' | 'compare'>('active');
 
     const hexToRgb = (hex: string) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -323,7 +324,7 @@ export default function Gallery() {
 
             {/* Modal for detail view / comparison */}
             {selectedImage && (
-                <div style={{ margin: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/90 animate-fade-in backdrop-blur-sm" onClick={() => { setSelectedImage(null); setShowDiff(false); setDiffImageUrl(null); }}>
+                <div style={{ margin: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-8 bg-black/90 animate-fade-in backdrop-blur-sm overflow-y-auto" onClick={() => { setSelectedImage(null); setShowDiff(false); setDiffImageUrl(null); }}>
                     <button
                         className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors p-2 z-[60]"
                         onClick={() => { setSelectedImage(null); setShowDiff(false); setDiffImageUrl(null); }}
@@ -332,23 +333,25 @@ export default function Gallery() {
                     </button>
 
                     <div className="w-full max-w-6xl flex flex-col gap-6" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-2xl font-black text-white uppercase tracking-tight">{selectedImage}</h2>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-xs font-bold text-text-muted uppercase">Version: {activeVersion}</span>
-                                    {compareVersion && <span className="text-xs font-bold text-accent-primary uppercase">vs {compareVersion}</span>}
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div className="min-w-0 text-center lg:text-left">
+                                <h2 className="text-lg md:text-2xl font-black text-white uppercase tracking-tight truncate px-2" title={selectedImage}>
+                                    {selectedImage}
+                                </h2>
+                                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-1">
+                                    <span className="text-[10px] font-bold text-text-muted uppercase bg-white/5 px-1.5 py-0.5 rounded">Version: {activeVersion}</span>
+                                    {compareVersion && <span className="text-[10px] font-bold text-accent-primary uppercase bg-accent-primary/10 px-1.5 py-0.5 rounded">vs {compareVersion}</span>}
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-col sm:flex-row items-center gap-3 px-2">
                                 {compareVersion && md5Manifest[activeVersion]?.[selectedImage] && md5Manifest[compareVersion]?.[selectedImage] && (
-                                    <div className="flex items-center gap-2 bg-bg-secondary/40 p-1 rounded-lg border border-white/5">
-                                        <div className="flex gap-1 px-2 border-r border-white/10 mr-1">
+                                    <div className="flex items-center gap-2 bg-bg-secondary/60 p-1.5 rounded-xl border border-white/10 shadow-lg">
+                                        <div className="flex gap-1 px-2 border-r border-white/10 mr-0.5">
                                             {['#ff00ff', '#00ffff', '#39ff14', '#ff3131', '#faff00'].map(c => (
                                                 <button
                                                     key={c}
                                                     className={cn(
-                                                        "w-4 h-4 rounded-full border border-white/20 transition-transform hover:scale-125",
+                                                        "w-4 h-4 md:w-5 md:h-5 rounded-full border border-white/20 transition-transform hover:scale-125 active:scale-95",
                                                         diffColor === c && "ring-2 ring-white ring-offset-2 ring-offset-black scale-110"
                                                     )}
                                                     style={{ backgroundColor: c }}
@@ -361,8 +364,9 @@ export default function Gallery() {
                                         </div>
                                         <Button
                                             variant="ghost"
+                                            size="sm"
                                             className={cn(
-                                                "h-8 font-black uppercase tracking-widest gap-2 text-[10px]",
+                                                "h-8 font-black uppercase tracking-widest gap-2 text-[10px] px-3",
                                                 showDiff ? "bg-accent-primary text-black hover:bg-accent-primary/80" : "text-text-muted hover:text-white"
                                             )}
                                             onClick={() => {
@@ -373,39 +377,67 @@ export default function Gallery() {
                                             disabled={isDiffing}
                                         >
                                             {isDiffing ? (
-                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                                                <RefreshCw size={14} className="animate-spin" />
                                             ) : (
                                                 <Layers size={14} />
                                             )}
-                                            {showDiff ? "Diff On" : "Diff Off"}
+                                            <span className="hidden sm:inline">{showDiff ? "Diff On" : "Diff Off"}</span>
+                                            <span className="sm:hidden">{showDiff ? "On" : "Off"}</span>
                                         </Button>
                                     </div>
                                 )}
                                 {md5Manifest[activeVersion]?.[selectedImage] && (
                                     <Button
                                         variant="primary"
-                                        className="font-black uppercase tracking-widest gap-2"
+                                        size="sm"
+                                        className="font-black uppercase tracking-widest gap-2 h-10 px-6 w-full sm:w-auto"
                                         onClick={() => handleDownload(selectedImage, activeVersion)}
                                     >
                                         <Download size={18} />
-                                        Download
+                                        <span>Download</span>
                                     </Button>
                                 )}
                             </div>
                         </div>
 
+                        {/* Mobile Version Switcher */}
+                        {compareVersion && (
+                            <div className="flex md:hidden bg-bg-secondary/60 p-1 rounded-xl border border-white/10 self-center">
+                                <button
+                                    className={cn(
+                                        "px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                                        mobileView === 'active' ? "bg-white text-black shadow-lg" : "text-text-muted"
+                                    )}
+                                    onClick={() => setMobileView('active')}
+                                >
+                                    Active
+                                </button>
+                                <button
+                                    className={cn(
+                                        "px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                                        mobileView === 'compare' ? "bg-accent-primary text-black shadow-lg" : "text-text-muted"
+                                    )}
+                                    onClick={() => setMobileView('compare')}
+                                >
+                                    Compare
+                                </button>
+                            </div>
+                        )}
+
                         <div className={cn(
                             "grid gap-6 transition-all duration-300",
                             compareVersion ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
                         )}>
+                            {/* Active Version Card */}
                             <Card className={cn(
                                 "p-4 bg-bg-secondary/40 border-border/50 flex flex-col items-center gap-4",
-                                !md5Manifest[activeVersion]?.[selectedImage] && "opacity-50"
+                                !md5Manifest[activeVersion]?.[selectedImage] && "opacity-50",
+                                compareVersion && mobileView === 'compare' && "hidden md:flex"
                             )}>
                                 <div className="text-[10px] font-black text-text-muted uppercase tracking-widest bg-bg-input px-2 py-1 rounded">
                                     Version: {activeVersion}
                                 </div>
-                                <div className="flex-1 w-full flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative min-h-[200px] max-h-[60vh]">
+                                <div className="flex-1 w-full flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative min-h-[300px] max-h-[60vh]">
                                     {md5Manifest[activeVersion]?.[selectedImage] ? (
                                         <div className="relative flex items-center justify-center w-full h-full">
                                             <img
@@ -432,15 +464,17 @@ export default function Gallery() {
                                 )}
                             </Card>
 
+                            {/* Comparison Version Card */}
                             {compareVersion && (
                                 <Card className={cn(
                                     "p-4 bg-bg-secondary/40 border-border/50 flex flex-col items-center gap-4 relative",
-                                    !md5Manifest[compareVersion]?.[selectedImage] && "opacity-50"
+                                    !md5Manifest[compareVersion]?.[selectedImage] && "opacity-50",
+                                    mobileView === 'active' && "hidden md:flex"
                                 )}>
                                     <div className="text-[10px] font-black text-accent-primary uppercase tracking-widest bg-accent-primary/10 px-2 py-1 rounded">
                                         Comparison: {compareVersion}
                                     </div>
-                                    <div className="flex-1 w-full flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative min-h-[200px] max-h-[60vh]">
+                                    <div className="flex-1 w-full flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative min-h-[300px] max-h-[60vh]">
                                         {md5Manifest[compareVersion]?.[selectedImage] ? (
                                             <div className="relative flex items-center justify-center w-full h-full">
                                                 <img
