@@ -8,6 +8,8 @@ import { formatPercent, formatCompactNumber } from '../../utils/statsCalculator'
 import { SKILL_MECHANICS } from '../../utils/constants';
 import { BreakpointTables, BreakpointExplanation } from './BreakpointTables';
 import { cn } from '../../lib/utils';
+import { useProfile } from '../../context/ProfileContext';
+import { useComparison } from '../../context/ComparisonContext';
 
 interface DpsBreakdownModalProps {
     isOpen: boolean;
@@ -15,10 +17,14 @@ interface DpsBreakdownModalProps {
     stats: AggregatedStats;
     profile: UserProfile;
     skillLibrary: any;
+    variant?: 'default' | 'original' | 'test';
 }
 
 // Internal component to handle content and memoization to prevent flickering
-const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBreakdownModalProps, 'isOpen'>) => {
+const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'default' }: Omit<DpsBreakdownModalProps, 'isOpen'>) => {
+    const { updateNestedProfile } = useProfile();
+    const { isComparing, originalUseSkinWindup, testUseSkinWindup, updateOriginalUseSkinWindup, updateTestUseSkinWindup } = useComparison();
+    
     const [showFullNumbers, setShowFullNumbers] = useState(false);
     const [useRealTime, setUseRealTime] = useState(true);
     const [showBreakpoints, setShowBreakpoints] = useState(false);
@@ -28,6 +34,24 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
         if (showFullNumbers) return val.toLocaleString(undefined, { maximumFractionDigits: decimals });
         if (val >= 1000000) return formatCompactNumber(val);
         return val.toLocaleString(undefined, { maximumFractionDigits: decimals });
+    };
+
+    const hasSkin = !!profile.items.Weapon?.skin;
+    const currentUseSkinWindup = useMemo(() => {
+        if (isComparing) {
+            if (variant === 'original') return originalUseSkinWindup !== false;
+            if (variant === 'test') return testUseSkinWindup !== false;
+        }
+        return profile.misc.useSkinWindup !== false;
+    }, [isComparing, variant, originalUseSkinWindup, testUseSkinWindup, profile.misc.useSkinWindup]);
+
+    const handleToggleSkinWindup = (val: boolean) => {
+        if (isComparing) {
+            if (variant === 'original') updateOriginalUseSkinWindup(val);
+            else if (variant === 'test') updateTestUseSkinWindup(val);
+        } else {
+            updateNestedProfile('misc', { useSkinWindup: val });
+        }
     };
 
     // --- WEAPON DPS CALCULATIONS ---
@@ -207,6 +231,33 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
                         </div>
                     </div>
                 </div>
+
+                {/* Animation Toggle Bar - Compact */}
+                {hasSkin && (
+                    <div className="px-4 py-2 bg-accent-primary/5 border-b border-accent-primary/10 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="w-3.5 h-3.5 text-accent-primary" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-accent-primary/80">Skin Performance Optimization</span>
+                        </div>
+                        <label 
+                            htmlFor={`modal-toggle-skin-windup-${variant}`}
+                            className="flex items-center gap-2 cursor-pointer group/toggle-modal"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <span className="text-[10px] font-bold text-text-muted group-hover/toggle-modal:text-accent-primary transition-colors">Use Skin Animation Speed</span>
+                            <div className="relative inline-flex items-center">
+                                <input 
+                                    type="checkbox" 
+                                    checked={currentUseSkinWindup}
+                                    onChange={(e) => handleToggleSkinWindup(e.target.checked)}
+                                    className="sr-only peer"
+                                    id={`modal-toggle-skin-windup-${variant}`}
+                                />
+                                <div className="w-7 h-4 bg-bg-input peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-accent-primary border border-border/50" />
+                            </div>
+                        </label>
+                    </div>
+                )}
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 md:space-y-10 custom-scrollbar bg-bg-primary font-sans">
@@ -512,7 +563,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose }: Omit<DpsBr
 
 ModalContent.displayName = 'ModalContent';
 
-export const DpsBreakdownModal = memo(({ isOpen, onClose, stats, profile, skillLibrary }: DpsBreakdownModalProps) => {
+export const DpsBreakdownModal = memo(({ isOpen, onClose, stats, profile, skillLibrary, variant }: DpsBreakdownModalProps) => {
     if (!isOpen) return null;
 
     return createPortal(
@@ -521,6 +572,7 @@ export const DpsBreakdownModal = memo(({ isOpen, onClose, stats, profile, skillL
             profile={profile} 
             skillLibrary={skillLibrary} 
             onClose={onClose} 
+            variant={variant}
         />,
         document.body
     );

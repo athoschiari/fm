@@ -146,6 +146,7 @@ export interface UserProfile {
         plannerMaxWait?: number;
         plannerMinWaitBetweenNodes?: number;
         techPlanMetadata?: { isAuto: boolean; config?: any };
+        useSkinWindup?: boolean;
     };
 }
 
@@ -226,6 +227,7 @@ export const INITIAL_PROFILE: UserProfile = {
         plannerSleepEnd: '07:00',
         plannerMaxWait: 120,
         plannerMinWaitBetweenNodes: 1,
-        techPlanMetadata: { isAuto: false }
+        techPlanMetadata: { isAuto: false },
+        useSkinWindup: true
     }
 };

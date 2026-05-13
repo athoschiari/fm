@@ -545,8 +545,9 @@ export class StatEngine {
                 this.stats.weaponAttackDuration = baseData.AttackDuration || 1.5;
 
                 // SKIN OVERRIDE FOR ANIMATION ONLY
-                if (weapon.skin && weapon.skin.idx !== undefined) {
-                    const skinKey = `{'Age': 999, 'Type': 'Weapon', 'Idx': ${weapon.skin.idx}}`;
+                if (weapon.skin && weapon.skin.idx !== undefined && (this.profile.misc.useSkinWindup !== false)) {
+                    const skinAge = this.stats.isRangedWeapon ? -1001 : -1000;
+                    const skinKey = `{'Age': ${skinAge}, 'Type': 'Weapon', 'Idx': ${weapon.skin.idx}}`;
                     const skinData = this.libs.weaponLibrary[skinKey];
                     if (skinData) {
                         this.stats.weaponWindupTime = skinData.WindupTime || this.stats.weaponWindupTime;
@@ -727,9 +728,9 @@ export class StatEngine {
                         }
                     }
 
-                    // skin combat stats override (Age 999 for Melee, 1000 for Ranged)
-                    if (item.skin?.idx !== undefined && this.libs.weaponLibrary) {
-                        const skinAge = this.stats.isRangedWeapon ? 1000 : 999;
+                    // skin combat stats override (Age -1000 for Melee, -1001 for Ranged)
+                    if (item.skin?.idx !== undefined && this.libs.weaponLibrary && (this.profile.misc.useSkinWindup !== false)) {
+                        const skinAge = this.stats.isRangedWeapon ? -1001 : -1000;
                         const skinKey = `{'Age': ${skinAge}, 'Type': 'Weapon', 'Idx': ${item.skin.idx}}`;
                         const skinWeaponData = this.libs.weaponLibrary[skinKey];
 

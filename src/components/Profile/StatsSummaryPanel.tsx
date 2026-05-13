@@ -332,7 +332,12 @@ function ComparisonStatRow({
 export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 'sidebar' | 'horizontal-strip', onClose?: () => void }) {
     const isStrip = variant === 'horizontal-strip';
     const [showDpsModal, setShowDpsModal] = useState(false);
-    const [modalData, setModalData] = useState<{ stats: AggregatedStats; profile: UserProfile } | null>(null);
+    const [modalData, setModalData] = useState<{ stats: AggregatedStats; profile: UserProfile; variant: 'default' | 'original' | 'test' } | null>(null);
+
+    const openDpsModal = (s: AggregatedStats, p: UserProfile, v: 'default' | 'original' | 'test' = 'default') => {
+        setModalData({ stats: s, profile: p, variant: v });
+        setShowDpsModal(true);
+    };
     const [openSection, setOpenSection] = useState<string | null>(null);
     const [viewTab, setViewTab] = useState<'general' | 'metrics' | 'hits'>('general');
     const stats = useGlobalStats();
@@ -355,6 +360,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
         testPets,
         originalSkills,
         testSkills,
+        originalUseSkinWindup,
+        testUseSkinWindup,
         exitCompareMode,
         keepOriginal,
         applyTestBuild,
@@ -450,7 +457,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                 forgeAscensionLevel: originalForgeAscension ?? profile.misc.forgeAscensionLevel,
                 mountAscensionLevel: originalMountAscension ?? profile.misc.mountAscensionLevel,
                 petAscensionLevel: originalPetAscension ?? profile.misc.petAscensionLevel,
-                skillAscensionLevel: originalSkillAscension ?? profile.misc.skillAscensionLevel
+                skillAscensionLevel: originalSkillAscension ?? profile.misc.skillAscensionLevel,
+                useSkinWindup: originalUseSkinWindup ?? profile.misc.useSkinWindup
             }
         };
         const testProfile = {
@@ -465,7 +473,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                 forgeAscensionLevel: testForgeAscension ?? profile.misc.forgeAscensionLevel,
                 mountAscensionLevel: testMountAscension ?? profile.misc.mountAscensionLevel,
                 petAscensionLevel: testPetAscension ?? profile.misc.petAscensionLevel,
-                skillAscensionLevel: testSkillAscension ?? profile.misc.skillAscensionLevel
+                skillAscensionLevel: testSkillAscension ?? profile.misc.skillAscensionLevel,
+                useSkinWindup: testUseSkinWindup ?? profile.misc.useSkinWindup
             }
         };
 
@@ -479,6 +488,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
         testForgeAscension, testMountAscension,
         originalPets, testPets, originalSkills, testSkills,
         originalPetAscension, testPetAscension, originalSkillAscension, testSkillAscension,
+        originalUseSkinWindup, testUseSkinWindup,
         treeMode, techTreePositionLibrary, techTreeLibrary, libs
     ]);
 
@@ -862,14 +872,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                         <>
                             {/* Grouped Theoretical */}
                             <div className="shrink-0 flex items-center gap-4 p-1.5 bg-white/5 rounded-xl border border-white/5">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theo DPS" originalValue={originalDps} testValue={testDps} color="text-orange-400" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theo DPS" originalValue={originalDps} testValue={testDps} color="text-orange-400" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
                                 <div className="w-px h-6 bg-white/10" />
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Theo HPS" originalValue={originalHps} testValue={testHps} color="text-emerald-400" />
                             </div>
 
                             {/* Grouped Real-Time */}
                             <div className="shrink-0 flex items-center gap-4 p-1.5 bg-orange-500/5 rounded-xl border border-orange-500/10 ring-1 ring-orange-500/10">
-                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile }); setShowDpsModal(true); } }} />
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
                                 <div className="w-px h-6 bg-orange-500/10" />
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-500" />} label="Real HPS" originalValue={originalRealHps} testValue={testRealHps} color="text-emerald-500" />
                             </div>
@@ -915,7 +925,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                     </Button>
                 </div>
 
-                <DpsBreakdownModal isOpen={showDpsModal} onClose={() => setShowDpsModal(false)} stats={modalData?.stats || stats} profile={modalData?.profile || profile} skillLibrary={skillLibrary} />
+                <DpsBreakdownModal 
+                    isOpen={showDpsModal} 
+                    onClose={() => setShowDpsModal(false)} 
+                    stats={modalData?.stats || stats} 
+                    profile={modalData?.profile || profile} 
+                    variant={modalData?.variant || 'default'}
+                    skillLibrary={skillLibrary} 
+                />
             </div>
         );
     }
@@ -1432,6 +1449,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                 onClose={() => { setShowDpsModal(false); setModalData(null); }}
                 stats={modalData?.stats || stats}
                 profile={modalData?.profile || profile}
+                variant={modalData?.variant || 'default'}
                 skillLibrary={skillLibrary}
             />
         </Card>

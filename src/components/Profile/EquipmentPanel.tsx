@@ -73,8 +73,12 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
         testPetAscension,
         originalMountAscension,
         testMountAscension,
+        originalUseSkinWindup,
+        testUseSkinWindup,
         updateOriginalForgeAscension,
         updateTestForgeAscension,
+        updateOriginalUseSkinWindup,
+        updateTestUseSkinWindup,
         updateOriginalItem, updateTestItem, enterCompareMode,
         isCompactStats } = useComparison();
     const { selectedVersion } = useGameDataContext();
@@ -239,6 +243,26 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const saveModalProps = getSaveModalProps();
     const panelTitle = title || 'Equipment';
 
+    const weapon = items.Weapon;
+    const hasSkin = !!weapon?.skin;
+
+    const currentUseSkinWindup = useMemo(() => {
+        if (isComparing) {
+            if (variant === 'original') return originalUseSkinWindup !== false;
+            if (variant === 'test') return testUseSkinWindup !== false;
+        }
+        return profile.misc.useSkinWindup !== false;
+    }, [isComparing, variant, originalUseSkinWindup, testUseSkinWindup, profile.misc.useSkinWindup]);
+
+    const handleToggleSkinWindup = (val: boolean) => {
+        if (isComparing) {
+            if (variant === 'original') updateOriginalUseSkinWindup(val);
+            else if (variant === 'test') updateTestUseSkinWindup(val);
+        } else {
+            updateNestedProfile('misc', { useSkinWindup: val });
+        }
+    };
+
     return (
         <>
             <Card className="p-4 sm:p-6">
@@ -280,6 +304,29 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                         )}
                     </div>
                 </div>
+
+                {hasSkin && (
+                    <label 
+                        htmlFor={`toggle-skin-windup-${variant}`}
+                        className="mb-6 flex items-center gap-3 bg-accent-primary/10 p-3 rounded-xl border border-accent-primary/20 shadow-sm transition-all hover:bg-accent-primary/15 group/toggle cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="relative inline-flex items-center">
+                            <input 
+                                type="checkbox" 
+                                checked={currentUseSkinWindup}
+                                onChange={(e) => handleToggleSkinWindup(e.target.checked)}
+                                className="sr-only peer"
+                                id={`toggle-skin-windup-${variant}`}
+                            />
+                            <div className="w-9 h-5 bg-bg-input peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent-primary border border-border/50 group-hover/toggle:border-accent-primary/50" />
+                        </div>
+                        <div className="text-xs sm:text-sm font-bold text-accent-primary select-none flex-1">
+                            Use Skin Animation Speed
+                            <span className="ml-2 text-[10px] text-text-muted font-normal block sm:inline">(Legacy skins might have faster animations)</span>
+                        </div>
+                    </label>
+                )}
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {SLOTS.map((slot) => {

@@ -28,6 +28,9 @@ interface ComparisonContextType {
     originalSkillAscension: number | null;
     testSkillAscension: number | null;
     snapshotSkillAscension: number | null;
+    originalUseSkinWindup: boolean | null;
+    testUseSkinWindup: boolean | null;
+    snapshotUseSkinWindup: boolean | null;
 
     enterCompareMode: () => void;
     exitCompareMode: () => void;
@@ -47,6 +50,8 @@ interface ComparisonContextType {
     updateTestPetAscension: (level: number) => void;
     updateOriginalSkillAscension: (level: number) => void;
     updateTestSkillAscension: (level: number) => void;
+    updateOriginalUseSkinWindup: (val: boolean) => void;
+    updateTestUseSkinWindup: (val: boolean) => void;
     keepOriginal: () => void;
     applyTestBuild: () => void;
     isCompactStats: boolean;
@@ -85,6 +90,9 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const [originalSkillAscension, setOriginalSkillAscension] = useState<number | null>(null);
     const [testSkillAscension, setTestSkillAscension] = useState<number | null>(null);
     const [snapshotSkillAscension, setSnapshotSkillAscension] = useState<number | null>(null);
+    const [originalUseSkinWindup, setOriginalUseSkinWindup] = useState<boolean | null>(null);
+    const [testUseSkinWindup, setTestUseSkinWindup] = useState<boolean | null>(null);
+    const [snapshotUseSkinWindup, setSnapshotUseSkinWindup] = useState<boolean | null>(null);
     const [isCompactStats, setIsCompactStats] = useState(true);
 
     const enterCompareMode = useCallback(() => {
@@ -126,6 +134,11 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setTestSkillAscension(currentSkillAsc);
         setSnapshotSkillAscension(currentSkillAsc);
 
+        const currentUseSkinWindup = profile.misc.useSkinWindup !== false;
+        setOriginalUseSkinWindup(currentUseSkinWindup);
+        setTestUseSkinWindup(currentUseSkinWindup);
+        setSnapshotUseSkinWindup(currentUseSkinWindup);
+
         setIsComparing(true);
     }, [profile]);
 
@@ -155,6 +168,9 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setOriginalSkillAscension(null);
         setTestSkillAscension(null);
         setSnapshotSkillAscension(null);
+        setOriginalUseSkinWindup(null);
+        setTestUseSkinWindup(null);
+        setSnapshotUseSkinWindup(null);
     }, []);
 
     const updateOriginalItem = useCallback((slot: keyof UserProfile['items'], item: UserProfile['items'][keyof UserProfile['items']]) => {
@@ -220,6 +236,14 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const updateTestSkillAscension = useCallback((level: number) => {
         setTestSkillAscension(level);
     }, []);
+ 
+    const updateOriginalUseSkinWindup = useCallback((val: boolean) => {
+        setOriginalUseSkinWindup(val);
+    }, []);
+
+    const updateTestUseSkinWindup = useCallback((val: boolean) => {
+        setTestUseSkinWindup(val);
+    }, []);
 
     const keepOriginal = useCallback(() => {
         if (originalItems) {
@@ -240,6 +264,7 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (originalMountAscension !== null) miscUpdates.mountAscensionLevel = originalMountAscension;
         if (originalPetAscension !== null) miscUpdates.petAscensionLevel = originalPetAscension;
         if (originalSkillAscension !== null) miscUpdates.skillAscensionLevel = originalSkillAscension;
+        if (originalUseSkinWindup !== null) miscUpdates.useSkinWindup = originalUseSkinWindup;
         
         if (Object.keys(miscUpdates).length > 0) {
             updateNestedProfile('misc', miscUpdates);
@@ -266,6 +291,7 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (testMountAscension !== null) miscUpdates.mountAscensionLevel = testMountAscension;
         if (testPetAscension !== null) miscUpdates.petAscensionLevel = testPetAscension;
         if (testSkillAscension !== null) miscUpdates.skillAscensionLevel = testSkillAscension;
+        if (testUseSkinWindup !== null) miscUpdates.useSkinWindup = testUseSkinWindup;
 
         if (Object.keys(miscUpdates).length > 0) {
             updateNestedProfile('misc', miscUpdates);
@@ -300,6 +326,9 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             originalSkillAscension,
             testSkillAscension,
             snapshotSkillAscension,
+            originalUseSkinWindup,
+            testUseSkinWindup,
+            snapshotUseSkinWindup,
             enterCompareMode,
             exitCompareMode,
             updateOriginalItem,
@@ -318,6 +347,8 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             updateTestPetAscension,
             updateOriginalSkillAscension,
             updateTestSkillAscension,
+            updateOriginalUseSkinWindup,
+            updateTestUseSkinWindup,
             keepOriginal,
             applyTestBuild,
             isCompactStats,
