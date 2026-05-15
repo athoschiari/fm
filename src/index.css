@@ -349,9 +349,9 @@
 .divine-animation::after {
     content: '';
     position: absolute;
-    inset: -100%;
-    width: 300%;
-    height: 300%;
+    inset: -200%;
+    width: 500%;
+    height: 500%;
     background-image: var(--theme-url);
     background-size: 30px 30px;
     background-repeat: repeat;
@@ -373,9 +373,9 @@
 .underworld-animation::after {
     content: '';
     position: absolute;
-    inset: -100%;
-    width: 300%;
-    height: 300%;
+    inset: -200%;
+    width: 500%;
+    height: 500%;
     background-image: var(--theme-url);
     background-size: 150px 150px;
     background-repeat: repeat;
@@ -398,9 +398,9 @@
 .multiverse-animation::after {
     content: '';
     position: absolute;
-    inset: -100%;
-    width: 300%;
-    height: 300%;
+    inset: -200%;
+    width: 500%;
+    height: 500%;
     background-image: var(--theme-url);
     background-size: 40px 40px;
     background-repeat: repeat;
@@ -422,9 +422,9 @@
 .interstellar-animation::after {
     content: '';
     position: absolute;
-    inset: -100%;
-    width: 300%;
-    height: 300%;
+    inset: -200%;
+    width: 500%;
+    height: 500%;
     background-image: var(--theme-url);
     background-size: 100px 100px;
     background-repeat: repeat;
@@ -507,9 +507,9 @@
 .primitive-animation::after, .medieval-animation::after, .earlymodern-animation::after, .modern-animation::after, .space-animation::after {
     content: '';
     position: absolute;
-    inset: -100%;
-    width: 300%;
-    height: 300%;
+    inset: -200%;
+    width: 500%;
+    height: 500%;
     background-image: var(--theme-url);
     background-size: 40px 40px;
     background-repeat: repeat;
