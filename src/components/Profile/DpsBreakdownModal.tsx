@@ -11,6 +11,8 @@ import { cn } from '../../lib/utils';
 import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 
+import { formatNumber } from '../../utils/format';
+
 interface DpsBreakdownModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -32,8 +34,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
     // Local helper for compact formatting of large values
     const formatVal = (val: number, decimals: number = 0) => {
         if (showFullNumbers) return val.toLocaleString(undefined, { maximumFractionDigits: decimals });
-        if (val >= 1000000) return formatCompactNumber(val);
-        return val.toLocaleString(undefined, { maximumFractionDigits: decimals });
+        return formatNumber(val);
     };
 
     const hasSkin = !!profile.items.Weapon?.skin;
@@ -103,31 +104,50 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
             const cdMult = Math.max(0.1, 1 - cdr);
             const finalCd = Math.max(0.1, baseCooldown * cdMult);
 
-            const globalDamageMulti = stats.damageMultiplier;
-            const skillMulti = stats.skillDamageMultiplier;
+            // SKILL LAYER: (1 + tech + items) * ascension (mirrors Forge Ascension)
+            const skillMulti = stats.skillDamageMultiplier; // Already computed in statEngine
+            const commonMulti = stats.damageMultiplier;     // Common layer
             
-            // FORMULA ALIGNMENT: Match BattleSimulator (skillMulti + globalMulti - 1)
-            const effectiveMultiplier = skillMulti + globalDamageMulti - 1;
+            // BREAKDOWN COMPONENTS (for display only)
+            const skillTech = stats.skillDamageBreakdown.tree || 0;
+            const skillItems = stats.skillDamageBreakdown.substats || 0;
+            const skillAsc = stats.skillDamageBreakdown.ascension || 1;
+
+            // FORMULA: skillMulti * commonMulti
+            const effectiveMultiplier = skillMulti * commonMulti;
 
             const isBuff = BUFF_SKILLS.includes(String(skill.id));
             const mechanics = SKILL_MECHANICS[String(skill.id)] || { count: 1 };
             const hitCount = mechanics.count || 1;
 
+            const baseInfo = {
+                name: skillData.Name || `Skill #${skill.id}`,
+                base: baseSkillValue,
+                multi: effectiveMultiplier,
+                commonMulti,
+                skillMulti,
+                skillTech,
+                skillItems,
+                skillAsc,
+                cooldown: finalCd,
+                // Common Multi breakdown
+                commonTech: stats.damageBreakdown.tree || 0,
+                commonItems: stats.damageBreakdown.substats || 0,
+                commonSkins: stats.skinDamageMulti || 0,
+                commonSets: stats.setDamageMulti || 0,
+            };
+
             if (isBuff) {
                 const cycle = finalCd + duration;
                 const uptime = duration / Math.max(0.1, cycle);
                 const bonusPower = baseSkillValue * effectiveMultiplier;
-                // Buffs benefit from weapon stats (Power x APS x Crit x Double)
                 const weaponSynergy = displayAps * critMult * doubleMult;
                 const dpsContrib = bonusPower * weaponSynergy * uptime;
 
                 return {
-                    name: skillData.Name || `Skill #${skill.id}`,
+                    ...baseInfo,
                     isBuff: true,
-                    base: baseSkillValue,
-                    multi: effectiveMultiplier,
                     duration,
-                    cooldown: finalCd,
                     uptime,
                     weaponSynergy,
                     dps: dpsContrib
@@ -138,12 +158,9 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                 const dps = totalDmgPerActivation / finalCd;
 
                 return {
-                    name: skillData.Name || `Skill #${skill.id}`,
+                    ...baseInfo,
                     isBuff: false,
-                    base: baseSkillValue,
-                    multi: effectiveMultiplier,
                     hitCount,
-                    cooldown: finalCd,
                     dps: dps
                 };
             }
@@ -455,8 +472,10 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                                 <div className="text-white">{(s.uptime * 100).toFixed(1)}%</div>
                                             </div>
                                             <div className="col-span-2 pt-2 border-t border-purple-300/10">
-                                                <div className="text-purple-300/50 uppercase text-[8px] mb-1 font-sans">Weapon Synergy</div>
-                                                <div className="text-white">{s.weaponSynergy.toFixed(2)}x Factor</div>
+                                                <div className="text-purple-300/50 uppercase text-[8px] mb-1 font-sans text-left">Formula:</div>
+                                                <div className="text-[9px] text-white/40 leading-tight">
+                                                    (1 + {s.skillTech.toFixed(2)} + {s.skillItems.toFixed(2)}) × {s.skillAsc.toFixed(0)} × {s.commonMulti.toFixed(2)} = {s.multi.toFixed(2)}x
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -515,6 +534,60 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                                 </div>
                                                 <div className="mt-3 p-1.5 bg-blue-500/5 rounded border border-blue-500/10 text-[8px] md:text-[9px] text-white/20 italic font-mono text-center">
                                                     (Hit×Mult×#) / CD
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Detailed Multipliers */}
+                                        <div className="mt-4 pt-4 border-t border-white/5 space-y-3">
+                                            <div className="flex items-center gap-2 text-[9px] font-bold text-blue-400/60 uppercase tracking-wider">
+                                                <Zap className="w-3 h-3" />
+                                                Multiplier Breakdown
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 bg-black/20 rounded-xl p-3 font-mono text-[10px]">
+                                                <div className="flex justify-between items-center border-b border-white/5 pb-1 col-span-2">
+                                                    <span className="text-white/30 uppercase text-[8px]">Effective Multiplier</span>
+                                                    <span className="text-blue-400 font-bold text-[11px]">{s.multi.toFixed(3)}x</span>
+                                                </div>
+                                                
+                                                <div className="col-span-2 text-[8px] text-white/20 uppercase mt-1">Skill Layer</div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-white/40">Base</span>
+                                                    <span className="text-white/80">1.00</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-white/40">Skill Tech</span>
+                                                    <span className="text-green-400">+{formatPercent(s.skillTech)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-white/40">Skill Items</span>
+                                                    <span className="text-green-400">+{formatPercent(s.skillItems)}</span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-white/5 pb-1">
+                                                    <span className="text-white/40">× Skill Ascension</span>
+                                                    <span className="text-purple-400 font-bold">×{s.skillAsc.toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-white/40">= Skill Multi</span>
+                                                    <span className="text-blue-300 font-bold">{s.skillMulti.toFixed(2)}</span>
+                                                </div>
+
+                                                <div className="col-span-2 text-[8px] text-white/20 uppercase mt-2">Common Layer ({s.commonMulti.toFixed(2)}x)</div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-white/40">Tech Tree (Dmg)</span>
+                                                    <span className="text-white/60">+{formatPercent(s.commonTech)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-white/40">Item Substats</span>
+                                                    <span className="text-white/60">+{formatPercent(s.commonItems)}</span>
+                                                </div>
+
+                                                <div className="col-span-2 mt-2 pt-2 border-t border-white/10">
+                                                    <div className="text-[8px] text-white/20 uppercase mb-1 font-sans">Formula:</div>
+                                                    <div className="text-[9px] text-white/40 leading-tight">
+                                                        (1 + {s.skillTech.toFixed(2)} + {s.skillItems.toFixed(2)}) × {s.skillAsc.toFixed(2)} × {s.commonMulti.toFixed(2)} = {s.multi.toFixed(2)}x
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

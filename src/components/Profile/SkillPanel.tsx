@@ -22,11 +22,7 @@ import { formatNumber } from '../../utils/format';
 import { StatBreakdownTooltip } from '../UI/StatBreakdownTooltip';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 
-// Helper for truncation (sync with StatEngine)
-const truncate = (value: number, decimals: number): number => {
-    const factor = Math.pow(10, decimals);
-    return Math.floor(value * factor) / factor;
-};
+// Using global formatNumber from ../../utils/format
 
 interface SkillPanelProps {
     variant?: 'default' | 'original' | 'test';
@@ -80,8 +76,8 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                     const sTarget = s.StatNode?.StatTarget?.$type;
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     if (sTarget === 'ActiveSkillStatTarget') {
-                        if (sType === 'Damage' || sType === 'AscensionDamage') d = s.Value + 1;
-                        if (sType === 'Health' || sType === 'AscensionHealth') h = s.Value + 1;
+                        if (sType === 'Damage' || sType === 'AscensionDamage') d = Math.max(d, s.Value + 1);
+                        if (sType === 'Health' || sType === 'AscensionHealth') h = Math.max(h, s.Value + 1);
                     }
                 }
             }
@@ -201,11 +197,25 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
         const duration = skillData.ActiveDuration || 0;
         const cooldown = skillData.Cooldown || 0;
 
-        const techActiveSkillDmgBonus = techModifiers['SkillDamage'] || 0;
-        const techActiveSkillHpBonus = techModifiers['SkillDamage'] || 0;
+        // Skill Layer: computed locally to respect variant-specific ascension levels
+        // Tech tree bonus (SkillDamage applies to both dmg and heal for active skills)
+        const techSkillBonus = techModifiers['SkillDamage'] || 0;
+        // Item substats from globalStats (these don't change between variants)
+        const itemSkillDmgBonus = globalStats?.skillDamageBreakdown?.substats || 0;
+        const itemSkillHpBonus = globalStats?.skillHealthBreakdown?.substats || 0;
 
-        const totalDamageMulti = (1 + techActiveSkillDmgBonus) * (activeAscensionDmgMulti || 1);
-        const totalHealthMulti = (1 + techActiveSkillHpBonus) * (activeAscensionHpMulti || 1);
+        // Skill Layer = (1 + tech + items) * ascension
+        const skillDmgMulti = (1 + techSkillBonus + itemSkillDmgBonus) * (activeAscensionDmgMulti || 1);
+        const skillHpMulti = (1 + techSkillBonus + itemSkillHpBonus) * (activeAscensionHpMulti || 1);
+
+        // Common Layer from globalStats (Tech Tree Dmg + Item Dmg%)
+        // Active skills (including heal/buff) use the global Damage Multiplier
+        const commonDmgMulti = globalStats?.damageMultiplier || 1;
+        const commonHpMulti = globalStats?.damageMultiplier || 1;
+
+        // Total = skillLayer * commonLayer
+        const totalDamageMulti = skillDmgMulti * commonDmgMulti;
+        const totalHealthMulti = skillHpMulti * commonHpMulti;
 
         const damage = baseDmg * totalDamageMulti;
         const health = baseHp * totalHealthMulti;
@@ -229,8 +239,24 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
             damageBonus: totalDamageMulti - 1,
             healthBonus: totalHealthMulti - 1,
             details: {
-                damage: { base: baseDmg, techMulti: 1 + techActiveSkillDmgBonus, ascMulti: activeAscensionDmgMulti || 1 },
-                health: { base: baseHp, techMulti: 1 + techActiveSkillHpBonus, ascMulti: activeAscensionHpMulti || 1 }
+                damage: {
+                    base: baseDmg,
+                    techMulti: techSkillBonus,
+                    itemMulti: itemSkillDmgBonus,
+                    ascMulti: activeAscensionDmgMulti || 1,
+                    commonMulti: commonDmgMulti,
+                    skillMulti: skillDmgMulti,
+                    total: totalDamageMulti
+                },
+                health: {
+                    base: baseHp,
+                    techMulti: techSkillBonus,
+                    itemMulti: itemSkillHpBonus,
+                    ascMulti: activeAscensionHpMulti || 1,
+                    commonMulti: commonHpMulti,
+                    skillMulti: skillHpMulti,
+                    total: totalHealthMulti
+                }
             }
         };
     };
@@ -403,11 +429,11 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                                     })()}
                                                 </div>
                                                 <div className="text-sm font-mono font-bold text-red-400 leading-tight">
-                                                    {isCompactStats ? formatNumber(stats.totalDamage) : Math.round(stats.totalDamage).toLocaleString()}
+                                                    {formatNumber(stats.totalDamage)}
                                                 </div>
                                                 {stats.count > 1 && (
                                                     <div className="text-[8px] text-red-400/60 font-mono italic">
-                                                        ({isCompactStats ? formatNumber(stats.damage) : Math.round(stats.damage).toLocaleString()} / hit)
+                                                        ({formatNumber(stats.damage)} / hit)
                                                     </div>
                                                 )}
                                                 <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center justify-center flex-wrap gap-x-1 gap-y-0 mt-0.5 text-center">
@@ -423,7 +449,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                                             <div className="bg-green-400/10 rounded p-1 border border-green-400/20 flex flex-col items-center group/heal relative">
                                                 <div className="text-[10px] text-green-400 uppercase font-bold">Healing</div>
                                                 <div className="text-sm font-mono font-bold text-green-400 leading-tight">
-                                                    {isCompactStats ? formatNumber(stats.health) : Math.round(stats.health).toLocaleString()}
+                                                    {formatNumber(stats.health)}
                                                 </div>
                                                 <div className="text-[9px] font-mono font-bold text-text-muted/80 flex items-center justify-center flex-wrap gap-x-1 gap-y-0 mt-0.5 text-center">
                                                     <span>x{stats.multi.toFixed(2)}</span>
