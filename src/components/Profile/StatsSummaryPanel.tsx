@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
-    ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout
+    ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download
 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
@@ -365,10 +365,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
         exitCompareMode,
         keepOriginal,
         applyTestBuild,
+        loadProfileIntoTest,
         isCompactStats,
         setIsCompactStats
     } = useComparison();
-    const { profile } = useProfile();
+    const { profile, profiles, activeProfileId } = useProfile();
+
     const { treeMode, setTreeMode } = useTreeMode();
 
     // Load all libraries for comparison calculations
@@ -780,9 +782,9 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
         return (
             <div className="relative bg-bg-secondary/95 backdrop-blur-md rounded-2xl border border-accent-primary/20 shadow-2xl p-4 flex flex-col items-center animate-in slide-in-from-top duration-300">
                 {/* Centered Comparison Label - Floating above */}
-                <div className="absolute left-1/2 -top-3.5 -translate-x-1/2 bg-bg-secondary border border-accent-primary/40 px-3 py-1 rounded-full flex items-center gap-2 shadow-xl z-20 backdrop-blur-xl">
+                <div className="absolute left-1/2 -top-3.5 -translate-x-1/2 bg-bg-secondary border border-accent-primary/40 px-1.5 sm:px-3 py-1 rounded-full flex items-center gap-2 shadow-xl z-20 backdrop-blur-xl">
                     <AnimatedClock className="w-3.5 h-3.5 text-accent-primary" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-accent-primary leading-none">Comparison Mode</span>
+                    <span className="hidden sm:block text-[10px] font-black uppercase tracking-widest text-accent-primary leading-none">Comparison Mode</span>
                 </div>
 
                 {/* View Mode Toggler - Floating Top Left */}
@@ -902,8 +904,37 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                     )}
                 </div>
 
-                {/* Bottom Row: Action Buttons (Always Visible and Centered) */}
+
                 <div className="flex items-center justify-center gap-1.5 sm:gap-4 w-full pt-2 border-t border-white/5">
+                    {/* Load Profile - Small Button with hidden select */}
+                    {profiles.length > 1 && (
+                        <div className="relative group/load">
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="h-8 sm:h-10 px-2 flex flex-col items-center justify-center p-0 gap-0.5 text-[9px] text-cyan-400/70 hover:text-cyan-400 hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 transition-all font-bold uppercase tracking-tight"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Load</span>
+                            </Button>
+                            <select
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                defaultValue=""
+                                onChange={(e) => {
+                                    const selectedProfile = profiles.find(p => p.id === e.target.value);
+                                    if (selectedProfile) {
+                                        loadProfileIntoTest(selectedProfile);
+                                        e.target.value = '';
+                                    }
+                                }}
+                            >
+                                <option value="" disabled>Load Profile...</option>
+                                {profiles.filter(p => p.id !== activeProfileId).map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     <Button variant="ghost" size="sm" onClick={exitCompareMode} className="h-8 sm:h-10 px-2 sm:px-6 gap-1 sm:gap-2 text-[10px] sm:text-xs text-text-muted hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all font-bold">
                         <X className="w-3.5 h-3.5 sm:w-4 h-4" />
                         <span className="hidden sm:inline">Exit Comparison</span>
@@ -1007,11 +1038,38 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
 
                 {isComparing && (
                     <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
-
-
                         <div className="space-y-3">
                             <div className="text-[10px] text-text-muted text-center font-bold uppercase tracking-widest opacity-60">Build Actions</div>
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-4 gap-2">
+                                {/* Load Profile - Small Button with hidden select */}
+                                {profiles.length > 1 && (
+                                    <div className="relative">
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-10 w-full flex flex-col items-center justify-center p-0 gap-1 text-[10px] text-cyan-400/70 hover:text-cyan-400 grayscale hover:grayscale-0 transition-all font-bold uppercase tracking-tight border border-transparent hover:border-cyan-500/20 bg-cyan-500/5"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            <span>Load</span>
+                                        </Button>
+                                        <select
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                            defaultValue=""
+                                            onChange={(e) => {
+                                                const selectedProfile = profiles.find(p => p.id === e.target.value);
+                                                if (selectedProfile) {
+                                                    loadProfileIntoTest(selectedProfile);
+                                                    e.target.value = '';
+                                                }
+                                            }}
+                                        >
+                                            <option value="" disabled>Load...</option>
+                                            {profiles.filter(p => p.id !== activeProfileId).map(p => (
+                                                <option key={p.id} value={p.id}>{p.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
                                 <Button
                                     variant="ghost"
                                     size="sm"

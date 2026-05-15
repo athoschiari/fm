@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { UserProfile, MountSlot } from '../types/Profile';
 import { useProfile } from './ProfileContext';
 
+
 interface ComparisonContextType {
     isComparing: boolean;
     originalItems: UserProfile['items'] | null;
@@ -54,6 +55,7 @@ interface ComparisonContextType {
     updateTestUseSkinWindup: (val: boolean) => void;
     keepOriginal: () => void;
     applyTestBuild: () => void;
+    loadProfileIntoTest: (sourceProfile: UserProfile) => void;
     isCompactStats: boolean;
     setIsCompactStats: (val: boolean) => void;
 }
@@ -299,6 +301,20 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         exitCompareMode();
     }, [testItems, testMount, testPets, testSkills, testForgeAscension, testMountAscension, testPetAscension, testSkillAscension, testUseSkinWindup, updateNestedProfile, exitCompareMode]);
 
+    const loadProfileIntoTest = useCallback((sourceProfile: UserProfile) => {
+        // Import build-relevant data from another profile into the test side
+        // Does NOT import: techTree, skills.passives, collections, savedItems, misc utilities
+        setTestItems(JSON.parse(JSON.stringify(sourceProfile.items)));
+        setTestMount(sourceProfile.mount.active ? JSON.parse(JSON.stringify(sourceProfile.mount.active)) : null);
+        setTestPets(JSON.parse(JSON.stringify(sourceProfile.pets.active)));
+        setTestSkills(JSON.parse(JSON.stringify(sourceProfile.skills.equipped)));
+        setTestForgeAscension(sourceProfile.misc.forgeAscensionLevel || 0);
+        setTestMountAscension(sourceProfile.misc.mountAscensionLevel || 0);
+        setTestPetAscension(sourceProfile.misc.petAscensionLevel || 0);
+        setTestSkillAscension(sourceProfile.misc.skillAscensionLevel || 0);
+        setTestUseSkinWindup(sourceProfile.misc.useSkinWindup !== false);
+    }, []);
+
     return (
         <ComparisonContext.Provider value={{
             isComparing,
@@ -351,6 +367,7 @@ export const ComparisonProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             updateTestUseSkinWindup,
             keepOriginal,
             applyTestBuild,
+            loadProfileIntoTest,
             isCompactStats,
             setIsCompactStats,
         }}>
