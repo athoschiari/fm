@@ -158,24 +158,36 @@ export default function TechTree() {
         const node = nodeById[nodeId];
         if (!node) return;
 
-        const currentTreeRanks = localRanks[activeTab] || {};
-        const currentRank = currentTreeRanks[nodeId] || 0;
-
-        const effect = treeEffects?.[node.type];
-        const max = effect?.MaxLevel || 1;
-        const newVal = Math.max(0, Math.min(max, currentRank + delta));
-
-        // Validation 1: Upgrading requires all requirements to be >= 1
-        if (delta > 0 && newVal > 0) {
-            const missingReqs = (node.requirements || []).filter((reqId: number) => (currentTreeRanks[reqId] || 0) <= 0);
-            if (missingReqs.length > 0) {
-                // Potential toast or feedback could go here
-                return;
-            }
-        }
-
         setLocalRanks(prev => {
             const newTreeRanks = { ...(prev[activeTab] || {}) };
+            const currentRank = newTreeRanks[nodeId] || 0;
+
+            const effect = treeEffects?.[node.type];
+            const max = effect?.MaxLevel || 1;
+            const newVal = Math.max(0, Math.min(max, currentRank + delta));
+
+            // Auto-unlock requirements if increasing level
+            if (delta > 0 && newVal > 0) {
+                const processed = new Set<number>();
+                const unlockRecursive = (id: number) => {
+                    if (processed.has(id)) return;
+                    processed.add(id);
+
+                    const n = nodeById[id];
+                    if (!n) return;
+
+                    if (n.requirements) {
+                        n.requirements.forEach((reqId: number) => {
+                            if ((newTreeRanks[reqId] || 0) === 0) {
+                                newTreeRanks[reqId] = 1;
+                                unlockRecursive(reqId);
+                            }
+                        });
+                    }
+                };
+                unlockRecursive(nodeId);
+            }
+
             newTreeRanks[nodeId] = newVal;
 
             // Validation 2: If downgraded to 0, prune all dependent nodes recursively (DFS)
@@ -676,13 +688,19 @@ export default function TechTree() {
                                                     </div>
 
                                                     <div
-                                                        className="w-6 h-6 rounded bg-bg-secondary hover:bg-white/10 flex items-center justify-center border border-border cursor-pointer active:scale-95"
+                                                        className={cn(
+                                                            "w-6 h-6 rounded flex items-center justify-center border border-border cursor-pointer active:scale-95 transition-all",
+                                                            (node.requirements || []).some((reqId: number) => (currentTreeRanks[reqId] || 0) <= 0)
+                                                                ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"
+                                                                : "bg-bg-secondary hover:bg-white/10 text-white"
+                                                        )}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleLocalUpdate(node.id, 1);
                                                         }}
+                                                        title={(node.requirements || []).some((reqId: number) => (currentTreeRanks[reqId] || 0) <= 0) ? "Auto-unlock requirements" : ""}
                                                     >
-                                                        <Plus className="w-3 h-3 text-white" />
+                                                        <Plus className="w-3 h-3" />
                                                     </div>
                                                 </div>
                                             </Card>

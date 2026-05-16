@@ -248,6 +248,34 @@ export function TechTreePanel() {
         return count;
     };
 
+    const autoUnlockRequirements = (nodeId: number, levels: Record<number, number>) => {
+        const tree = treesData[activeTab];
+        if (!tree?.nodes) return levels;
+
+        const updatedLevels = { ...levels };
+        const processed = new Set<number>();
+        
+        const unlockRecursive = (id: number) => {
+            if (processed.has(id)) return;
+            processed.add(id);
+
+            const node = tree.nodes.find((n: any) => n.id === id);
+            if (!node) return;
+
+            if (node.requirements) {
+                node.requirements.forEach((reqId: number) => {
+                    if ((updatedLevels[reqId] || 0) === 0) {
+                        updatedLevels[reqId] = 1;
+                        unlockRecursive(reqId);
+                    }
+                });
+            }
+        };
+
+        unlockRecursive(nodeId);
+        return updatedLevels;
+    };
+
     const executeLevelChange = (nodeId: number, level: number) => {
         const newTreeLevels = { ...profile.techTree[activeTab], [nodeId]: level };
 
@@ -286,6 +314,24 @@ export function TechTreePanel() {
                 setPendingReset({ nodeId, count });
                 return;
             }
+        }
+
+        // Auto unlock if trying to increase level on a locked node
+        const treeMap = treesData[activeTab];
+        const nodeDef = treeMap?.nodes?.find((n: any) => n.id === nodeId);
+        const unlocked = nodeDef ? isNodeUnlocked(nodeDef, currentTreeLevels) : true;
+
+        if (level > 0 && !unlocked) {
+            const unlockedLevels = autoUnlockRequirements(nodeId, currentTreeLevels);
+            unlockedLevels[nodeId] = Math.max(unlockedLevels[nodeId] || 0, level);
+            
+            updateProfile({
+                techTree: {
+                    ...profile.techTree,
+                    [activeTab]: unlockedLevels
+                }
+            });
+            return;
         }
 
         executeLevelChange(nodeId, val);
@@ -477,13 +523,16 @@ export function TechTreePanel() {
                                                 </div>
                                                 <button
                                                     onClick={() => handleLevelChange(node.id, currentLevel + 1, maxLevel)}
-                                                    disabled={!unlocked || currentLevel >= maxLevel}
+                                                    disabled={currentLevel >= maxLevel}
                                                     className={cn(
                                                         "w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors",
-                                                        unlocked && currentLevel < maxLevel
-                                                            ? "bg-bg-secondary hover:bg-white/10"
+                                                        currentLevel < maxLevel
+                                                            ? !unlocked 
+                                                                ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"
+                                                                : "bg-bg-secondary hover:bg-white/10"
                                                             : "text-text-muted cursor-not-allowed"
                                                     )}
+                                                    title={!unlocked ? "Auto-unlock requirements" : ""}
                                                 >+</button>
                                             </div>
 
