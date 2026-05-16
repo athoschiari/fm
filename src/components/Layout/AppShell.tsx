@@ -246,12 +246,20 @@ export default function AppShell() {
 
     return (
         <div className="flex h-screen bg-bg-primary text-text-primary overflow-hidden font-sans text-left">
+            {/* Hover zone to open sidebar */}
+            <div 
+                className="fixed top-0 left-0 bottom-0 w-4 z-[45] group cursor-pointer"
+                onMouseEnter={() => setIsSidebarOpen(true)}
+            >
+                <div className="h-full w-full group-hover:bg-accent-primary/5 transition-colors" />
+            </div>
+
             {/* Sidebar Navigation */}
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
             {/* Main Content Area */}
             <div className={cn(
-                "flex-1 flex flex-col h-full overflow-hidden relative lg:ml-64 transition-all duration-500 ease-in-out",
+                "flex-1 flex flex-col h-full overflow-hidden relative transition-all duration-500 ease-in-out",
                 isStatsOpen && "lg:pr-[450px]"
             )}>
                 {/* Header */}

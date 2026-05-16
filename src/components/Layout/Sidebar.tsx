@@ -184,7 +184,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Mobile Backdrop */}
             <div
                 className={cn(
-                    "fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300",
+                    "fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300",
                     isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
                 )}
                 onClick={onClose}
@@ -192,8 +192,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
             {/* Sidebar Container */}
             <aside className={cn(
-                "fixed top-0 left-0 bottom-0 w-64 bg-bg-secondary border-r border-border z-50 transition-transform duration-300 ease-in-out flex flex-col",
-                isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+                "fixed top-0 left-0 bottom-0 w-64 bg-bg-secondary border-r border-border z-50 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl",
+                isOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 {/* Logo */}
                 <div className="h-16 flex items-center gap-3 px-6 border-b border-border bg-bg-secondary/50 backdrop-blur-sm">
@@ -275,7 +275,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                                         (window as any).__triggerTestToast();
                                                                     }
                                                                 }
-                                                                window.innerWidth < 1024 && onClose();
+                                                                onClose();
                                                             }}
                                                             className={cn(
                                                                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative group/coffee overflow-visible",
@@ -318,7 +318,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                                                     <Link
                                                         key={item.path}
                                                         to={item.path}
-                                                        onClick={() => window.innerWidth < 1024 && onClose()}
+                                                        onClick={() => onClose()}
                                                         className={cn(
                                                             "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group relative",
                                                             isActive
@@ -381,7 +381,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                             if ((window as any).__triggerTestToast) {
                                 (window as any).__triggerTestToast();
                             }
-                            window.innerWidth < 1024 && onClose();
+                            onClose();
                         }}
                         className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 relative group/coffee overflow-visible coffee-btn-animated shadow-lg hover:shadow-accent-primary/20 hover:-translate-y-0.5"
                     >

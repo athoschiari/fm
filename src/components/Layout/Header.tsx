@@ -89,7 +89,6 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
                     variant="ghost"
                     size="sm"
                     onClick={onMenuToggle}
-                    className="lg:hidden"
                 >
                     <Menu className="w-6 h-6" />
                 </Button>
