@@ -65,6 +65,40 @@ export default function SubstatsCalculator() {
         };
     }, [enterCompareMode, exitCompareMode]);
 
+    const handleResetToProfile = useCallback(() => {
+        const initialAllocations: Record<string, number> = {};
+
+        const addAlloc = (statId: string) => {
+            initialAllocations[statId] = (initialAllocations[statId] || 0) + 1;
+        };
+
+        const slots: (keyof UserProfile['items'])[] = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'];
+        slots.forEach(slot => {
+            const item = profile.items[slot];
+            if (item?.secondaryStats) {
+                item.secondaryStats.forEach(s => addAlloc(s.statId));
+            }
+        });
+
+        profile.pets.active.forEach(pet => {
+            if (pet?.secondaryStats) {
+                pet.secondaryStats.forEach(s => addAlloc(s.statId));
+            }
+        });
+
+        const mount = profile.mount.active;
+        if (mount?.secondaryStats) {
+            mount.secondaryStats.forEach(s => addAlloc(s.statId));
+        }
+
+        const clampedAllocations: Record<string, number> = {};
+        Object.keys(initialAllocations).forEach(key => {
+            clampedAllocations[key] = Math.min(initialAllocations[key], 12);
+        });
+
+        setStatAllocations(clampedAllocations);
+    }, [profile]);
+
     // Pre-fill initial configuration based on current profile
     useEffect(() => {
         if (!secondaryStatLibrary) return;
@@ -105,12 +139,8 @@ export default function SubstatsCalculator() {
         setMountSubstatsConfig(maxMountSubstats);
         
         // Ensure initial allocations don't exceed max possible per stat (12)
-        const clampedAllocations: Record<string, number> = {};
-        Object.keys(initialAllocations).forEach(key => {
-            clampedAllocations[key] = Math.min(initialAllocations[key], 12);
-        });
-        setStatAllocations(clampedAllocations);
-    }, [secondaryStatLibrary, profile]); // Run once when library and profile are loaded
+        handleResetToProfile();
+    }, [secondaryStatLibrary, profile, handleResetToProfile]); // Run once when library and profile are loaded
 
     const totalAvailablePool = (itemSubstatsConfig * 8) + (petSubstatsConfig * 3) + (mountSubstatsConfig * 1);
     const currentAllocated = Object.values(statAllocations).reduce((sum, val) => sum + val, 0);
@@ -322,7 +352,7 @@ export default function SubstatsCalculator() {
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setStatAllocations({})}>
+                    <Button variant="outline" size="sm" onClick={handleResetToProfile}>
                         Reset Sliders
                     </Button>
                 </div>
