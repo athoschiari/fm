@@ -83,7 +83,7 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
     };
 
     return (
-        <header className="h-16 sticky top-0 bg-bg-secondary/80 backdrop-blur-md border-b border-border z-30 flex items-center justify-between px-2 sm:px-4 lg:px-8">
+        <header className="h-16 sticky top-0 bg-bg-secondary/80 backdrop-blur-md border-b border-border z-50 flex items-center justify-between px-2 sm:px-4 lg:px-8">
             <div className="flex items-center gap-2 sm:gap-4">
                 <Button
                     variant="ghost"

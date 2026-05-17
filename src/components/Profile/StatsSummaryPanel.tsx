@@ -329,7 +329,7 @@ function ComparisonStatRow({
     );
 }
 
-export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 'sidebar' | 'horizontal-strip', onClose?: () => void }) {
+export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = false, defaultTab = 'general' }: { variant?: 'sidebar' | 'horizontal-strip', onClose?: () => void, hideActions?: boolean, defaultTab?: 'general' | 'metrics' | 'hits' }) {
     const isStrip = variant === 'horizontal-strip';
     const [showDpsModal, setShowDpsModal] = useState(false);
     const [modalData, setModalData] = useState<{ stats: AggregatedStats; profile: UserProfile; variant: 'default' | 'original' | 'test' } | null>(null);
@@ -339,7 +339,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
         setShowDpsModal(true);
     };
     const [openSection, setOpenSection] = useState<string | null>(null);
-    const [viewTab, setViewTab] = useState<'general' | 'metrics' | 'hits'>('general');
+    const [viewTab, setViewTab] = useState<'general' | 'metrics' | 'hits'>(defaultTab);
     const stats = useGlobalStats();
     const techModifiers = useTreeModifiers();
     const {
@@ -905,6 +905,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                 </div>
 
 
+                {!hideActions && (
                 <div className="flex items-center justify-center gap-1.5 sm:gap-4 w-full pt-2 border-t border-white/5">
                     {/* Load Profile - Small Button with hidden select */}
                     {profiles.length > 1 && (
@@ -951,6 +952,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose }: { variant?: 
                         <span className="inline sm:hidden tracking-tight">Apply Test</span>
                     </Button>
                 </div>
+                )}
 
                 <DpsBreakdownModal 
                     isOpen={showDpsModal} 

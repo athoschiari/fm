@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { cn } from '../../lib/utils';
 import {
     Star, Egg, Key, Shirt, Cat, Image, ChevronDown,
-    Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee, Zap, ShoppingCart, Target
+    Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee, Zap, ShoppingCart, Target, Sliders
 } from 'lucide-react';
 import { GameIcon } from '../UI/GameIcon';
 import { useProfile } from '../../context/ProfileContext';
@@ -128,6 +128,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Eggs', path: '/eggs', icon: Egg },
                 { name: 'Skills', path: '/calculators/skills', icon: Star },
                 { name: 'Mounts', path: '/calculators/mounts', icon: Star },
+                { name: 'Substats', path: '/calculators/substats', icon: Sliders },
             ]
         },
         {

@@ -3,7 +3,7 @@ import { Card } from '../components/UI/Card';
 import { Button } from '../components/UI/Button';
 import { TrendingUp, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { getStatName, getStatIcon } from '../utils/statNames';
+import { getStatName } from '../utils/statNames';
 
 interface SecondaryStat {
     Stat: string;

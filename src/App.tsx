@@ -26,6 +26,7 @@ import FAQ from './pages/FAQ';
 import Profile from './pages/Profile';
 import ProgressPrediction from './pages/ProgressPrediction';
 import PvpArena from './pages/PvpArena';
+import SubstatsCalculator from './pages/Calculators/SubstatsCalculator';
 import ForgeCalculator from './pages/Calculators/ForgeCalculator';
 import MountCalculator from './pages/Calculators/MountCalculator';
 import SkillCalculator from './pages/Calculators/SkillCalculator';
@@ -79,6 +80,7 @@ function App() {
                                     <Route path="calculators/mounts" element={<MountCalculator />} />
                                     <Route path="calculators/skills" element={<SkillCalculator />} />
                                     <Route path="calculators/tree" element={<TreeCalculator />} />
+                                    <Route path="calculators/substats" element={<SubstatsCalculator />} />
                                     <Route path="solo-mission" element={<MissionSolo />} />
                                     <Route path="wiki/forge" element={<ForgeWiki />} />
                                     <Route path="wiki/base-drops" element={<BaseDrops />} />

@@ -51,29 +51,6 @@ export function getStatName(statId: string): string {
     return STAT_NAMES[statId] || statId.replace(/([A-Z])/g, ' $1').trim();
 }
 
-/**
- * Get icon emoji for a stat
- */
-export function getStatIcon(statId: string): string {
-    const icons: Record<string, string> = {
-        'DamageMulti': '⚔️',
-        'MeleeDamageMulti': '🗡️',
-        'RangedDamageMulti': '🏹',
-        'SkillDamageMulti': '✨',
-        'HealthMulti': '❤️',
-        'HealthRegen': '💚',
-        'LifeSteal': '🩸',
-        'CriticalChance': '🎯',
-        'CriticalMulti': '💥',
-        'DoubleDamageChance': '⚡',
-        'BlockChance': '🛡️',
-        'AttackSpeed': '⚡',
-        'SkillCooldownMulti': '⏱️',
-        'Damage': '⚔️',
-        'Health': '❤️',
-    };
-    return icons[statId] || '📊';
-}
 
 /**
  * Get color class for a stat
@@ -117,11 +94,10 @@ export function formatStatValue(value: number): string {
 /**
  * Component helper: format a secondary stat for display
  */
-export function formatSecondaryStat(statId: string, value: number): { name: string; formattedValue: string; icon: string; color: string } {
+export function formatSecondaryStat(statId: string, value: number): { name: string; formattedValue: string; color: string } {
     return {
         name: getStatName(statId),
         formattedValue: formatStatValue(value),
-        icon: getStatIcon(statId),
         color: getStatColor(statId),
     };
 }
