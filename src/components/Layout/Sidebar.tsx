@@ -100,7 +100,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             "Divine Drop Rate Up 💎", "Pet Food for Dev 🍕", "Mount Stable Fund 🐎",
             "Tech Tree Fertilizer 🌱", "XP Boost for Dev 📈", "Sleep is for the Weak 💤",
             "Donation Crit Hit! 🎯", "Anvil Overheat 🌡️", "Magic Brew 🧙",
-            "Supporter Aura ✨", "Godly Grind Fuel ⚡", "Bring back advanced chat 💬"
+            "Supporter Aura ✨", "Godly Grind Fuel ⚡", "Bring back advanced chat 💬",
+            "Bring Back Hex Colors 🎨"
         ];
         return labels[Math.floor(Math.random() * labels.length)];
     }, []);

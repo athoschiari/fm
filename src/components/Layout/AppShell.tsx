@@ -59,6 +59,7 @@ const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
         `Sleep is for the weak, but coffee is for the Forge Masters! ⚔️`,
         `If you find a bug, buy me a coffee and I'll call it a feature. 😉`,
         `Bring back advanced chat! (But first, bring back the coffee!) 💬`,
+        `Bring Back Hex Colors! (But first, bring back the coffee!) 🎨`,
         `The developer has a dedicated server for your support. It's called 'Hope'. 🕊️`
     ];
 
@@ -123,7 +124,8 @@ export default function AppShell() {
             "Divine Drop Rate Up 💎", "Pet Food for Dev 🍕", "Mount Stable Fund 🐎",
             "Tech Tree Fertilizer 🌱", "XP Boost for Dev 📈", "Sleep is for the Weak 💤",
             "Donation Crit Hit! 🎯", "Anvil Overheat 🌡️", "Magic Brew 🧙",
-            "Supporter Aura ✨", "Godly Grind Fuel ⚡", "Bring back advanced chat 💬"
+            "Supporter Aura ✨", "Godly Grind Fuel ⚡", "Bring back advanced chat 💬",
+            "Bring Back Hex Colors 🎨"
         ];
         return labels[Math.floor(Math.random() * labels.length)];
     }, []);
