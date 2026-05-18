@@ -471,6 +471,115 @@
             color: var(--warn);
         }
 
+        /* --- LOADER SPINNER --- */
+        .spinner {
+            display: inline-block;
+            width: 0.9rem;
+            height: 0.9rem;
+            border: 2px solid rgba(0, 255, 136, 0.15);
+            border-radius: 50%;
+            border-top-color: var(--accent);
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- STEPPING PREDICITON --- */
+        .next-is-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            text-align: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .next-is-label {
+            font-size: 0.7rem;
+            color: var(--muted);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.4rem;
+        }
+
+        .next-is-val {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 15px currentColor;
+        }
+
+        .next-is-val.up {
+            color: var(--accent);
+        }
+
+        .next-is-val.down {
+            color: var(--danger);
+        }
+
+        .step-ctrl-row {
+            display: flex;
+            gap: 0.75rem;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .step-btn {
+            flex: 1;
+            padding: 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .history-label {
+            font-size: 0.65rem;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.4rem;
+        }
+
+        .tape-segment {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+
+        .tape-segment.observed {
+            background: rgba(102, 102, 170, 0.08);
+            border: 1px dashed rgba(102, 102, 170, 0.4);
+            color: var(--text);
+        }
+
+        .tape-segment.stepped {
+            background: rgba(124, 58, 237, 0.1);
+            border: 1px solid var(--accent2);
+            box-shadow: 0 0 5px rgba(124, 58, 237, 0.2);
+        }
+
+        .tape-segment.b0 {
+            color: var(--danger);
+        }
+
+        .tape-segment.b1 {
+            color: var(--accent);
+        }
+
         @media (max-width: 600px) {
             .layout {
                 grid-template-columns: 1fr;
@@ -488,6 +597,13 @@
     <div style="max-width:900px;margin:0 auto">
         <h1>// CTF PRNG Solver</h1>
         <div class="subtitle">stepping-stone oracle attack · multi-prng bruteforce</div>
+
+        <div id="restore-banner" style="display:none; background:rgba(255, 170, 0, 0.1); border: 1px solid var(--warn); border-radius: 6px; padding: 0.75rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; align-items: center; justify-content: space-between;">
+            <div>
+                ⚡ <strong>Sessione ripristinata</strong>: Seed <span class="seed-num" style="font-size:0.75rem;" id="restore-seed-id">0</span> salvato il <span id="restore-date-id">--</span>.
+            </div>
+            <button class="undo-btn" style="color:var(--danger);" onclick="deleteActivePredictionAndHideBanner()">× elimina salvataggio</button>
+        </div>
 
         <div class="layout">
 
@@ -605,16 +721,7 @@
             </div>
 
             <!-- PREDIZIONE -->
-            <div class="panel full-width" id="predict-panel" style="display:none">
-                <div class="panel-title">05 · prossime mosse da giocare</div>
-                <div class="predict-tape" id="predict-tape"></div>
-                <div class="predict-meta" id="predict-meta"></div>
-                <div style="display:flex;gap:0.75rem;margin-top:1rem">
-                    <button class="btn" style="max-width:200px" onclick="extendPrediction()">+ altri 30</button>
-                    <button class="btn" style="max-width:200px;border-color:var(--muted);color:var(--muted)"
-                        onclick="document.getElementById('predict-panel').style.display='none'">chiudi</button>
-                </div>
-            </div>
+            <div class="panel full-width" id="predict-panel" style="display:none"></div>
 
         </div>
     </div>
@@ -822,17 +929,20 @@
             results = [];
             document.getElementById('btn-start').disabled = true;
             document.getElementById('btn-stop').style.display = 'block';
-            document.getElementById('results-list').innerHTML = '<div class="empty-msg">ricerca in corso...</div>';
+            document.getElementById('results-list').innerHTML = 
+                '<div class="empty-msg"><span class="spinner"></span>ricerca in corso...</div>';
 
             const total = (to - from) * selected.length * flips.length;
             let done = 0;
+            let lastYield = performance.now();
 
             for (const prngKey of selected) {
                 const { label, make } = PRNG_MAP[prngKey];
                 for (const flip of flips) {
                     let i = from;
                     while (i < to && !stopFlag) {
-                        const chunkEnd = Math.min(i + 3000, to);
+                        const chunkStart = i;
+                        const chunkEnd = Math.min(i + 150, to);
                         for (; i < chunkEnd; i++) {
                             const off = testSeed(seq, make, i, minOff, maxOff, flip);
                             if (off >= 0) {
@@ -840,12 +950,17 @@
                                 renderResults();
                             }
                         }
-                        done += 3000;
-                        const pct = Math.min(100, Math.round(done / total * 100));
-                        document.getElementById('prog-fill').style.width = pct + '%';
-                        document.getElementById('prog-label').textContent =
-                            `${label}${flip ? ' (flip)' : ''} · seed ${i.toLocaleString()}/${to.toLocaleString()} · trovati: ${results.length}`;
-                        await new Promise(r => setTimeout(r, 0));
+                        done += (chunkEnd - chunkStart);
+                        
+                        // Cedi il controllo se sono passati più di 30ms per non freezare la pagina
+                        if (performance.now() - lastYield > 30 || i >= to) {
+                            const pct = Math.min(100, Math.round(done / total * 100));
+                            document.getElementById('prog-fill').style.width = pct + '%';
+                            document.getElementById('prog-label').textContent =
+                                `${label}${flip ? ' (flip)' : ''} · seed ${i.toLocaleString()}/${to.toLocaleString()} · trovati: ${results.length}`;
+                            await new Promise(r => setTimeout(r, 0));
+                            lastYield = performance.now();
+                        }
                     }
                 }
             }
@@ -884,39 +999,144 @@
 
         // ─── PREDICTION ───────────────────────────────────────────────────────────────
         function startPredict(seed, prngKey, offset, flip) {
-            predictCtx = { seed, prngKey, offset, flip };
-            predictCount = 30;
+            predictCtx = { seed, prngKey, offset, flip, advancedSteps: 0 };
             renderPrediction();
         }
 
-        function extendPrediction() {
-            predictCount += 30;
-            renderPrediction();
+        function stepNext() {
+            if (predictCtx) {
+                predictCtx.advancedSteps++;
+                renderPrediction();
+            }
+        }
+
+        function stepPrev() {
+            if (predictCtx && predictCtx.advancedSteps > 0) {
+                predictCtx.advancedSteps--;
+                renderPrediction();
+            }
+        }
+
+        function closePredictPanel() {
+            document.getElementById('predict-panel').style.display = 'none';
+        }
+
+        function saveActivePrediction() {
+            if (!predictCtx) return;
+            const data = {
+                predictCtx: predictCtx,
+                bits: bits,
+                textarea: document.getElementById('manual-seq').value,
+                savedAt: new Date().toLocaleString('it-IT')
+            };
+            localStorage.setItem('ctf_prng_active_prediction', JSON.stringify(data));
+            showRestoreBanner(data.savedAt, predictCtx.seed);
+            alert('Stato del seed e sequenza salvati con successo! Saranno ricaricati automaticamente al prossimo avvio.');
+        }
+
+        function deleteActivePrediction() {
+            localStorage.removeItem('ctf_prng_active_prediction');
+            const banner = document.getElementById('restore-banner');
+            if (banner) banner.style.display = 'none';
+            closePredictPanel();
+            alert('Salvataggio del seed eliminato!');
+        }
+
+        function showRestoreBanner(savedAt, seed) {
+            const banner = document.getElementById('restore-banner');
+            if (banner) {
+                document.getElementById('restore-seed-id').textContent = seed;
+                document.getElementById('restore-date-id').textContent = savedAt;
+                banner.style.display = 'flex';
+            }
+        }
+
+        function deleteActivePredictionAndHideBanner() {
+            deleteActivePrediction();
+        }
+
+        function checkSavedPrediction() {
+            try {
+                const saved = localStorage.getItem('ctf_prng_active_prediction');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    bits = data.bits || [];
+                    predictCtx = data.predictCtx;
+                    
+                    const manualSeqEl = document.getElementById('manual-seq');
+                    if (manualSeqEl) {
+                        manualSeqEl.value = data.textarea || bits.join(' ');
+                    }
+                    
+                    renderTape();
+                    renderPrediction();
+                    showRestoreBanner(data.savedAt, data.predictCtx.seed);
+                }
+            } catch (e) {
+                console.error('Errore nel caricamento del seed precaricato:', e);
+            }
         }
 
         function renderPrediction() {
-            const { seed, prngKey, offset, flip } = predictCtx;
+            if (!predictCtx) return;
+            const { seed, prngKey, offset, flip, advancedSteps } = predictCtx;
             const { label, make } = PRNG_MAP[prngKey];
             const rng = make(seed);
-            // skip offset + bit già osservati
-            for (let i = 0; i < offset + bits.length; i++) rng();
 
-            let html = '';
-            for (let i = 0; i < predictCount; i++) {
+            // Skip offset
+            for (let i = 0; i < offset; i++) rng();
+
+            // Genera bit passati (osservati + avanzati)
+            let historyHTML = '';
+            for (let i = 0; i < bits.length + advancedSteps; i++) {
                 const f = rng();
                 let bit = f >= 0.5 ? 1 : 0;
                 if (flip) bit = 1 - bit;
-                // bit=1 → sopra, bit=0 → sotto
-                html += `<span class="p${bit}">${bit === 1 ? '↑' : '↓'}</span>`;
-                if ((i + 1) % 20 === 0) html += '<br>';
-                else html += ' ';
+                
+                const isStepped = i >= bits.length;
+                const typeClass = isStepped ? 'stepped' : 'observed';
+                historyHTML += `<span class="tape-segment ${typeClass} b${bit}">${bit === 1 ? '↑' : '↓'} <span style="font-size:0.55rem;opacity:0.6;">#${i + 1}</span></span>`;
             }
+
+            // Calcola il bit SUCCESSIVO
+            const fNext = rng();
+            let nextBit = fNext >= 0.5 ? 1 : 0;
+            if (flip) nextBit = 1 - nextBit;
 
             const panel = document.getElementById('predict-panel');
             panel.style.display = 'block';
-            document.getElementById('predict-tape').innerHTML = html;
-            document.getElementById('predict-meta').textContent =
-                `seed=${seed} · ${label} · offset +${offset}${flip ? ' · flip' : ''} · ↑=sopra ↓=sotto`;
+            
+            panel.innerHTML = `
+                <div class="panel-title">05 · simulatore stepping seed</div>
+                
+                <div class="history-label">Bit giocati finora (${bits.length} osservati + ${advancedSteps} simulati)</div>
+                <div style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem; background: var(--bg); margin-bottom: 1rem; line-height: 1.8;">
+                    ${historyHTML || '<span style="color:var(--muted)">Nessun bit ancora giocato.</span>'}
+                </div>
+
+                <div class="next-is-container">
+                    <div class="next-is-label">Prossima Mossa (Mossa #${bits.length + advancedSteps + 1})</div>
+                    <div class="next-is-val ${nextBit === 1 ? 'up' : 'down'}">
+                        ${nextBit === 1 ? '↑ SOPRA / 1' : '↓ SOTTO / 0'}
+                    </div>
+                </div>
+
+                <div class="step-ctrl-row">
+                    <button class="btn step-btn" style="margin-top:0;" onclick="stepPrev()" ${advancedSteps === 0 ? 'disabled' : ''}>⬅️ Indietro</button>
+                    <button class="btn btn-accent step-btn" style="margin-top:0;" onclick="stepNext()">➡️ Avanti (Next)</button>
+                </div>
+
+                <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+                    <button class="btn" style="margin-top:0; flex:1; border-color:var(--warn); background:rgba(255, 170, 0, 0.1); color:var(--warn);" onclick="saveActivePrediction()">💾 Salva Mossa Corrente</button>
+                    <button class="btn" style="margin-top:0; flex:1; border-color:var(--danger); background:rgba(255, 68, 85, 0.1); color:var(--danger);" onclick="deleteActivePrediction()">🗑️ Elimina Salvataggio</button>
+                    <button class="btn" style="margin-top:0; border-color:var(--muted); color:var(--muted); max-width:100px;" onclick="closePredictPanel()">Chiudi</button>
+                </div>
+                
+                <div class="predict-meta" style="margin-top:0.75rem; text-align:center;">
+                    seed=${seed} · ${label} · offset +${offset}${flip ? ' · flip' : ''} · passi avanzati=${advancedSteps}
+                </div>
+            `;
+            
             panel.scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -1023,6 +1243,7 @@
 
         // Carica stato iniziale all'avvio
         updateLoadButtonStatus();
+        checkSavedPrediction();
     </script>
 </body>
 
