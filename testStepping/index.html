@@ -485,7 +485,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* --- STEPPING PREDICITON --- */
@@ -500,7 +502,7 @@
             padding: 1.25rem;
             margin: 1rem 0;
             text-align: center;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
         }
 
         .next-is-label {
@@ -598,11 +600,14 @@
         <h1>// CTF PRNG Solver</h1>
         <div class="subtitle">stepping-stone oracle attack · multi-prng bruteforce</div>
 
-        <div id="restore-banner" style="display:none; background:rgba(255, 170, 0, 0.1); border: 1px solid var(--warn); border-radius: 6px; padding: 0.75rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; align-items: center; justify-content: space-between;">
+        <div id="restore-banner"
+            style="display:none; background:rgba(255, 170, 0, 0.1); border: 1px solid var(--warn); border-radius: 6px; padding: 0.75rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; align-items: center; justify-content: space-between;">
             <div>
-                ⚡ <strong>Sessione ripristinata</strong>: Seed <span class="seed-num" style="font-size:0.75rem;" id="restore-seed-id">0</span> salvato il <span id="restore-date-id">--</span>.
+                ⚡ <strong>Sessione ripristinata</strong>: Seed <span class="seed-num" style="font-size:0.75rem;"
+                    id="restore-seed-id">0</span> salvato il <span id="restore-date-id">--</span>.
             </div>
-            <button class="undo-btn" style="color:var(--danger);" onclick="deleteActivePredictionAndHideBanner()">× elimina salvataggio</button>
+            <button class="undo-btn" style="color:var(--danger);" onclick="deleteActivePredictionAndHideBanner()">×
+                elimina salvataggio</button>
         </div>
 
         <div class="layout">
@@ -701,6 +706,11 @@
                     </select>
                 </div>
 
+                <div class="field">
+                    <label>parallelizzazione thread</label>
+                    <select id="worker-count"></select>
+                </div>
+
                 <button class="btn" id="btn-start" onclick="startBrute()">▶ avvia bruteforce</button>
                 <button class="btn btn-stop" id="btn-stop" onclick="stopBrute()">■ stop</button>
 
@@ -733,6 +743,8 @@
         let stopFlag = false;
         let predictCtx = null;
         let predictCount = 30;
+        let activeWorkers = [];
+        let activeResolve = null;
 
         // ─── GAME INTERACTION ─────────────────────────────────────────────────────────
         function choose(v) {
@@ -851,19 +863,15 @@
             // Costanti esatte estratte dal decompilato IL2CPP
             const mult = 0x5851f42d4c957f2dn;
             const inc = 0x14057b7ef767814fn;
-            const MAX = 18446744073709551616n; // 2^64
 
             // Costruttore: *(long *)(param_1 + 0x10) = param_2 * 0x5851f42d4c957f2d + 0x1a08ee1184ba6d32;
-            let state = (BigInt(seed) * mult + 0x1a08ee1184ba6d32n) % MAX;
-            // JS gestisce i BigInt negativi col modulo in modo strano, forziamo il positivo
-            if (state < 0n) state += MAX;
+            let state = BigInt.asUintN(64, BigInt(seed) * mult + 0x1a08ee1184ba6d32n);
 
             return () => {
                 const old = state;
 
-                // Step di aggiornamento
-                state = (old * mult + inc) % MAX;
-                if (state < 0n) state += MAX;
+                // Step di aggiornamento superveloce con asUintN a 64 bit nativo (senza moduli pesanti)
+                state = BigInt.asUintN(64, old * mult + inc);
 
                 // Output function XSH-RR
                 const xsh = Number(((old >> 18n ^ old) >> 27n) & 0xFFFFFFFFn);
@@ -871,13 +879,8 @@
                 const uVar1 = ((xsh >>> rot) | (xsh << ((-rot) & 31))) >>> 0;
 
                 // Metaplay NextInt(max) logic (param_2 = 2 per decidere 0 o 1)
-                // uVar1 = ... >> 1; return uVar1 % param_2;
                 const nextInt = uVar1 >>> 1;
-                const bit = nextInt % 2;
-
-                // Ritorniamo direttamente 0 o 1.
-                // Nel tuo solver "f >= 0.5 ? 1 : 0" elaborerà: 0 >= 0.5 (falso -> 0) o 1 >= 0.5 (vero -> 1). Perfetto.
-                return bit;
+                return nextInt % 2;
             };
         }
         const PRNG_MAP = {
@@ -893,16 +896,27 @@
         // ─── BRUTEFORCE ───────────────────────────────────────────────────────────────
         let results = [];
 
-        function testSeed(seq, makeFn, seed, minOff, maxOff, flip) {
+        function testSeed(seq, makeFn, seed, minOff, maxOff, flip, buffer) {
+            const rng = makeFn(seed);
+            const N = seq.length;
+            const targetLen = maxOff + N;
+            const buf = buffer || new Uint8Array(targetLen);
+
+            // Riempiamo il buffer riutilizzato (sovrascrive i vecchi dati)
+            for (let i = 0; i < targetLen; i++) {
+                const f = rng();
+                buf[i] = f >= 0.5 ? 1 : 0;
+            }
+
+            // Cerca la finestra corrispondente (sliding window)
             for (let off = minOff; off <= maxOff; off++) {
-                const rng = makeFn(seed);
-                for (let i = 0; i < off; i++) rng(); // skip offset
                 let ok = true;
-                for (let i = 0; i < seq.length; i++) {
-                    const f = rng();
-                    const bit = f >= 0.5 ? 1 : 0;
-                    const expected = flip ? 1 - seq[i] : seq[i];
-                    if (bit !== expected) { ok = false; break; }
+                for (let j = 0; j < N; j++) {
+                    const expected = flip ? 1 - seq[j] : seq[j];
+                    if (buf[off + j] !== expected) {
+                        ok = false;
+                        break;
+                    }
                 }
                 if (ok) return off;
             }
@@ -922,46 +936,129 @@
             const minOff = parseInt(document.getElementById('min-offset').value);
             const maxOff = parseInt(document.getElementById('max-offset').value);
             const polarity = document.getElementById('polarity').value;
+            const workersCount = parseInt(document.getElementById('worker-count').value) || 4;
 
             const flips = polarity === 'both' ? [false, true] : polarity === 'flip' ? [true] : [false];
 
             stopFlag = false;
             results = [];
+            activeWorkers = [];
             document.getElementById('btn-start').disabled = true;
             document.getElementById('btn-stop').style.display = 'block';
             document.getElementById('results-list').innerHTML = 
-                '<div class="empty-msg"><span class="spinner"></span>ricerca in corso...</div>';
+                '<div class="empty-msg"><span class="spinner"></span>ricerca in corso con multi-thread...</div>';
 
             const total = (to - from) * selected.length * flips.length;
             let done = 0;
-            let lastYield = performance.now();
 
-            for (const prngKey of selected) {
-                const { label, make } = PRNG_MAP[prngKey];
-                for (const flip of flips) {
-                    let i = from;
-                    while (i < to && !stopFlag) {
-                        const chunkStart = i;
-                        const chunkEnd = Math.min(i + 150, to);
-                        for (; i < chunkEnd; i++) {
-                            const off = testSeed(seq, make, i, minOff, maxOff, flip);
-                            if (off >= 0) {
-                                results.push({ prng: prngKey, label, seed: i, offset: off, flip });
-                                renderResults();
-                            }
+            // Codice del Web Worker inline come stringa autogenerata
+            const workerCode = `
+                const PRNG_MAP = {
+                    lcg32: { make: ${makeLCG32.toString()} },
+                    lcg_cs: { make: ${makeLCG_CS.toString()} },
+                    xorshift: { make: ${makeXorshift.toString()} },
+                    minstd: { make: ${makeMinstd.toString()} },
+                    pcg: { make: ${makePCG32.toString()} },
+                    mt: { make: ${makeMT.toString()} },
+                    metaplay: { make: ${makeMetaplayPCG.toString()} }
+                };
+
+                const testSeed = ${testSeed.toString()};
+
+                self.onmessage = function(e) {
+                    const { prngKey, from, to, seq, minOff, maxOff, flip } = e.data;
+                    const makeFn = PRNG_MAP[prngKey].make;
+                    
+                    // 🔥 ALLOCHIAMO IL BUFFER UNA SOLA VOLTA 🔥
+                    const targetLen = maxOff + seq.length;
+                    const buffer = new Uint8Array(targetLen);
+                    
+                    let checked = 0;
+                    for (let i = from; i < to; i++) {
+                        // Passiamo il buffer alla funzione
+                        const off = testSeed(seq, makeFn, i, minOff, maxOff, flip, buffer);
+                        if (off >= 0) {
+                            self.postMessage({ type: 'match', seed: i, offset: off });
                         }
-                        done += (chunkEnd - chunkStart);
-                        
-                        // Cedi il controllo se sono passati più di 30ms per non freezare la pagina
-                        if (performance.now() - lastYield > 30 || i >= to) {
-                            const pct = Math.min(100, Math.round(done / total * 100));
-                            document.getElementById('prog-fill').style.width = pct + '%';
-                            document.getElementById('prog-label').textContent =
-                                `${label}${flip ? ' (flip)' : ''} · seed ${i.toLocaleString()}/${to.toLocaleString()} · trovati: ${results.length}`;
-                            await new Promise(r => setTimeout(r, 0));
-                            lastYield = performance.now();
+                        checked++;
+                        if (checked % 10000 === 0) { // Alzato a 10.000 per meno overhead di IPC
+                            self.postMessage({ type: 'progress', checked: 10000 });
+                            checked = 0;
                         }
                     }
+                    if (checked > 0) {
+                        self.postMessage({ type: 'progress', checked });
+                    }
+                    self.postMessage({ type: 'done' });
+                };
+            `;
+
+            for (const prngKey of selected) {
+                const { label } = PRNG_MAP[prngKey];
+                for (const flip of flips) {
+                    if (stopFlag) break;
+
+                    const segmentSize = Math.ceil((to - from) / workersCount);
+                    
+                    await new Promise((resolve) => {
+                        activeResolve = resolve;
+                        let doneWorkers = 0;
+                        
+                        for (let w = 0; w < workersCount; w++) {
+                            const wFrom = from + w * segmentSize;
+                            const wTo = Math.min(wFrom + segmentSize, to);
+                            
+                            if (wFrom >= to) {
+                                doneWorkers++;
+                                if (doneWorkers === workersCount) {
+                                    activeResolve = null;
+                                    resolve();
+                                }
+                                continue;
+                            }
+
+                            const blob = new Blob([workerCode], { type: 'application/javascript' });
+                            const url = URL.createObjectURL(blob);
+                            const worker = new Worker(url);
+                            URL.revokeObjectURL(url); // Il Worker ha già parsato il file, l'URL non serve più!
+                            activeWorkers.push(worker);
+
+                            worker.onmessage = function(e) {
+                                if (stopFlag) return;
+                                const { type, checked, seed, offset } = e.data;
+
+                                if (type === 'progress') {
+                                    done += checked;
+                                    const pct = Math.min(100, Math.round(done / total * 100));
+                                    document.getElementById('prog-fill').style.width = pct + '%';
+                                    document.getElementById('prog-label').textContent =
+                                        `${label}${flip ? ' (flip)' : ''} · avanzamento: ${pct}% · trovati: ${results.length}`;
+                                } else if (type === 'match') {
+                                    results.push({ prng: prngKey, label, seed, offset, flip });
+                                    renderResults();
+                                } else if (type === 'done') {
+                                    doneWorkers++;
+                                    if (doneWorkers === workersCount) {
+                                        // Rimuovi i worker terminati
+                                        activeWorkers.forEach(w => w.terminate());
+                                        activeWorkers = [];
+                                        activeResolve = null;
+                                        resolve();
+                                    }
+                                }
+                            };
+
+                            worker.postMessage({
+                                prngKey,
+                                from: wFrom,
+                                to: wTo,
+                                seq,
+                                minOff,
+                                maxOff,
+                                flip
+                            });
+                        }
+                    });
                 }
             }
 
@@ -976,6 +1073,12 @@
 
         function stopBrute() {
             stopFlag = true;
+            activeWorkers.forEach(w => w.terminate());
+            activeWorkers = [];
+            if (activeResolve) {
+                activeResolve();
+                activeResolve = null;
+            }
             document.getElementById('btn-start').disabled = false;
             document.getElementById('btn-stop').style.display = 'none';
         }
@@ -1062,12 +1165,12 @@
                     const data = JSON.parse(saved);
                     bits = data.bits || [];
                     predictCtx = data.predictCtx;
-                    
+
                     const manualSeqEl = document.getElementById('manual-seq');
                     if (manualSeqEl) {
                         manualSeqEl.value = data.textarea || bits.join(' ');
                     }
-                    
+
                     renderTape();
                     renderPrediction();
                     showRestoreBanner(data.savedAt, data.predictCtx.seed);
@@ -1092,7 +1195,7 @@
                 const f = rng();
                 let bit = f >= 0.5 ? 1 : 0;
                 if (flip) bit = 1 - bit;
-                
+
                 const isStepped = i >= bits.length;
                 const typeClass = isStepped ? 'stepped' : 'observed';
                 historyHTML += `<span class="tape-segment ${typeClass} b${bit}">${bit === 1 ? '↑' : '↓'} <span style="font-size:0.55rem;opacity:0.6;">#${i + 1}</span></span>`;
@@ -1105,7 +1208,7 @@
 
             const panel = document.getElementById('predict-panel');
             panel.style.display = 'block';
-            
+
             panel.innerHTML = `
                 <div class="panel-title">05 · simulatore stepping seed</div>
                 
@@ -1136,7 +1239,7 @@
                     seed=${seed} · ${label} · offset +${offset}${flip ? ' · flip' : ''} · passi avanzati=${advancedSteps}
                 </div>
             `;
-            
+
             panel.scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -1241,7 +1344,23 @@
             btn.style.opacity = '0.5';
         }
 
+        function initThreads() {
+            const threads = navigator.hardwareConcurrency || 4;
+            const workerSel = document.getElementById('worker-count');
+            if (workerSel) {
+                workerSel.innerHTML = '';
+                for (let i = 1; i <= Math.max(threads, 16); i++) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = `${i} Core / Thread` + (i === threads ? ' (raccomandato)' : '');
+                    if (i === threads) opt.selected = true;
+                    workerSel.appendChild(opt);
+                }
+            }
+        }
+
         // Carica stato iniziale all'avvio
+        initThreads();
         updateLoadButtonStatus();
         checkSavedPrediction();
     </script>
