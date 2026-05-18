@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
@@ -331,6 +332,10 @@ function ComparisonStatRow({
 
 export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = false, defaultTab = 'general' }: { variant?: 'sidebar' | 'horizontal-strip', onClose?: () => void, hideActions?: boolean, defaultTab?: 'general' | 'metrics' | 'hits' }) {
     const isStrip = variant === 'horizontal-strip';
+    const location = useLocation();
+    const isSubstatsPage = location.pathname.includes('/calculators/substats');
+    const actualHideActions = hideActions || isSubstatsPage;
+    
     const [showDpsModal, setShowDpsModal] = useState(false);
     const [modalData, setModalData] = useState<{ stats: AggregatedStats; profile: UserProfile; variant: 'default' | 'original' | 'test' } | null>(null);
 
@@ -905,7 +910,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 </div>
 
 
-                {!hideActions && (
+                {!actualHideActions && (
                 <div className="flex items-center justify-center gap-1.5 sm:gap-4 w-full pt-2 border-t border-white/5">
                     {/* Load Profile - Small Button with hidden select */}
                     {profiles.length > 1 && (
