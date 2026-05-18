@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTF PRNG Solver</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@300;500;700&display=swap');
+
+        :root {
+            --bg: #0a0a0f;
+            --bg2: #111118;
+            --bg3: #1a1a24;
+            --border: #2a2a3a;
+            --accent: #00ff88;
+            --accent2: #7c3aed;
+            --text: #e0e0f0;
+            --muted: #6666aa;
+            --danger: #ff4455;
+            --warn: #ffaa00;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            font-size: 15px;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 0.25rem;
+        }
+
+        .subtitle {
+            font-size: 0.8rem;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 2rem;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+        }
+
+        .panel-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        /* --- GAME BUTTONS --- */
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .game-btn {
+            flex: 1;
+            padding: 1.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg3);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .game-btn span {
+            font-size: 0.65rem;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .game-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .game-btn:active {
+            transform: scale(0.97);
+        }
+
+        .outcome-row {
+            display: flex;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .outcome-btn {
+            flex: 1;
+            padding: 0.7rem;
+            border-radius: 6px;
+            border: 1px solid;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-transform: uppercase;
+        }
+
+        .outcome-btn.win {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: transparent;
+        }
+
+        .outcome-btn.win:hover {
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .outcome-btn.lose {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: transparent;
+        }
+
+        .outcome-btn.lose:hover {
+            background: rgba(255, 68, 85, 0.1);
+        }
+
+        .last-choice {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .last-choice strong {
+            color: var(--warn);
+        }
+
+        /* --- BIT TAPE --- */
+        .bit-tape {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            word-break: break-all;
+            line-height: 1.8;
+            color: var(--accent);
+            min-height: 60px;
+            letter-spacing: 0.1em;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .bit-tape .b0 {
+            color: var(--danger);
+        }
+
+        .bit-tape .b1 {
+            color: var(--accent);
+        }
+
+        .bit-stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.75rem;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--muted);
+        }
+
+        .bit-stats strong {
+            color: var(--text);
+        }
+
+        /* --- TEXTAREA manual --- */
+        textarea {
+            width: 100%;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            padding: 0.6rem;
+            resize: vertical;
+            min-height: 60px;
+            letter-spacing: 0.1em;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent2);
+        }
+
+        /* --- CONTROLS --- */
+        .field {
+            margin-bottom: 0.75rem;
+        }
+
+        .field label {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.3rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        select,
+        input[type=number] {
+            width: 100%;
+            background: var(--bg3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.6rem;
+        }
+
+        select:focus,
+        input:focus {
+            outline: none;
+            border-color: var(--accent2);
+        }
+
+        .range-row {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .range-row input {
+            flex: 1;
+        }
+
+        .range-row span {
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            width: 100%;
+            padding: 0.7rem;
+            border-radius: 6px;
+            border: 1px solid var(--accent2);
+            background: rgba(124, 58, 237, 0.15);
+            color: #c4b5fd;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-top: 0.5rem;
+        }
+
+        .btn:hover {
+            background: rgba(124, 58, 237, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-stop {
+            border-color: var(--danger);
+            background: rgba(255, 68, 85, 0.1);
+            color: var(--danger);
+            display: none;
+        }
+
+        .btn-accent {
+            border-color: var(--accent);
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent);
+        }
+
+        .btn-accent:hover {
+            background: rgba(0, 255, 136, 0.3);
+        }
+
+        /* --- PROGRESS --- */
+        .progress-wrap {
+            margin-top: 0.75rem;
+        }
+
+        .progress-track {
+            height: 3px;
+            background: var(--bg3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 0.4rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent2);
+            width: 0%;
+            transition: width 0.08s;
+        }
+
+        .progress-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--muted);
+        }
+
+        /* --- RESULTS --- */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .badge-ok {
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .badge-info {
+            background: rgba(124, 58, 237, 0.15);
+            color: #c4b5fd;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+
+        .seed-num {
+            color: var(--warn);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .predict-btn {
+            margin-left: auto;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            border: 1px solid var(--accent2);
+            background: transparent;
+            color: #c4b5fd;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .predict-btn:hover {
+            background: rgba(124, 58, 237, 0.2);
+        }
+
+        /* --- PREDICTION --- */
+        .predict-tape {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            letter-spacing: 0.3em;
+            line-height: 2;
+            word-break: break-all;
+        }
+
+        .predict-tape .p0 {
+            color: var(--danger);
+        }
+
+        .predict-tape .p1 {
+            color: var(--accent);
+        }
+
+        .predict-meta {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--muted);
+            margin-top: 0.5rem;
+        }
+
+        .empty-msg {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--muted);
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+
+        .undo-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            color: var(--muted);
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+        }
+
+        .undo-btn:hover {
+            color: var(--warn);
+        }
+
+        @media (max-width: 600px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .full-width {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div style="max-width:900px;margin:0 auto">
+        <h1>// CTF PRNG Solver</h1>
+        <div class="subtitle">stepping-stone oracle attack · multi-prng bruteforce</div>
+
+        <div class="layout">
+
+            <!-- RACCOLTA INTERATTIVA -->
+            <div class="panel">
+                <div class="panel-title">01 · raccolta bit</div>
+                <div class="game-area">
+                    <div class="btn-row">
+                        <button class="game-btn" onclick="choose(0)">
+                            ↓
+                            <span>sotto / 0</span>
+                        </button>
+                        <button class="game-btn" onclick="choose(1)">
+                            ↑
+                            <span>sopra / 1</span>
+                        </button>
+                    </div>
+                    <div class="last-choice" id="last-choice">scegli sopra o sotto →</div>
+                    <div class="outcome-row" id="outcome-row" style="display:none">
+                        <button class="outcome-btn win" onclick="outcome(true)">✓ vivo</button>
+                        <button class="outcome-btn lose" onclick="outcome(false)">✗ caduto</button>
+                    </div>
+                    <div style="display:flex;gap:0.75rem;align-items:center;width:100%;justify-content:flex-end">
+                        <button class="undo-btn" onclick="undoLast()">← annulla ultimo</button>
+                        <button class="undo-btn" onclick="clearBits()" style="color:var(--danger)">× svuota</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEQUENZA MANUALE -->
+            <div class="panel">
+                <div class="panel-title">02 · sequenza (auto o manuale)</div>
+                <div class="bit-tape mono" id="tape"><span style="color:var(--muted)">nessun bit ancora...</span></div>
+                <div class="bit-stats" id="bit-stats"></div>
+                <div style="margin-top:0.75rem">
+                    <label
+                        style="font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase">o
+                        incolla manualmente (0 e 1)</label>
+                    <textarea id="manual-seq" placeholder="1 0 1 1 0 0 1 0 ..." oninput="parseManual()"></textarea>
+                </div>
+                <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+                    <button class="btn" style="margin-top:0; flex:1;" onclick="saveToLocalStorage()">💾 Salva</button>
+                    <button class="btn btn-accent" style="margin-top:0; flex:1;" id="btn-load-recent"
+                        onclick="loadFromLocalStorage()">📂 Carica</button>
+                </div>
+                <div id="storage-status"
+                    style="font-size:0.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted);margin-top:0.5rem;text-align:right;">
+                </div>
+            </div>
+
+            <!-- CONFIGURAZIONE BRUTEFORCE -->
+            <div class="panel">
+                <div class="panel-title">03 · configurazione bruteforce</div>
+
+                <div class="field">
+                    <label>PRNG da testare</label>
+                    <select id="prng-sel" multiple size="5" style="height:auto">
+                        <!-- <option value="lcg32" selected>LCG 32-bit (Java / Unity Mono)</option>
+                        <option value="lcg_cs" selected>LCG C# System.Random</option>
+                        <option value="xorshift" selected>Xorshift32</option>
+                        <option value="mt" selected>Mersenne Twister 32-bit</option>
+                        <option value="minstd">MINSTD (std::minstd_rand)</option>
+                        <option value="pcg">PCG32</option> -->
+                        <option value="metaplay" selected>Metaplay Custom PCG (ATTACCO!)</option>
+                    </select>
+                    <div
+                        style="font-size:0.6rem;color:var(--muted);margin-top:0.3rem;font-family:'JetBrains Mono',monospace">
+                        ctrl+click per selezionare più PRNG</div>
+                </div>
+
+                <div class="field">
+                    <label>range seed</label>
+                    <div class="range-row">
+                        <input type="number" id="seed-from" value="0">
+                        <span>→</span>
+                        <input type="number" id="seed-to" value="100000">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>range offset (distanza dall'inizio)</label>
+                    <div class="range-row">
+                        <input type="number" id="min-offset" value="0">
+                        <span>→</span>
+                        <input type="number" id="max-offset" value="100">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label>polarità</label>
+                    <select id="polarity">
+                        <option value="both">testa entrambe (normale + invertita)</option>
+                        <option value="normal">normale (sopra=1, sotto=0)</option>
+                        <option value="flip">invertita (sopra=0, sotto=1)</option>
+                    </select>
+                </div>
+
+                <button class="btn" id="btn-start" onclick="startBrute()">▶ avvia bruteforce</button>
+                <button class="btn btn-stop" id="btn-stop" onclick="stopBrute()">■ stop</button>
+
+                <div class="progress-wrap">
+                    <div class="progress-track">
+                        <div class="progress-fill" id="prog-fill"></div>
+                    </div>
+                    <div class="progress-label" id="prog-label">—</div>
+                </div>
+            </div>
+
+            <!-- RISULTATI -->
+            <div class="panel">
+                <div class="panel-title">04 · match trovati</div>
+                <div id="results-list">
+                    <div class="empty-msg">nessun bruteforce ancora avviato</div>
+                </div>
+            </div>
+
+            <!-- PREDIZIONE -->
+            <div class="panel full-width" id="predict-panel" style="display:none">
+                <div class="panel-title">05 · prossime mosse da giocare</div>
+                <div class="predict-tape" id="predict-tape"></div>
+                <div class="predict-meta" id="predict-meta"></div>
+                <div style="display:flex;gap:0.75rem;margin-top:1rem">
+                    <button class="btn" style="max-width:200px" onclick="extendPrediction()">+ altri 30</button>
+                    <button class="btn" style="max-width:200px;border-color:var(--muted);color:var(--muted)"
+                        onclick="document.getElementById('predict-panel').style.display='none'">chiudi</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ─── STATE ────────────────────────────────────────────────────────────────────
+        let bits = [];          // sequenza raccolta
+        let pendingChoice = null; // scelta appena fatta (0 o 1)
+        let stopFlag = false;
+        let predictCtx = null;
+        let predictCount = 30;
+
+        // ─── GAME INTERACTION ─────────────────────────────────────────────────────────
+        function choose(v) {
+            pendingChoice = v;
+            const lc = document.getElementById('last-choice');
+            lc.innerHTML = `hai scelto <strong>${v === 1 ? '↑ sopra' : '↓ sotto'}</strong> — esito?`;
+            document.getElementById('outcome-row').style.display = 'flex';
+        }
+
+        function outcome(survived) {
+            // se sopravvissuto: la risposta era pendingChoice
+            // se caduto: la risposta era l'opposto
+            const correct = survived ? pendingChoice : 1 - pendingChoice;
+            bits.push(correct);
+            pendingChoice = null;
+            document.getElementById('outcome-row').style.display = 'none';
+            document.getElementById('last-choice').textContent = `bit registrato: ${correct} — continua`;
+            renderTape();
+        }
+
+        function undoLast() {
+            bits.pop();
+            pendingChoice = null;
+            document.getElementById('outcome-row').style.display = 'none';
+            document.getElementById('last-choice').textContent = 'scegli sopra o sotto →';
+            renderTape();
+        }
+
+        function clearBits() {
+            bits = [];
+            pendingChoice = null;
+            document.getElementById('outcome-row').style.display = 'none';
+            document.getElementById('last-choice').textContent = 'scegli sopra o sotto →';
+            renderTape();
+        }
+
+        function parseManual() {
+            const raw = document.getElementById('manual-seq').value;
+            const parsed = raw.replace(/[^01]/g, '').split('').map(Number);
+            bits = parsed;
+            renderTape();
+        }
+
+        function renderTape() {
+            const tape = document.getElementById('tape');
+            if (bits.length === 0) {
+                tape.innerHTML = '<span style="color:var(--muted)">nessun bit ancora...</span>';
+                document.getElementById('bit-stats').innerHTML = '';
+                return;
+            }
+            tape.innerHTML = bits.map(b =>
+                `<span class="b${b}">${b}</span>`
+            ).join(' ');
+            const ones = bits.filter(b => b === 1).length;
+            document.getElementById('bit-stats').innerHTML =
+                `<span>totale: <strong>${bits.length}</strong></span>
+     <span>1s: <strong>${ones}</strong></span>
+     <span>0s: <strong>${bits.length - ones}</strong></span>`;
+        }
+
+        // ─── PRNG ENGINES ─────────────────────────────────────────────────────────────
+        function makeLCG32(seed) {
+            let s = seed >>> 0;
+            return () => { s = ((Math.imul(1664525, s) + 1013904223) >>> 0); return s / 0x100000000; };
+        }
+        function makeLCG_CS(seed) {
+            let s = seed >>> 0;
+            return () => { s = ((Math.imul(0x343FD, s) + 0x269EC3) >>> 0); return (s >>> 1) / 0x7FFFFFFF; };
+        }
+        function makeXorshift(seed) {
+            let s = (seed || 1) >>> 0;
+            return () => { s ^= s << 13; s ^= s >> 17; s ^= s << 5; s = s >>> 0; return s / 0x100000000; };
+        }
+        function makeMinstd(seed) {
+            let s = (seed || 1) >>> 0;
+            return () => { s = (Math.imul(48271, s) % 2147483647) >>> 0; return s / 2147483647; };
+        }
+        function makePCG32(seed) {
+            // PCG32 - inc=1
+            let state = BigInt(seed) + BigInt(1442695040888963407n);
+            const inc = BigInt(1442695040888963407n) | 1n;
+            const mult = BigInt('6364136223846793005');
+            const MAX = BigInt('18446744073709551616');
+            return () => {
+                const old = state;
+                state = (old * mult + inc) % MAX;
+                const xsh = Number(((old >> 18n ^ old) >> 27n) & 0xFFFFFFFFn);
+                const rot = Number(old >> 59n);
+                const result = ((xsh >>> rot) | (xsh << ((-rot) & 31))) >>> 0;
+                return result / 0x100000000;
+            };
+        }
+        function makeMT(seed) {
+            const mt = new Uint32Array(624);
+            let idx = 625;
+            mt[0] = seed >>> 0;
+            for (let i = 1; i < 624; i++)
+                mt[i] = (Math.imul(1812433253, mt[i - 1] ^ (mt[i - 1] >>> 30)) + i) >>> 0;
+            function twist() {
+                for (let i = 0; i < 624; i++) {
+                    const y = (mt[i] & 0x80000000) + (mt[(i + 1) % 624] & 0x7fffffff);
+                    mt[i] = mt[(i + 397) % 624] ^ (y >>> 1);
+                    if (y & 1) mt[i] ^= 0x9908b0df;
+                }
+                idx = 0;
+            }
+            return () => {
+                if (idx >= 624) twist();
+                let y = mt[idx++];
+                y ^= y >>> 11; y ^= (y << 7) & 0x9d2c5680;
+                y ^= (y << 15) & 0xefc60000; y ^= y >>> 18;
+                return (y >>> 0) / 0x100000000;
+            };
+        }
+        function makeMetaplayPCG(seed) {
+            // Costanti esatte estratte dal decompilato IL2CPP
+            const mult = 0x5851f42d4c957f2dn;
+            const inc = 0x14057b7ef767814fn;
+            const MAX = 18446744073709551616n; // 2^64
+
+            // Costruttore: *(long *)(param_1 + 0x10) = param_2 * 0x5851f42d4c957f2d + 0x1a08ee1184ba6d32;
+            let state = (BigInt(seed) * mult + 0x1a08ee1184ba6d32n) % MAX;
+            // JS gestisce i BigInt negativi col modulo in modo strano, forziamo il positivo
+            if (state < 0n) state += MAX;
+
+            return () => {
+                const old = state;
+
+                // Step di aggiornamento
+                state = (old * mult + inc) % MAX;
+                if (state < 0n) state += MAX;
+
+                // Output function XSH-RR
+                const xsh = Number(((old >> 18n ^ old) >> 27n) & 0xFFFFFFFFn);
+                const rot = Number(old >> 59n);
+                const uVar1 = ((xsh >>> rot) | (xsh << ((-rot) & 31))) >>> 0;
+
+                // Metaplay NextInt(max) logic (param_2 = 2 per decidere 0 o 1)
+                // uVar1 = ... >> 1; return uVar1 % param_2;
+                const nextInt = uVar1 >>> 1;
+                const bit = nextInt % 2;
+
+                // Ritorniamo direttamente 0 o 1.
+                // Nel tuo solver "f >= 0.5 ? 1 : 0" elaborerà: 0 >= 0.5 (falso -> 0) o 1 >= 0.5 (vero -> 1). Perfetto.
+                return bit;
+            };
+        }
+        const PRNG_MAP = {
+            /*   lcg32: { label: 'LCG 32-bit', make: makeLCG32 },
+               lcg_cs: { label: 'LCG C# System.Random', make: makeLCG_CS },
+               xorshift: { label: 'Xorshift32', make: makeXorshift },
+               mt: { label: 'Mersenne Twister', make: makeMT },
+               minstd: { label: 'MINSTD', make: makeMinstd },
+               pcg: { label: 'PCG32', make: makePCG32 },*/
+            metaplay: { label: 'Metaplay Custom PCG', make: makeMetaplayPCG },
+        };
+
+        // ─── BRUTEFORCE ───────────────────────────────────────────────────────────────
+        let results = [];
+
+        function testSeed(seq, makeFn, seed, minOff, maxOff, flip) {
+            for (let off = minOff; off <= maxOff; off++) {
+                const rng = makeFn(seed);
+                for (let i = 0; i < off; i++) rng(); // skip offset
+                let ok = true;
+                for (let i = 0; i < seq.length; i++) {
+                    const f = rng();
+                    const bit = f >= 0.5 ? 1 : 0;
+                    const expected = flip ? 1 - seq[i] : seq[i];
+                    if (bit !== expected) { ok = false; break; }
+                }
+                if (ok) return off;
+            }
+            return -1;
+        }
+
+        async function startBrute() {
+            const seq = bits.slice();
+            if (seq.length < 10) { alert('Raccogli almeno 10 bit prima di avviare!'); return; }
+
+            const selEl = document.getElementById('prng-sel');
+            const selected = [...selEl.options].filter(o => o.selected).map(o => o.value);
+            if (!selected.length) { alert('Seleziona almeno un PRNG!'); return; }
+
+            const from = parseInt(document.getElementById('seed-from').value);
+            const to = parseInt(document.getElementById('seed-to').value);
+            const minOff = parseInt(document.getElementById('min-offset').value);
+            const maxOff = parseInt(document.getElementById('max-offset').value);
+            const polarity = document.getElementById('polarity').value;
+
+            const flips = polarity === 'both' ? [false, true] : polarity === 'flip' ? [true] : [false];
+
+            stopFlag = false;
+            results = [];
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('btn-stop').style.display = 'block';
+            document.getElementById('results-list').innerHTML = '<div class="empty-msg">ricerca in corso...</div>';
+
+            const total = (to - from) * selected.length * flips.length;
+            let done = 0;
+
+            for (const prngKey of selected) {
+                const { label, make } = PRNG_MAP[prngKey];
+                for (const flip of flips) {
+                    let i = from;
+                    while (i < to && !stopFlag) {
+                        const chunkEnd = Math.min(i + 3000, to);
+                        for (; i < chunkEnd; i++) {
+                            const off = testSeed(seq, make, i, minOff, maxOff, flip);
+                            if (off >= 0) {
+                                results.push({ prng: prngKey, label, seed: i, offset: off, flip });
+                                renderResults();
+                            }
+                        }
+                        done += 3000;
+                        const pct = Math.min(100, Math.round(done / total * 100));
+                        document.getElementById('prog-fill').style.width = pct + '%';
+                        document.getElementById('prog-label').textContent =
+                            `${label}${flip ? ' (flip)' : ''} · seed ${i.toLocaleString()}/${to.toLocaleString()} · trovati: ${results.length}`;
+                        await new Promise(r => setTimeout(r, 0));
+                    }
+                }
+            }
+
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('btn-stop').style.display = 'none';
+            document.getElementById('prog-label').textContent =
+                stopFlag ? `fermato · trovati: ${results.length}` : `completato · trovati: ${results.length}`;
+            if (results.length === 0)
+                document.getElementById('results-list').innerHTML =
+                    '<div class="empty-msg">nessun match · prova range più ampio, altro PRNG, o più bit</div>';
+        }
+
+        function stopBrute() {
+            stopFlag = true;
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('btn-stop').style.display = 'none';
+        }
+
+        function renderResults() {
+            const list = document.getElementById('results-list');
+            list.innerHTML = '';
+            for (const r of results.slice(0, 30)) {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.innerHTML = `
+      <span class="badge badge-ok">MATCH</span>
+      <span class="seed-num">${r.seed}</span>
+      <span class="badge badge-info">${r.label}</span>
+      <span style="color:var(--muted);font-size:0.7rem">off +${r.offset}${r.flip ? ' · flip' : ''}</span>
+      <button class="predict-btn" onclick="startPredict(${r.seed},'${r.prng}',${r.offset},${r.flip})">→ predici</button>
+    `;
+                list.appendChild(div);
+            }
+        }
+
+        // ─── PREDICTION ───────────────────────────────────────────────────────────────
+        function startPredict(seed, prngKey, offset, flip) {
+            predictCtx = { seed, prngKey, offset, flip };
+            predictCount = 30;
+            renderPrediction();
+        }
+
+        function extendPrediction() {
+            predictCount += 30;
+            renderPrediction();
+        }
+
+        function renderPrediction() {
+            const { seed, prngKey, offset, flip } = predictCtx;
+            const { label, make } = PRNG_MAP[prngKey];
+            const rng = make(seed);
+            // skip offset + bit già osservati
+            for (let i = 0; i < offset + bits.length; i++) rng();
+
+            let html = '';
+            for (let i = 0; i < predictCount; i++) {
+                const f = rng();
+                let bit = f >= 0.5 ? 1 : 0;
+                if (flip) bit = 1 - bit;
+                // bit=1 → sopra, bit=0 → sotto
+                html += `<span class="p${bit}">${bit === 1 ? '↑' : '↓'}</span>`;
+                if ((i + 1) % 20 === 0) html += '<br>';
+                else html += ' ';
+            }
+
+            const panel = document.getElementById('predict-panel');
+            panel.style.display = 'block';
+            document.getElementById('predict-tape').innerHTML = html;
+            document.getElementById('predict-meta').textContent =
+                `seed=${seed} · ${label} · offset +${offset}${flip ? ' · flip' : ''} · ↑=sopra ↓=sotto`;
+            panel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ─── LOCAL STORAGE OPERATIONS ───────────────────────────────────────────────
+        function saveToLocalStorage() {
+            if (bits.length === 0) {
+                alert('Nessun bit da salvare!');
+                return;
+            }
+            const timestamp = new Date().toLocaleString('it-IT');
+            const data = {
+                bits: bits,
+                textarea: document.getElementById('manual-seq').value,
+                timestamp: timestamp,
+                timeMs: Date.now()
+            };
+
+            let history = [];
+            try {
+                const existing = localStorage.getItem('ctf_prng_history');
+                if (existing) {
+                    history = JSON.parse(existing);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+
+            history.push(data);
+            if (history.length > 20) {
+                history.shift();
+            }
+
+            localStorage.setItem('ctf_prng_history', JSON.stringify(history));
+
+            const status = document.getElementById('storage-status');
+            status.innerHTML = `✅ Salvato alle ${timestamp.split(', ')[1]}!`;
+            status.style.color = 'var(--accent)';
+
+            updateLoadButtonStatus();
+
+            setTimeout(() => {
+                status.innerHTML = `Ultimo salvataggio: ${timestamp}`;
+                status.style.color = 'var(--muted)';
+            }, 3000);
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const existing = localStorage.getItem('ctf_prng_history');
+                if (!existing) {
+                    alert('Nessun salvataggio trovato in localStorage!');
+                    return;
+                }
+                const history = JSON.parse(existing);
+                if (history.length === 0) {
+                    alert('Nessun salvataggio trovato in localStorage!');
+                    return;
+                }
+
+                const mostRecent = history[history.length - 1];
+                bits = mostRecent.bits || [];
+                pendingChoice = null;
+                document.getElementById('outcome-row').style.display = 'none';
+                document.getElementById('last-choice').textContent = 'scegli sopra o sotto →';
+                document.getElementById('manual-seq').value = mostRecent.textarea || bits.join(' ');
+
+                renderTape();
+
+                const status = document.getElementById('storage-status');
+                status.innerHTML = `📂 Caricato salvataggio del ${mostRecent.timestamp}`;
+                status.style.color = 'var(--accent)';
+
+                setTimeout(() => {
+                    updateLoadButtonStatus();
+                }, 3000);
+            } catch (e) {
+                alert('Errore nel caricamento dei dati da localStorage!');
+                console.error(e);
+            }
+        }
+
+        function updateLoadButtonStatus() {
+            const status = document.getElementById('storage-status');
+            const btn = document.getElementById('btn-load-recent');
+            try {
+                const existing = localStorage.getItem('ctf_prng_history');
+                if (existing) {
+                    const history = JSON.parse(existing);
+                    if (history.length > 0) {
+                        const mostRecent = history[history.length - 1];
+                        status.innerHTML = `Ultimo salvataggio: ${mostRecent.timestamp}`;
+                        status.style.color = 'var(--muted)';
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        return;
+                    }
+                }
+            } catch (e) { }
+            status.innerHTML = 'Nessun salvataggio presente';
+            status.style.color = 'var(--muted)';
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+        }
+
+        // Carica stato iniziale all'avvio
+        updateLoadButtonStatus();
+    </script>
+</body>
+
+</html>
