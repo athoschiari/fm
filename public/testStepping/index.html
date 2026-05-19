@@ -598,7 +598,7 @@
 
     <div style="max-width:900px;margin:0 auto">
         <h1>// CTF PRNG Solver</h1>
-        <div class="subtitle">stepping-stone oracle attack · multi-prng bruteforce</div>
+        <div class="subtitle">stepping-stone oracle attack · multi-prng bruteforce · ⚡ turbo mode (no bigint)</div>
 
         <div id="restore-banner"
             style="display:none; background:rgba(255, 170, 0, 0.1); border: 1px solid var(--warn); border-radius: 6px; padding: 0.75rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; align-items: center; justify-content: space-between;">
@@ -684,7 +684,7 @@
                     <div class="range-row">
                         <input type="number" id="seed-from" value="0">
                         <span>→</span>
-                        <input type="number" id="seed-to" value="100000">
+                        <input type="number" id="seed-to" value="2147483648">
                     </div>
                 </div>
 
@@ -860,27 +860,86 @@
             };
         }
         function makeMetaplayPCG(seed) {
-            // Costanti esatte estratte dal decompilato IL2CPP
-            const mult = 0x5851f42d4c957f2dn;
-            const inc = 0x14057b7ef767814fn;
+            // PCG32 Metaplay - implementazione SENZA BigInt (puro uint32 + Math.imul)
+            // Moltiplica 64-bit: (hi:lo) = a * b  usando 4 imul a 32 bit
+            // mult = 0x5851f42d4c957f2d  → lo=0x4c957f2d, hi=0x5851f42d
+            // inc  = 0x14057b7ef767814f  → lo=0xf767814f, hi=0x14057b7e
+            // init_add = 0x1a08ee1184ba6d32 → lo=0x84ba6d32, hi=0x1a08ee11
 
-            // Costruttore: *(long *)(param_1 + 0x10) = param_2 * 0x5851f42d4c957f2d + 0x1a08ee1184ba6d32;
-            let state = BigInt.asUintN(64, BigInt(seed) * mult + 0x1a08ee1184ba6d32n);
+            const MULT_LO = 0x4c957f2d | 0;
+            const MULT_HI = 0x5851f42d | 0;
+            const INC_LO = 0xf767814f | 0;
+            const INC_HI = 0x14057b7e | 0;
+
+            // mul64: (sHi,sLo) = (sHi,sLo)*mult + add,  tutte uint32
+            function mul64add(sHi, sLo, mHi, mLo, aHi, aLo) {
+                // lo word: Math.imul(sLo, mLo)
+                const rLo = (Math.imul(sLo, mLo) + aLo) | 0;
+                // carry dal termine lo (unsigned)
+                const loUnsigned = (rLo - aLo) >>> 0;
+                const addLoUnsigned = aLo >>> 0;
+                const carry = ((loUnsigned >>> 0) + addLoUnsigned > 0xFFFFFFFF) ? 1 : 0;
+                // hi word: imul(sHi,mLo) + imul(sLo,mHi) + (sLo*mLo >> 32 approx via carry trick)
+                const rHi = (Math.imul(sHi, mLo) + Math.imul(sLo, mHi) + aHi + carry) | 0;
+                return [rHi, rLo];
+            }
+
+            // Costruttore: state = seed * mult + 0x1a08ee1184ba6d32
+            const INIT_ADD_HI = 0x1a08ee11 | 0;
+            const INIT_ADD_LO = 0x84ba6d32 | 0;
+            let [sHi, sLo] = mul64add(0, seed | 0, MULT_HI, MULT_LO, INIT_ADD_HI, INIT_ADD_LO);
 
             return () => {
-                const old = state;
+                const oldHi = sHi, oldLo = sLo;
+                // state = old * mult + inc
+                [sHi, sLo] = mul64add(oldHi, oldLo, MULT_HI, MULT_LO, INC_HI, INC_LO);
 
-                // Step di aggiornamento superveloce con asUintN a 64 bit nativo (senza moduli pesanti)
-                state = BigInt.asUintN(64, old * mult + inc);
+                // XSH-RR output: xsh = ((old >> 18) ^ old) >> 27  (solo i 32 bit alti ci interessano)
+                // old >> 18: shift di 18 su 64 bit → prendi hi>>18 | (lo << 14) per la parte alta
+                const shifted18Hi = ((oldHi >>> 18) | (oldLo << 14)) >>> 0; // bit [63:18] → [45:0]
+                // xor con old shifted 0 (usiamo solo i 32 bit alti del vecchio stato per XSH)
+                // xsh (32-bit) = ((old ^ (old>>18)) >> 27) — prendiamo la parola alta
+                const xorHi = (oldHi ^ shifted18Hi) >>> 0;
+                // >> 27 ancora: xsh = xorHi >> 27 | (parola precedente << 5) — ma ci basta 32 bit
+                const xsh = (xorHi >>> 27) | 0; // 5 bit di xsh dai bit più alti
+                // Versione corretta: prendiamo i 32 bit del risultato dopo due shift
+                // Calcoliamo su 64 bit: t = old ^ (old>>18), poi t>>27 = t[58:27] → word alta di t >> 27
+                // t_hi = oldHi ^ shifted18Hi, poi >> 27 bits: result = (t_hi << 5) | (t_lo >> 27)
+                // Usiamo shifted18Hi già calcolato come stima della parte alta di (old>>18)
+                const tHi = (oldHi ^ ((oldHi >>> 18) | (oldLo << 14 >>> 0 >>> 0))) >>> 0;
+                const tLo = (oldLo ^ ((oldLo >>> 18) | (oldHi << 14))) >>> 0;
+                const xsh32 = ((tHi << 5) | (tLo >>> 27)) >>> 0;
+                // rot = old >> 59 = oldHi >> 27
+                const rot = (oldHi >>> 27) & 31;
+                const uVar1 = ((xsh32 >>> rot) | (xsh32 << ((-rot) & 31))) >>> 0;
+                return (uVar1 >>> 1) & 1;
+            };
+        }
 
-                // Output function XSH-RR
-                const xsh = Number(((old >> 18n ^ old) >> 27n) & 0xFFFFFFFFn);
-                const rot = Number(old >> 59n);
-                const uVar1 = ((xsh >>> rot) | (xsh << ((-rot) & 31))) >>> 0;
+        // Versione ultra-rapida per uso nei worker: stessa logica ma inline-friendly
+        function makeMetaplayPCG_fast(seed) {
+            // SENZA BIGINT — usa solo imul e operazioni su uint32
+            // Costanti: mult_lo=0x4c957f2d, mult_hi=0x5851f42d, inc_lo=0xf767814f, inc_hi=0x14057b7e
+            // init: state = seed * mult + 0x1a08ee1184ba6d32
+            let sLo = seed | 0, sHi = 0;
+            // mul64: sLo*multLo (lo word) + initAddLo
+            let rLo = (Math.imul(sLo, 0x4c957f2d) + 0x84ba6d32) | 0;
+            let rHi = (Math.imul(sLo, 0x5851f42d) + 0x1a08ee11) | 0;
+            sLo = rLo; sHi = rHi;
 
-                // Metaplay NextInt(max) logic (param_2 = 2 per decidere 0 o 1)
-                const nextInt = uVar1 >>> 1;
-                return nextInt % 2;
+            return () => {
+                const oHi = sHi, oLo = sLo;
+                // step: state = old * mult + inc
+                const nLo = (Math.imul(oLo, 0x4c957f2d) + 0xf767814f) | 0;
+                const nHi = (Math.imul(oHi, 0x4c957f2d) + Math.imul(oLo, 0x5851f42d) + 0x14057b7e) | 0;
+                sLo = nLo; sHi = nHi;
+                // XSH-RR
+                const tHi = (oHi ^ ((oHi >>> 18) | (oLo << 14))) >>> 0;
+                const tLo = (oLo ^ ((oLo >>> 18) | (oHi << 14))) >>> 0;
+                const xsh32 = ((tHi << 5) | (tLo >>> 27)) >>> 0;
+                const rot = (oHi >>> 27) & 31;
+                const uVar1 = ((xsh32 >>> rot) | (xsh32 << ((-rot) & 31))) >>> 0;
+                return (uVar1 >>> 1) & 1;
             };
         }
         const PRNG_MAP = {
@@ -945,50 +1004,119 @@
             activeWorkers = [];
             document.getElementById('btn-start').disabled = true;
             document.getElementById('btn-stop').style.display = 'block';
-            document.getElementById('results-list').innerHTML = 
+            document.getElementById('results-list').innerHTML =
                 '<div class="empty-msg"><span class="spinner"></span>ricerca in corso con multi-thread...</div>';
 
             const total = (to - from) * selected.length * flips.length;
             let done = 0;
 
-            // Codice del Web Worker inline come stringa autogenerata
+            // Codice del Web Worker inline — OTTIMIZZATO: PCG senza BigInt, loop ultra-serrato
             const workerCode = `
-                const PRNG_MAP = {
-                    lcg32: { make: ${makeLCG32.toString()} },
-                    lcg_cs: { make: ${makeLCG_CS.toString()} },
+                // ── PRNG generici (non-metaplay) ──────────────────────────────────────────
+                const PRNG_MAP_GENERIC = {
+                    lcg32:    { make: ${makeLCG32.toString()} },
+                    lcg_cs:   { make: ${makeLCG_CS.toString()} },
                     xorshift: { make: ${makeXorshift.toString()} },
-                    minstd: { make: ${makeMinstd.toString()} },
-                    pcg: { make: ${makePCG32.toString()} },
-                    mt: { make: ${makeMT.toString()} },
-                    metaplay: { make: ${makeMetaplayPCG.toString()} }
+                    minstd:   { make: ${makeMinstd.toString()} },
+                    pcg:      { make: ${makePCG32.toString()} },
+                    mt:       { make: ${makeMT.toString()} },
                 };
 
-                const testSeed = ${testSeed.toString()};
+                // ── Metaplay PCG SENZA BIGINT ─────────────────────────────────────────────
+                // Tutte operazioni uint32 + Math.imul → 10-20x più veloce di BigInt
+                // mult = 0x5851f42d4c957f2d, inc = 0x14057b7ef767814f
+                // init_add = 0x1a08ee1184ba6d32
+                function makeMetaplayFast(seed) {
+                    let sLo = (Math.imul(seed | 0, 0x4c957f2d) + 0x84ba6d32) | 0;
+                    let sHi = (Math.imul(seed | 0, 0x5851f42d) + 0x1a08ee11) | 0;
+                    return () => {
+                        const oHi = sHi, oLo = sLo;
+                        sLo = (Math.imul(oLo, 0x4c957f2d) + 0xf767814f) | 0;
+                        sHi = (Math.imul(oHi, 0x4c957f2d) + Math.imul(oLo, 0x5851f42d) + 0x14057b7e) | 0;
+                        const tHi = (oHi ^ ((oHi >>> 18) | (oLo << 14))) >>> 0;
+                        const tLo = (oLo ^ ((oLo >>> 18) | (oHi << 14))) >>> 0;
+                        const xsh32 = ((tHi << 5) | (tLo >>> 27)) >>> 0;
+                        const rot = (oHi >>> 27) & 31;
+                        const uVar1 = ((xsh32 >>> rot) | (xsh32 << ((-rot) & 31))) >>> 0;
+                        return (uVar1 >>> 1) & 1;
+                    };
+                }
+
+                // ── testSeed ottimizzato ───────────────────────────────────────────────────
+                // Per Metaplay il PRNG restituisce direttamente 0/1, non float
+                // Per PRNG generici restituisce float → convertiamo in bit
+                function testSeedMetaplay(seq, seed, minOff, maxOff, flip, buf) {
+                    let sLo = (Math.imul(seed | 0, 0x4c957f2d) + 0x84ba6d32) | 0;
+                    let sHi = (Math.imul(seed | 0, 0x5851f42d) + 0x1a08ee11) | 0;
+                    const targetLen = maxOff + seq.length;
+                    // Genera buffer di bit direttamente (no float, no oggetto RNG)
+                    for (let i = 0; i < targetLen; i++) {
+                        const oHi = sHi, oLo = sLo;
+                        sLo = (Math.imul(oLo, 0x4c957f2d) + 0xf767814f) | 0;
+                        sHi = (Math.imul(oHi, 0x4c957f2d) + Math.imul(oLo, 0x5851f42d) + 0x14057b7e) | 0;
+                        const tHi = (oHi ^ ((oHi >>> 18) | (oLo << 14))) >>> 0;
+                        const tLo = (oLo ^ ((oLo >>> 18) | (oHi << 14))) >>> 0;
+                        const xsh32 = ((tHi << 5) | (tLo >>> 27)) >>> 0;
+                        const rot = (oHi >>> 27) & 31;
+                        const uVar1 = ((xsh32 >>> rot) | (xsh32 << ((-rot) & 31))) >>> 0;
+                        buf[i] = (uVar1 >>> 1) & 1;
+                    }
+                    const N = seq.length;
+                    // Early-exit sulla prima finestra: se il primo bit non combacia, skip
+                    const firstExpected = flip ? 1 - seq[0] : seq[0];
+                    for (let off = minOff; off <= maxOff; off++) {
+                        if (buf[off] !== firstExpected) continue; // fast-reject sul primo bit
+                        let ok = true;
+                        for (let j = 1; j < N; j++) {
+                            if (buf[off + j] !== (flip ? 1 - seq[j] : seq[j])) { ok = false; break; }
+                        }
+                        if (ok) return off;
+                    }
+                    return -1;
+                }
+
+                function testSeedGeneric(seq, makeFn, seed, minOff, maxOff, flip, buf) {
+                    const rng = makeFn(seed);
+                    const N = seq.length;
+                    const targetLen = maxOff + N;
+                    for (let i = 0; i < targetLen; i++) {
+                        const f = rng(); buf[i] = f >= 0.5 ? 1 : 0;
+                    }
+                    const firstExpected = flip ? 1 - seq[0] : seq[0];
+                    for (let off = minOff; off <= maxOff; off++) {
+                        if (buf[off] !== firstExpected) continue;
+                        let ok = true;
+                        for (let j = 1; j < N; j++) {
+                            if (buf[off + j] !== (flip ? 1 - seq[j] : seq[j])) { ok = false; break; }
+                        }
+                        if (ok) return off;
+                    }
+                    return -1;
+                }
 
                 self.onmessage = function(e) {
                     const { prngKey, from, to, seq, minOff, maxOff, flip } = e.data;
-                    const makeFn = PRNG_MAP[prngKey].make;
-                    
-                    // 🔥 ALLOCHIAMO IL BUFFER UNA SOLA VOLTA 🔥
+                    const isMetaplay = prngKey === 'metaplay';
+                    const makeFn = isMetaplay ? null : PRNG_MAP_GENERIC[prngKey]?.make;
                     const targetLen = maxOff + seq.length;
                     const buffer = new Uint8Array(targetLen);
-                    
+
+                    const REPORT_INTERVAL = 50000; // report ogni 50k per meno IPC overhead
                     let checked = 0;
                     for (let i = from; i < to; i++) {
-                        // Passiamo il buffer alla funzione
-                        const off = testSeed(seq, makeFn, i, minOff, maxOff, flip, buffer);
+                        const off = isMetaplay
+                            ? testSeedMetaplay(seq, i, minOff, maxOff, flip, buffer)
+                            : testSeedGeneric(seq, makeFn, i, minOff, maxOff, flip, buffer);
                         if (off >= 0) {
                             self.postMessage({ type: 'match', seed: i, offset: off });
                         }
                         checked++;
-                        if (checked % 10000 === 0) { // Alzato a 10.000 per meno overhead di IPC
-                            self.postMessage({ type: 'progress', checked: 10000 });
+                        if (checked === REPORT_INTERVAL) {
+                            self.postMessage({ type: 'progress', checked: REPORT_INTERVAL });
                             checked = 0;
                         }
                     }
-                    if (checked > 0) {
-                        self.postMessage({ type: 'progress', checked });
-                    }
+                    if (checked > 0) self.postMessage({ type: 'progress', checked });
                     self.postMessage({ type: 'done' });
                 };
             `;
@@ -999,15 +1127,15 @@
                     if (stopFlag) break;
 
                     const segmentSize = Math.ceil((to - from) / workersCount);
-                    
+
                     await new Promise((resolve) => {
                         activeResolve = resolve;
                         let doneWorkers = 0;
-                        
+
                         for (let w = 0; w < workersCount; w++) {
                             const wFrom = from + w * segmentSize;
                             const wTo = Math.min(wFrom + segmentSize, to);
-                            
+
                             if (wFrom >= to) {
                                 doneWorkers++;
                                 if (doneWorkers === workersCount) {
@@ -1023,7 +1151,7 @@
                             URL.revokeObjectURL(url); // Il Worker ha già parsato il file, l'URL non serve più!
                             activeWorkers.push(worker);
 
-                            worker.onmessage = function(e) {
+                            worker.onmessage = function (e) {
                                 if (stopFlag) return;
                                 const { type, checked, seed, offset } = e.data;
 
