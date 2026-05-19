@@ -598,7 +598,7 @@
 
     <div style="max-width:900px;margin:0 auto">
         <h1>// CTF PRNG Solver</h1>
-        <div class="subtitle">stepping-stone oracle attack · multi-prng bruteforce · ⚡ turbo mode (no bigint)</div>
+        <div class="subtitle">stepping-stone oracle attack · multi-prng bruteforce</div>
 
         <div id="restore-banner"
             style="display:none; background:rgba(255, 170, 0, 0.1); border: 1px solid var(--warn); border-radius: 6px; padding: 0.75rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; align-items: center; justify-content: space-between;">
@@ -666,12 +666,6 @@
                 <div class="field">
                     <label>PRNG da testare</label>
                     <select id="prng-sel" multiple size="5" style="height:auto">
-                        <!-- <option value="lcg32" selected>LCG 32-bit (Java / Unity Mono)</option>
-                        <option value="lcg_cs" selected>LCG C# System.Random</option>
-                        <option value="xorshift" selected>Xorshift32</option>
-                        <option value="mt" selected>Mersenne Twister 32-bit</option>
-                        <option value="minstd">MINSTD (std::minstd_rand)</option>
-                        <option value="pcg">PCG32</option> -->
                         <option value="metaplay" selected>Metaplay Custom PCG (ATTACCO!)</option>
                     </select>
                     <div
@@ -684,7 +678,7 @@
                     <div class="range-row">
                         <input type="number" id="seed-from" value="0">
                         <span>→</span>
-                        <input type="number" id="seed-to" value="2147483648">
+                        <input type="number" id="seed-to" value="100000">
                     </div>
                 </div>
 
@@ -738,11 +732,10 @@
 
     <script>
         // ─── STATE ────────────────────────────────────────────────────────────────────
-        let bits = [];          // sequenza raccolta
-        let pendingChoice = null; // scelta appena fatta (0 o 1)
+        let bits = [];
+        let pendingChoice = null;
         let stopFlag = false;
         let predictCtx = null;
-        let predictCount = 30;
         let activeWorkers = [];
         let activeResolve = null;
 
@@ -755,8 +748,6 @@
         }
 
         function outcome(survived) {
-            // se sopravvissuto: la risposta era pendingChoice
-            // se caduto: la risposta era l'opposto
             const correct = survived ? pendingChoice : 1 - pendingChoice;
             bits.push(correct);
             pendingChoice = null;
@@ -805,182 +796,62 @@
      <span>0s: <strong>${bits.length - ones}</strong></span>`;
         }
 
-        // ─── PRNG ENGINES ─────────────────────────────────────────────────────────────
-        function makeLCG32(seed) {
-            let s = seed >>> 0;
-            return () => { s = ((Math.imul(1664525, s) + 1013904223) >>> 0); return s / 0x100000000; };
-        }
-        function makeLCG_CS(seed) {
-            let s = seed >>> 0;
-            return () => { s = ((Math.imul(0x343FD, s) + 0x269EC3) >>> 0); return (s >>> 1) / 0x7FFFFFFF; };
-        }
-        function makeXorshift(seed) {
-            let s = (seed || 1) >>> 0;
-            return () => { s ^= s << 13; s ^= s >> 17; s ^= s << 5; s = s >>> 0; return s / 0x100000000; };
-        }
-        function makeMinstd(seed) {
-            let s = (seed || 1) >>> 0;
-            return () => { s = (Math.imul(48271, s) % 2147483647) >>> 0; return s / 2147483647; };
-        }
-        function makePCG32(seed) {
-            // PCG32 - inc=1
-            let state = BigInt(seed) + BigInt(1442695040888963407n);
-            const inc = BigInt(1442695040888963407n) | 1n;
-            const mult = BigInt('6364136223846793005');
-            const MAX = BigInt('18446744073709551616');
-            return () => {
-                const old = state;
-                state = (old * mult + inc) % MAX;
-                const xsh = Number(((old >> 18n ^ old) >> 27n) & 0xFFFFFFFFn);
-                const rot = Number(old >> 59n);
-                const result = ((xsh >>> rot) | (xsh << ((-rot) & 31))) >>> 0;
-                return result / 0x100000000;
-            };
-        }
-        function makeMT(seed) {
-            const mt = new Uint32Array(624);
-            let idx = 625;
-            mt[0] = seed >>> 0;
-            for (let i = 1; i < 624; i++)
-                mt[i] = (Math.imul(1812433253, mt[i - 1] ^ (mt[i - 1] >>> 30)) + i) >>> 0;
-            function twist() {
-                for (let i = 0; i < 624; i++) {
-                    const y = (mt[i] & 0x80000000) + (mt[(i + 1) % 624] & 0x7fffffff);
-                    mt[i] = mt[(i + 397) % 624] ^ (y >>> 1);
-                    if (y & 1) mt[i] ^= 0x9908b0df;
-                }
-                idx = 0;
-            }
-            return () => {
-                if (idx >= 624) twist();
-                let y = mt[idx++];
-                y ^= y >>> 11; y ^= (y << 7) & 0x9d2c5680;
-                y ^= (y << 15) & 0xefc60000; y ^= y >>> 18;
-                return (y >>> 0) / 0x100000000;
-            };
-        }
+        // ─── Metaplay PCG CORRETTO (NO BigInt) ───────────────────────────────────────
         function makeMetaplayPCG(seed) {
-            // PCG32 Metaplay - implementazione SENZA BigInt (puro uint32 + Math.imul)
-            // Moltiplica 64-bit: (hi:lo) = a * b  usando 4 imul a 32 bit
-            // mult = 0x5851f42d4c957f2d  → lo=0x4c957f2d, hi=0x5851f42d
-            // inc  = 0x14057b7ef767814f  → lo=0xf767814f, hi=0x14057b7e
-            // init_add = 0x1a08ee1184ba6d32 → lo=0x84ba6d32, hi=0x1a08ee11
+            const MULT_LO = 0x4c957f2d;
+            const MULT_HI = 0x5851f42d;
+            const INC_LO = 0xf767814f;
+            const INC_HI = 0x14057b7e;
+            const INIT_ADD_LO = 0x84ba6d32;
+            const INIT_ADD_HI = 0x1a08ee11;
 
-            const MULT_LO = 0x4c957f2d | 0;
-            const MULT_HI = 0x5851f42d | 0;
-            const INC_LO = 0xf767814f | 0;
-            const INC_HI = 0x14057b7e | 0;
-
-            // mul64: (sHi,sLo) = (sHi,sLo)*mult + add,  tutte uint32
-            function mul64add(sHi, sLo, mHi, mLo, aHi, aLo) {
-                // lo word: Math.imul(sLo, mLo)
-                const rLo = (Math.imul(sLo, mLo) + aLo) | 0;
-                // carry dal termine lo (unsigned)
-                const loUnsigned = (rLo - aLo) >>> 0;
-                const addLoUnsigned = aLo >>> 0;
-                const carry = ((loUnsigned >>> 0) + addLoUnsigned > 0xFFFFFFFF) ? 1 : 0;
-                // hi word: imul(sHi,mLo) + imul(sLo,mHi) + (sLo*mLo >> 32 approx via carry trick)
-                const rHi = (Math.imul(sHi, mLo) + Math.imul(sLo, mHi) + aHi + carry) | 0;
-                return [rHi, rLo];
+            // Moltiplicazione 64-bit: (hi, lo) = a * b (tutti 32-bit unsigned)
+            function mul64(aLo, aHi, bLo, bHi) {
+                const w0 = Math.imul(aLo, bLo) >>> 0;
+                const carry0 = (Math.imul(aLo, bLo) / 0x100000000) | 0; // floor division
+                const w1 = (Math.imul(aHi, bLo) + Math.imul(aLo, bHi) + carry0) >>> 0;
+                return { lo: w0, hi: w1 };
             }
 
-            // Costruttore: state = seed * mult + 0x1a08ee1184ba6d32
-            const INIT_ADD_HI = 0x1a08ee11 | 0;
-            const INIT_ADD_LO = 0x84ba6d32 | 0;
-            let [sHi, sLo] = mul64add(0, seed | 0, MULT_HI, MULT_LO, INIT_ADD_HI, INIT_ADD_LO);
+            // Somma 64-bit: res = a + b
+            function add64(aLo, aHi, bLo, bHi) {
+                const lo = (aLo + bLo) >>> 0;
+                const carry = (lo < aLo) ? 1 : 0;
+                const hi = (aHi + bHi + carry) >>> 0;
+                return { lo, hi };
+            }
 
-            return () => {
-                const oldHi = sHi, oldLo = sLo;
+            // Inizializza stato: state = seed * mult + init_add
+            let prod = mul64(seed | 0, 0, MULT_LO, MULT_HI);
+            let state = add64(prod.lo, prod.hi, INIT_ADD_LO, INIT_ADD_HI);
+            let stateLo = state.lo, stateHi = state.hi;
+
+            return function () {
+                const oldLo = stateLo, oldHi = stateHi;
+
                 // state = old * mult + inc
-                [sHi, sLo] = mul64add(oldHi, oldLo, MULT_HI, MULT_LO, INC_HI, INC_LO);
+                prod = mul64(oldLo, oldHi, MULT_LO, MULT_HI);
+                state = add64(prod.lo, prod.hi, INC_LO, INC_HI);
+                stateLo = state.lo; stateHi = state.hi;
 
-                // XSH-RR output: xsh = ((old >> 18) ^ old) >> 27  (solo i 32 bit alti ci interessano)
-                // old >> 18: shift di 18 su 64 bit → prendi hi>>18 | (lo << 14) per la parte alta
-                const shifted18Hi = ((oldHi >>> 18) | (oldLo << 14)) >>> 0; // bit [63:18] → [45:0]
-                // xor con old shifted 0 (usiamo solo i 32 bit alti del vecchio stato per XSH)
-                // xsh (32-bit) = ((old ^ (old>>18)) >> 27) — prendiamo la parola alta
-                const xorHi = (oldHi ^ shifted18Hi) >>> 0;
-                // >> 27 ancora: xsh = xorHi >> 27 | (parola precedente << 5) — ma ci basta 32 bit
-                const xsh = (xorHi >>> 27) | 0; // 5 bit di xsh dai bit più alti
-                // Versione corretta: prendiamo i 32 bit del risultato dopo due shift
-                // Calcoliamo su 64 bit: t = old ^ (old>>18), poi t>>27 = t[58:27] → word alta di t >> 27
-                // t_hi = oldHi ^ shifted18Hi, poi >> 27 bits: result = (t_hi << 5) | (t_lo >> 27)
-                // Usiamo shifted18Hi già calcolato come stima della parte alta di (old>>18)
-                const tHi = (oldHi ^ ((oldHi >>> 18) | (oldLo << 14 >>> 0 >>> 0))) >>> 0;
-                const tLo = (oldLo ^ ((oldLo >>> 18) | (oldHi << 14))) >>> 0;
-                const xsh32 = ((tHi << 5) | (tLo >>> 27)) >>> 0;
-                // rot = old >> 59 = oldHi >> 27
+                // XSH-RR: output a 32 bit, poi NextInt(2)
+                const shift18Lo = (oldLo >>> 18) | (oldHi << 14);
+                const shift18Hi = oldHi >>> 18;
+                const xorLo = oldLo ^ shift18Lo;
+                const xorHi = oldHi ^ shift18Hi;
+                const xsh = ((xorHi << 5) | (xorLo >>> 27)) >>> 0;
                 const rot = (oldHi >>> 27) & 31;
-                const uVar1 = ((xsh32 >>> rot) | (xsh32 << ((-rot) & 31))) >>> 0;
-                return (uVar1 >>> 1) & 1;
+                const uVar1 = ((xsh >>> rot) | (xsh << ((-rot) & 31))) >>> 0;
+                return (uVar1 >>> 1) & 1; // bit 0 o 1
             };
         }
 
-        // Versione ultra-rapida per uso nei worker: stessa logica ma inline-friendly
-        function makeMetaplayPCG_fast(seed) {
-            // SENZA BIGINT — usa solo imul e operazioni su uint32
-            // Costanti: mult_lo=0x4c957f2d, mult_hi=0x5851f42d, inc_lo=0xf767814f, inc_hi=0x14057b7e
-            // init: state = seed * mult + 0x1a08ee1184ba6d32
-            let sLo = seed | 0, sHi = 0;
-            // mul64: sLo*multLo (lo word) + initAddLo
-            let rLo = (Math.imul(sLo, 0x4c957f2d) + 0x84ba6d32) | 0;
-            let rHi = (Math.imul(sLo, 0x5851f42d) + 0x1a08ee11) | 0;
-            sLo = rLo; sHi = rHi;
-
-            return () => {
-                const oHi = sHi, oLo = sLo;
-                // step: state = old * mult + inc
-                const nLo = (Math.imul(oLo, 0x4c957f2d) + 0xf767814f) | 0;
-                const nHi = (Math.imul(oHi, 0x4c957f2d) + Math.imul(oLo, 0x5851f42d) + 0x14057b7e) | 0;
-                sLo = nLo; sHi = nHi;
-                // XSH-RR
-                const tHi = (oHi ^ ((oHi >>> 18) | (oLo << 14))) >>> 0;
-                const tLo = (oLo ^ ((oLo >>> 18) | (oHi << 14))) >>> 0;
-                const xsh32 = ((tHi << 5) | (tLo >>> 27)) >>> 0;
-                const rot = (oHi >>> 27) & 31;
-                const uVar1 = ((xsh32 >>> rot) | (xsh32 << ((-rot) & 31))) >>> 0;
-                return (uVar1 >>> 1) & 1;
-            };
-        }
         const PRNG_MAP = {
-            /*   lcg32: { label: 'LCG 32-bit', make: makeLCG32 },
-               lcg_cs: { label: 'LCG C# System.Random', make: makeLCG_CS },
-               xorshift: { label: 'Xorshift32', make: makeXorshift },
-               mt: { label: 'Mersenne Twister', make: makeMT },
-               minstd: { label: 'MINSTD', make: makeMinstd },
-               pcg: { label: 'PCG32', make: makePCG32 },*/
             metaplay: { label: 'Metaplay Custom PCG', make: makeMetaplayPCG },
         };
 
-        // ─── BRUTEFORCE ───────────────────────────────────────────────────────────────
+        // ─── BRUTEFORCE (worker interni) ─────────────────────────────────────────────
         let results = [];
-
-        function testSeed(seq, makeFn, seed, minOff, maxOff, flip, buffer) {
-            const rng = makeFn(seed);
-            const N = seq.length;
-            const targetLen = maxOff + N;
-            const buf = buffer || new Uint8Array(targetLen);
-
-            // Riempiamo il buffer riutilizzato (sovrascrive i vecchi dati)
-            for (let i = 0; i < targetLen; i++) {
-                const f = rng();
-                buf[i] = f >= 0.5 ? 1 : 0;
-            }
-
-            // Cerca la finestra corrispondente (sliding window)
-            for (let off = minOff; off <= maxOff; off++) {
-                let ok = true;
-                for (let j = 0; j < N; j++) {
-                    const expected = flip ? 1 - seq[j] : seq[j];
-                    if (buf[off + j] !== expected) {
-                        ok = false;
-                        break;
-                    }
-                }
-                if (ok) return off;
-            }
-            return -1;
-        }
 
         async function startBrute() {
             const seq = bits.slice();
@@ -1010,84 +881,61 @@
             const total = (to - from) * selected.length * flips.length;
             let done = 0;
 
-            // Codice del Web Worker inline — OTTIMIZZATO: PCG senza BigInt, loop ultra-serrato
+            // Worker interno: Metaplay PCG senza BigInt, tutto inline per massima velocità
             const workerCode = `
-                // ── PRNG generici (non-metaplay) ──────────────────────────────────────────
-                const PRNG_MAP_GENERIC = {
-                    lcg32:    { make: ${makeLCG32.toString()} },
-                    lcg_cs:   { make: ${makeLCG_CS.toString()} },
-                    xorshift: { make: ${makeXorshift.toString()} },
-                    minstd:   { make: ${makeMinstd.toString()} },
-                    pcg:      { make: ${makePCG32.toString()} },
-                    mt:       { make: ${makeMT.toString()} },
-                };
-
-                // ── Metaplay PCG SENZA BIGINT ─────────────────────────────────────────────
-                // Tutte operazioni uint32 + Math.imul → 10-20x più veloce di BigInt
-                // mult = 0x5851f42d4c957f2d, inc = 0x14057b7ef767814f
-                // init_add = 0x1a08ee1184ba6d32
-                function makeMetaplayFast(seed) {
-                    let sLo = (Math.imul(seed | 0, 0x4c957f2d) + 0x84ba6d32) | 0;
-                    let sHi = (Math.imul(seed | 0, 0x5851f42d) + 0x1a08ee11) | 0;
-                    return () => {
-                        const oHi = sHi, oLo = sLo;
-                        sLo = (Math.imul(oLo, 0x4c957f2d) + 0xf767814f) | 0;
-                        sHi = (Math.imul(oHi, 0x4c957f2d) + Math.imul(oLo, 0x5851f42d) + 0x14057b7e) | 0;
-                        const tHi = (oHi ^ ((oHi >>> 18) | (oLo << 14))) >>> 0;
-                        const tLo = (oLo ^ ((oLo >>> 18) | (oHi << 14))) >>> 0;
-                        const xsh32 = ((tHi << 5) | (tLo >>> 27)) >>> 0;
-                        const rot = (oHi >>> 27) & 31;
-                        const uVar1 = ((xsh32 >>> rot) | (xsh32 << ((-rot) & 31))) >>> 0;
-                        return (uVar1 >>> 1) & 1;
-                    };
-                }
-
-                // ── testSeed ottimizzato ───────────────────────────────────────────────────
-                // Per Metaplay il PRNG restituisce direttamente 0/1, non float
-                // Per PRNG generici restituisce float → convertiamo in bit
+                // ── Metaplay PCG inline (corretto) ─────────────────────────────────────
                 function testSeedMetaplay(seq, seed, minOff, maxOff, flip, buf) {
-                    let sLo = (Math.imul(seed | 0, 0x4c957f2d) + 0x84ba6d32) | 0;
-                    let sHi = (Math.imul(seed | 0, 0x5851f42d) + 0x1a08ee11) | 0;
+                    const MULT_LO = 0x4c957f2d;
+                    const MULT_HI = 0x5851f42d;
+                    const INC_LO  = 0xf767814f;
+                    const INC_HI  = 0x14057b7e;
+                    const INIT_ADD_LO = 0x84ba6d32;
+                    const INIT_ADD_HI = 0x1a08ee11;
+
+                    // Inizializza stato
+                    let sLo = seed | 0;
+                    let sHi = 0;
+                    // seed * mult + init_add
+                    const w0 = Math.imul(sLo, MULT_LO) >>> 0;
+                    const carry0 = (Math.imul(sLo, MULT_LO) / 0x100000000) | 0;
+                    const w1 = (Math.imul(sLo, MULT_HI) + carry0) >>> 0;
+                    sLo = (w0 + INIT_ADD_LO) >>> 0;
+                    const carry1 = (sLo < w0) ? 1 : 0;
+                    sHi = (w1 + INIT_ADD_HI + carry1) >>> 0;
+
                     const targetLen = maxOff + seq.length;
-                    // Genera buffer di bit direttamente (no float, no oggetto RNG)
+                    // Genera i bit in buf
                     for (let i = 0; i < targetLen; i++) {
-                        const oHi = sHi, oLo = sLo;
-                        sLo = (Math.imul(oLo, 0x4c957f2d) + 0xf767814f) | 0;
-                        sHi = (Math.imul(oHi, 0x4c957f2d) + Math.imul(oLo, 0x5851f42d) + 0x14057b7e) | 0;
-                        const tHi = (oHi ^ ((oHi >>> 18) | (oLo << 14))) >>> 0;
-                        const tLo = (oLo ^ ((oLo >>> 18) | (oHi << 14))) >>> 0;
-                        const xsh32 = ((tHi << 5) | (tLo >>> 27)) >>> 0;
+                        const oLo = sLo, oHi = sHi;
+                        // Aggiorna stato: state = o * mult + inc
+                        const w0_ = Math.imul(oLo, MULT_LO) >>> 0;
+                        const carry_ = (Math.imul(oLo, MULT_LO) / 0x100000000) | 0;
+                        const w1_ = (Math.imul(oHi, MULT_LO) + Math.imul(oLo, MULT_HI) + carry_) >>> 0;
+                        sLo = (w0_ + INC_LO) >>> 0;
+                        const carry2 = (sLo < w0_) ? 1 : 0;
+                        sHi = (w1_ + INC_HI + carry2) >>> 0;
+
+                        // XSH-RR
+                        const shift18Lo = (oLo >>> 18) | (oHi << 14);
+                        const shift18Hi = oHi >>> 18;
+                        const xorLo = oLo ^ shift18Lo;
+                        const xorHi = oHi ^ shift18Hi;
+                        const xsh = ((xorHi << 5) | (xorLo >>> 27)) >>> 0;
                         const rot = (oHi >>> 27) & 31;
-                        const uVar1 = ((xsh32 >>> rot) | (xsh32 << ((-rot) & 31))) >>> 0;
+                        const uVar1 = ((xsh >>> rot) | (xsh << ((-rot) & 31))) >>> 0;
                         buf[i] = (uVar1 >>> 1) & 1;
                     }
-                    const N = seq.length;
-                    // Early-exit sulla prima finestra: se il primo bit non combacia, skip
-                    const firstExpected = flip ? 1 - seq[0] : seq[0];
-                    for (let off = minOff; off <= maxOff; off++) {
-                        if (buf[off] !== firstExpected) continue; // fast-reject sul primo bit
-                        let ok = true;
-                        for (let j = 1; j < N; j++) {
-                            if (buf[off + j] !== (flip ? 1 - seq[j] : seq[j])) { ok = false; break; }
-                        }
-                        if (ok) return off;
-                    }
-                    return -1;
-                }
 
-                function testSeedGeneric(seq, makeFn, seed, minOff, maxOff, flip, buf) {
-                    const rng = makeFn(seed);
+                    // Ricerca finestra (fast-reject sul primo bit)
                     const N = seq.length;
-                    const targetLen = maxOff + N;
-                    for (let i = 0; i < targetLen; i++) {
-                        const f = rng(); buf[i] = f >= 0.5 ? 1 : 0;
-                    }
                     const firstExpected = flip ? 1 - seq[0] : seq[0];
                     for (let off = minOff; off <= maxOff; off++) {
                         if (buf[off] !== firstExpected) continue;
                         let ok = true;
                         for (let j = 1; j < N; j++) {
-                            if (buf[off + j] !== (flip ? 1 - seq[j] : seq[j])) { ok = false; break; }
+                            if (buf[off + j] !== (flip ? 1 - seq[j] : seq[j])) {
+                                ok = false; break;
+                            }
                         }
                         if (ok) return off;
                     }
@@ -1095,24 +943,19 @@
                 }
 
                 self.onmessage = function(e) {
-                    const { prngKey, from, to, seq, minOff, maxOff, flip } = e.data;
-                    const isMetaplay = prngKey === 'metaplay';
-                    const makeFn = isMetaplay ? null : PRNG_MAP_GENERIC[prngKey]?.make;
+                    const { from, to, seq, minOff, maxOff, flip } = e.data;
                     const targetLen = maxOff + seq.length;
                     const buffer = new Uint8Array(targetLen);
-
-                    const REPORT_INTERVAL = 50000; // report ogni 50k per meno IPC overhead
+                    const REPORT = 50000;
                     let checked = 0;
                     for (let i = from; i < to; i++) {
-                        const off = isMetaplay
-                            ? testSeedMetaplay(seq, i, minOff, maxOff, flip, buffer)
-                            : testSeedGeneric(seq, makeFn, i, minOff, maxOff, flip, buffer);
+                        const off = testSeedMetaplay(seq, i, minOff, maxOff, flip, buffer);
                         if (off >= 0) {
                             self.postMessage({ type: 'match', seed: i, offset: off });
                         }
                         checked++;
-                        if (checked === REPORT_INTERVAL) {
-                            self.postMessage({ type: 'progress', checked: REPORT_INTERVAL });
+                        if (checked === REPORT) {
+                            self.postMessage({ type: 'progress', checked: REPORT });
                             checked = 0;
                         }
                     }
@@ -1127,15 +970,12 @@
                     if (stopFlag) break;
 
                     const segmentSize = Math.ceil((to - from) / workersCount);
-
                     await new Promise((resolve) => {
                         activeResolve = resolve;
                         let doneWorkers = 0;
-
                         for (let w = 0; w < workersCount; w++) {
                             const wFrom = from + w * segmentSize;
                             const wTo = Math.min(wFrom + segmentSize, to);
-
                             if (wFrom >= to) {
                                 doneWorkers++;
                                 if (doneWorkers === workersCount) {
@@ -1148,26 +988,24 @@
                             const blob = new Blob([workerCode], { type: 'application/javascript' });
                             const url = URL.createObjectURL(blob);
                             const worker = new Worker(url);
-                            URL.revokeObjectURL(url); // Il Worker ha già parsato il file, l'URL non serve più!
+                            URL.revokeObjectURL(url);
                             activeWorkers.push(worker);
 
                             worker.onmessage = function (e) {
                                 if (stopFlag) return;
                                 const { type, checked, seed, offset } = e.data;
-
                                 if (type === 'progress') {
                                     done += checked;
                                     const pct = Math.min(100, Math.round(done / total * 100));
                                     document.getElementById('prog-fill').style.width = pct + '%';
                                     document.getElementById('prog-label').textContent =
-                                        `${label}${flip ? ' (flip)' : ''} · avanzamento: ${pct}% · trovati: ${results.length}`;
+                                        `${label}${flip ? ' (flip)' : ''} · ${pct}% · trovati: ${results.length}`;
                                 } else if (type === 'match') {
                                     results.push({ prng: prngKey, label, seed, offset, flip });
                                     renderResults();
                                 } else if (type === 'done') {
                                     doneWorkers++;
                                     if (doneWorkers === workersCount) {
-                                        // Rimuovi i worker terminati
                                         activeWorkers.forEach(w => w.terminate());
                                         activeWorkers = [];
                                         activeResolve = null;
@@ -1177,7 +1015,6 @@
                             };
 
                             worker.postMessage({
-                                prngKey,
                                 from: wFrom,
                                 to: wTo,
                                 seq,
@@ -1317,26 +1154,20 @@
             // Skip offset
             for (let i = 0; i < offset; i++) rng();
 
-            // Genera bit passati (osservati + avanzati)
             let historyHTML = '';
             for (let i = 0; i < bits.length + advancedSteps; i++) {
-                const f = rng();
-                let bit = f >= 0.5 ? 1 : 0;
-                if (flip) bit = 1 - bit;
-
+                const bit = rng(); // restituisce 0 o 1
+                let displayBit = flip ? 1 - bit : bit;
                 const isStepped = i >= bits.length;
                 const typeClass = isStepped ? 'stepped' : 'observed';
-                historyHTML += `<span class="tape-segment ${typeClass} b${bit}">${bit === 1 ? '↑' : '↓'} <span style="font-size:0.55rem;opacity:0.6;">#${i + 1}</span></span>`;
+                historyHTML += `<span class="tape-segment ${typeClass} b${displayBit}">${displayBit === 1 ? '↑' : '↓'} <span style="font-size:0.55rem;opacity:0.6;">#${i + 1}</span></span>`;
             }
 
-            // Calcola il bit SUCCESSIVO
-            const fNext = rng();
-            let nextBit = fNext >= 0.5 ? 1 : 0;
-            if (flip) nextBit = 1 - nextBit;
+            const nextBit = rng();
+            let nextDisplay = flip ? 1 - nextBit : nextBit;
 
             const panel = document.getElementById('predict-panel');
             panel.style.display = 'block';
-
             panel.innerHTML = `
                 <div class="panel-title">05 · simulatore stepping seed</div>
                 
@@ -1347,8 +1178,8 @@
 
                 <div class="next-is-container">
                     <div class="next-is-label">Prossima Mossa (Mossa #${bits.length + advancedSteps + 1})</div>
-                    <div class="next-is-val ${nextBit === 1 ? 'up' : 'down'}">
-                        ${nextBit === 1 ? '↑ SOPRA / 1' : '↓ SOTTO / 0'}
+                    <div class="next-is-val ${nextDisplay === 1 ? 'up' : 'down'}">
+                        ${nextDisplay === 1 ? '↑ SOPRA / 1' : '↓ SOTTO / 0'}
                     </div>
                 </div>
 
@@ -1367,11 +1198,10 @@
                     seed=${seed} · ${label} · offset +${offset}${flip ? ' · flip' : ''} · passi avanzati=${advancedSteps}
                 </div>
             `;
-
             panel.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // ─── LOCAL STORAGE OPERATIONS ───────────────────────────────────────────────
+        // ─── LOCAL STORAGE ─────────────────────────────────────────────────────────
         function saveToLocalStorage() {
             if (bits.length === 0) {
                 alert('Nessun bit da salvare!');
@@ -1391,9 +1221,7 @@
                 if (existing) {
                     history = JSON.parse(existing);
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
 
             history.push(data);
             if (history.length > 20) {
@@ -1487,7 +1315,7 @@
             }
         }
 
-        // Carica stato iniziale all'avvio
+        // Avvio iniziale
         initThreads();
         updateLoadButtonStatus();
         checkSavedPrediction();
