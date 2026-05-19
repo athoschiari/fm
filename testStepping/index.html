@@ -678,7 +678,7 @@
                     <div class="range-row">
                         <input type="number" id="seed-from" value="0">
                         <span>→</span>
-                        <input type="number" id="seed-to" value="100000">
+                        <input type="number" id="seed-to" value="2147483648">
                     </div>
                 </div>
 
@@ -738,6 +738,7 @@
         let predictCtx = null;
         let activeWorkers = [];
         let activeResolve = null;
+        let lastBitsLength = 0;
 
         // ─── GAME INTERACTION ─────────────────────────────────────────────────────────
         function choose(v) {
@@ -754,6 +755,7 @@
             document.getElementById('outcome-row').style.display = 'none';
             document.getElementById('last-choice').textContent = `bit registrato: ${correct} — continua`;
             renderTape();
+            filterMatchesAndSave();
         }
 
         function undoLast() {
@@ -762,6 +764,7 @@
             document.getElementById('outcome-row').style.display = 'none';
             document.getElementById('last-choice').textContent = 'scegli sopra o sotto →';
             renderTape();
+            filterMatchesAndSave();
         }
 
         function clearBits() {
@@ -770,6 +773,8 @@
             document.getElementById('outcome-row').style.display = 'none';
             document.getElementById('last-choice').textContent = 'scegli sopra o sotto →';
             renderTape();
+            results = [];
+            filterMatchesAndSave();
         }
 
         function parseManual() {
@@ -777,6 +782,7 @@
             const parsed = raw.replace(/[^01]/g, '').split('').map(Number);
             bits = parsed;
             renderTape();
+            filterMatchesAndSave();
         }
 
         function renderTape() {
@@ -865,6 +871,11 @@
             const to = parseInt(document.getElementById('seed-to').value);
             const minOff = parseInt(document.getElementById('min-offset').value);
             const maxOff = parseInt(document.getElementById('max-offset').value);
+            
+            // Salva rangeoffset in localStorage
+            localStorage.setItem('ctf_prng_min_offset', minOff);
+            localStorage.setItem('ctf_prng_max_offset', maxOff);
+
             const polarity = document.getElementById('polarity').value;
             const workersCount = parseInt(document.getElementById('worker-count').value) || 4;
 
@@ -1031,9 +1042,15 @@
             document.getElementById('btn-stop').style.display = 'none';
             document.getElementById('prog-label').textContent =
                 stopFlag ? `fermato · trovati: ${results.length}` : `completato · trovati: ${results.length}`;
-            if (results.length === 0)
+            
+            // Salva i match trovati e traccia l'attuale lunghezza dei bit
+            localStorage.setItem('ctf_prng_matches', JSON.stringify(results));
+            lastBitsLength = bits.length;
+
+            if (results.length === 0) {
                 document.getElementById('results-list').innerHTML =
                     '<div class="empty-msg">nessun match · prova range più ampio, altro PRNG, o più bit</div>';
+            }
         }
 
         function stopBrute() {
@@ -1051,17 +1068,103 @@
         function renderResults() {
             const list = document.getElementById('results-list');
             list.innerHTML = '';
+            if (results.length === 0) {
+                list.innerHTML = '<div class="empty-msg">nessun match compatibile rimasto</div>';
+                return;
+            }
             for (const r of results.slice(0, 30)) {
                 const div = document.createElement('div');
                 div.className = 'result-item';
                 div.innerHTML = `
-      <span class="badge badge-ok">MATCH</span>
-      <span class="seed-num">${r.seed}</span>
-      <span class="badge badge-info">${r.label}</span>
-      <span style="color:var(--muted);font-size:0.7rem">off +${r.offset}${r.flip ? ' · flip' : ''}</span>
-      <button class="predict-btn" onclick="startPredict(${r.seed},'${r.prng}',${r.offset},${r.flip})">→ predici</button>
-    `;
+                    <span class="badge badge-ok">MATCH</span>
+                    <span class="seed-num">${r.seed}</span>
+                    <span class="badge badge-info">${r.label}</span>
+                    <span style="color:var(--muted);font-size:0.7rem">off +${r.offset}${r.flip ? ' · flip' : ''}</span>
+                    <button class="predict-btn" onclick="startPredict(${r.seed},'${r.prng}',${r.offset},${r.flip})">→ predici</button>
+                `;
                 list.appendChild(div);
+            }
+        }
+
+        function isMatchCompatible(r, currentBits) {
+            const makeFn = PRNG_MAP[r.prng].make;
+            const rng = makeFn(r.seed);
+            
+            // Salta offset
+            for (let i = 0; i < r.offset; i++) {
+                rng();
+            }
+            
+            // Controlla i bit generati con quelli correnti
+            for (let i = 0; i < currentBits.length; i++) {
+                const bit = rng();
+                const expected = r.flip ? 1 - currentBits[i] : currentBits[i];
+                if (bit !== expected) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function filterMatchesAndSave() {
+            const filtered = [];
+            for (const r of results) {
+                if (isMatchCompatible(r, bits)) {
+                    filtered.push(r);
+                }
+            }
+            results = filtered;
+            
+            localStorage.setItem('ctf_prng_matches', JSON.stringify(results));
+            renderResults();
+            
+            if (predictCtx) {
+                const isStillValid = results.some(r => r.seed === predictCtx.seed && r.prng === predictCtx.prngKey && r.offset === predictCtx.offset && r.flip === predictCtx.flip);
+                if (isStillValid) {
+                    if (typeof lastBitsLength !== 'undefined') {
+                        if (bits.length > lastBitsLength) {
+                            const diff = bits.length - lastBitsLength;
+                            predictCtx.advancedSteps = Math.max(0, predictCtx.advancedSteps - diff);
+                        } else if (bits.length < lastBitsLength) {
+                            const diff = lastBitsLength - bits.length;
+                            predictCtx.advancedSteps += diff;
+                        }
+                    }
+                    renderPrediction();
+                } else {
+                    alert(`Il seed attivo (${predictCtx.seed}) non è più valido con la nuova sequenza di bit inserita ed è stato scartato.`);
+                    closePredictPanel();
+                }
+            }
+            
+            lastBitsLength = bits.length;
+        }
+
+        function loadSavedMatches() {
+            try {
+                const saved = localStorage.getItem('ctf_prng_matches');
+                if (saved) {
+                    results = JSON.parse(saved);
+                    lastBitsLength = bits.length;
+                    filterMatchesAndSave();
+                }
+            } catch (e) {
+                console.error('Errore nel caricamento dei match salvati:', e);
+            }
+        }
+
+        function loadSavedOffsets() {
+            try {
+                const minOff = localStorage.getItem('ctf_prng_min_offset');
+                const maxOff = localStorage.getItem('ctf_prng_max_offset');
+                if (minOff !== null) {
+                    document.getElementById('min-offset').value = minOff;
+                }
+                if (maxOff !== null) {
+                    document.getElementById('max-offset').value = maxOff;
+                }
+            } catch (e) {
+                console.error('Errore nel caricamento degli offset salvati:', e);
             }
         }
 
@@ -1263,6 +1366,7 @@
                 document.getElementById('manual-seq').value = mostRecent.textarea || bits.join(' ');
 
                 renderTape();
+                filterMatchesAndSave();
 
                 const status = document.getElementById('storage-status');
                 status.innerHTML = `📂 Caricato salvataggio del ${mostRecent.timestamp}`;
@@ -1319,6 +1423,8 @@
         initThreads();
         updateLoadButtonStatus();
         checkSavedPrediction();
+        loadSavedOffsets();
+        loadSavedMatches();
     </script>
 </body>
 
