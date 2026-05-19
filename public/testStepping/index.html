@@ -691,6 +691,17 @@
                     </div>
                 </div>
 
+                <div class="field" style="border: 1px dashed var(--border); padding: 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.01); margin-top: 0.75rem;">
+                    <label style="font-size:0.65rem; color:var(--accent); text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:0.5rem;">💡 Stima Offset da Token Spesi</label>
+                    <div style="display:flex; gap:0.5rem; align-items:stretch;">
+                        <input type="number" id="token-count" placeholder="Esempio: 50" style="flex:2; font-size:0.8rem; box-sizing:border-box;">
+                        <button type="button" class="btn" style="margin-top:0; padding:0.5rem 0.8rem; font-size:0.75rem; flex:1; white-space:nowrap;" onclick="calculateOffsetFromTokens()">Calcola</button>
+                    </div>
+                    <div id="token-calc-result" style="font-size:0.65rem; color:var(--muted); margin-top:0.6rem; font-family:'JetBrains Mono',monospace; line-height: 1.5;">
+                        Inserisci i token spesi in questo livello per stimare l'offset.
+                    </div>
+                </div>
+
                 <div class="field">
                     <label>polarità</label>
                     <select id="polarity">
@@ -1165,6 +1176,60 @@
                 }
             } catch (e) {
                 console.error('Errore nel caricamento degli offset salvati:', e);
+            }
+        }
+
+        function calculateOffsetFromTokens() {
+            const el = document.getElementById('token-count');
+            const tokenVal = parseInt(el.value);
+            if (isNaN(tokenVal) || tokenVal <= 0) {
+                alert('Inserisci un numero di token valido e maggiore di zero!');
+                return;
+            }
+
+            // Statistiche per singola run:
+            // Media passi per run = 1.9921875
+            // Varianza = 1.88275146
+            // Deviazione Standard = 1.3721339
+            const T = tokenVal;
+            const mean = 1.9921875 * T;
+            const variance = 1.88275146484375 * T;
+            const stdDev = Math.sqrt(variance);
+
+            // Calcoliamo un intervallo di confidenza al 99.9% (z = 3.3 deviazioni standard)
+            const zScore = 3.3; 
+            const minOff = Math.max(0, Math.floor(mean - zScore * stdDev));
+            const maxOff = Math.ceil(mean + zScore * stdDev);
+
+            // Range teorico assoluto per completezza [T, 8*T]
+            const absMin = T;
+            const absMax = 8 * T;
+
+            const resDiv = document.getElementById('token-calc-result');
+            resDiv.innerHTML = `
+                Offset stimato: <strong style="color:var(--accent);">${minOff} → ${maxOff}</strong> (Confidenza 99.9%)<br/>
+                Range assoluto: ${absMin} → ${absMax}<br/>
+                <button type="button" class="btn" style="margin-top:0.4rem; padding:0.25rem 0.5rem; font-size:0.65rem; width:100%; border-color:var(--accent); background:rgba(0, 255, 136, 0.1);" onclick="applyTokenOffsets(${minOff}, ${maxOff})">Applica Range</button>
+            `;
+        }
+
+        function applyTokenOffsets(minOff, maxOff) {
+            document.getElementById('min-offset').value = minOff;
+            document.getElementById('max-offset').value = maxOff;
+            // Salva subito nel localStorage
+            localStorage.setItem('ctf_prng_min_offset', minOff);
+            localStorage.setItem('ctf_prng_max_offset', maxOff);
+            
+            const btn = document.querySelector('#token-calc-result button');
+            if (btn) {
+                btn.textContent = 'Applicato! ✓';
+                btn.style.borderColor = 'var(--accent)';
+                btn.style.color = '#fff';
+                btn.style.background = 'rgba(0, 255, 136, 0.3)';
+                setTimeout(() => {
+                    btn.textContent = 'Applica Range';
+                    btn.style.background = 'rgba(0, 255, 136, 0.1)';
+                }, 2000);
             }
         }
 
