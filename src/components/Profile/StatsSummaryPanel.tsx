@@ -1043,7 +1043,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     </div>
                 </div>
 
-                {isComparing && (
+                {!actualHideActions && isComparing && (
                     <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
                         <div className="space-y-3">
                             <div className="text-[10px] text-text-muted text-center font-bold uppercase tracking-widest opacity-60">Build Actions</div>
