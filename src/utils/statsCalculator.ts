@@ -85,11 +85,13 @@ export interface AggregatedStats {
     isRangedWeapon: boolean;
     weaponAttackRange: number;
     weaponWindupTime: number;
+    isAiming: boolean;
 
     // Projectile Info
     hasProjectile: boolean;
     projectileSpeed: number;
     projectileRadius: number;
+    projectileAffectedByGravity: boolean;
 
     // Skill metrics
     skillDps: number;
@@ -128,9 +130,11 @@ export const DEFAULT_STATS: AggregatedStats = {
     isRangedWeapon: false,
     weaponAttackRange: 1,
     weaponWindupTime: 0.5,
+    isAiming: false,
     hasProjectile: false,
     projectileSpeed: 0,
     projectileRadius: 0,
+    projectileAffectedByGravity: false,
     skillDps: 0,
     skillHps: 0,
     maxItemLevels: {
@@ -550,14 +554,18 @@ export function calculateAllStats(
     if (profile.items.Weapon && gameData.weaponLibrary) {
         const key = `{'Age': ${profile.items.Weapon.age}, 'Type': 'Weapon', 'Idx': ${profile.items.Weapon.idx}}`;
         const weaponData = gameData.weaponLibrary[key];
-        const projId = weaponData?.ProjectileId;
+        if (weaponData) {
+            result.isAiming = !!weaponData.IsAiming;
+            const projId = weaponData.ProjectileId;
 
-        if (projId !== undefined && projId > -1 && gameData.projectilesLibrary) {
-            const projData = gameData.projectilesLibrary[String(projId)];
-            if (projData) {
-                result.hasProjectile = true;
-                result.projectileSpeed = projData.Speed || 0;
-                result.projectileRadius = projData.CollisionRadius || 0;
+            if (projId !== undefined && projId > -1 && gameData.projectilesLibrary) {
+                const projData = gameData.projectilesLibrary[String(projId)];
+                if (projData) {
+                    result.hasProjectile = true;
+                    result.projectileSpeed = projData.Speed || 0;
+                    result.projectileRadius = projData.CollisionRadius || 0;
+                    result.projectileAffectedByGravity = !!projData.AffectedByGravity;
+                }
             }
         }
     }

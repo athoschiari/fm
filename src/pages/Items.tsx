@@ -334,6 +334,31 @@ export default function Items() {
                                                             {weaponData.WindupTime ? weaponData.WindupTime.toFixed(2) + 's' : 'N/A'}
                                                         </div>
                                                     </div>
+                                                    <div className={cn(
+                                                        "bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col",
+                                                        projectileData ? "col-span-1" : "col-span-2"
+                                                    )}>
+                                                        <span className="text-[10px] text-text-muted uppercase font-bold">Is Aiming</span>
+                                                        <span className="font-mono font-bold text-text-primary">{weaponData.IsAiming ? 'Yes' : 'No'}</span>
+                                                    </div>
+                                                    {projectileData && (
+                                                        <div className="bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col">
+                                                            <span className="text-[10px] text-text-muted uppercase font-bold">Gravity Affected</span>
+                                                            <span className="font-mono font-bold text-text-primary">{projectileData.AffectedByGravity ? 'Yes' : 'No'}</span>
+                                                        </div>
+                                                    )}
+                                                    {projectileData && (
+                                                        <>
+                                                            <div className="bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col">
+                                                                <span className="text-[10px] text-text-muted uppercase font-bold">Proj Speed</span>
+                                                                <span className="font-mono font-bold text-text-primary">{projectileData.Speed || 'N/A'}</span>
+                                                            </div>
+                                                            <div className="bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col">
+                                                                <span className="text-[10px] text-text-muted uppercase font-bold">Proj Radius</span>
+                                                                <span className="font-mono font-bold text-text-primary">{projectileData.CollisionRadius?.toFixed(2) || 'N/A'}</span>
+                                                            </div>
+                                                        </>
+                                                    )}
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -351,12 +376,6 @@ export default function Items() {
                                                         <Zap className="w-3 h-3" />
                                                         Show Breakpoints Table
                                                     </button>
-                                                    {projectileData && (weaponData.AttackRange ?? 0) > 1 && (
-                                                        <div className="bg-bg-input/50 p-2 rounded border border-border/30 flex flex-col col-span-2">
-                                                            <span className="text-[10px] text-text-muted uppercase font-bold">Proj Speed</span>
-                                                            <span className="font-mono font-bold text-text-primary">{projectileData.Speed || 'N/A'}</span>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             );
                                         })()}

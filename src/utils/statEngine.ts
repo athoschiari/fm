@@ -105,10 +105,12 @@ export interface AggregatedStats {
     weaponAttackRange: number;
     weaponWindupTime: number;
     weaponAttackDuration: number;
+    isAiming: boolean;
 
     hasProjectile: boolean;
     projectileSpeed: number;
     projectileRadius: number;
+    projectileAffectedByGravity: boolean;
 
     skillDps: number;
     skillBuffDps: number;
@@ -212,9 +214,11 @@ export const DEFAULT_STATS: AggregatedStats = {
     weaponAttackRange: 1,
     weaponWindupTime: 0.5,
     weaponAttackDuration: 1.0,
+    isAiming: false,
     hasProjectile: false,
     projectileSpeed: 0,
     projectileRadius: 0,
+    projectileAffectedByGravity: false,
     skillDps: 0,
     skillBuffDps: 0,
     skillHps: 0,
@@ -539,6 +543,7 @@ export class StatEngine {
                 const attackRange = baseData.AttackRange || 0;
                 this.stats.isRangedWeapon = attackRange >= 1;
                 this.stats.weaponAttackRange = attackRange;
+                this.stats.isAiming = !!baseData.IsAiming;
 
                 // Animation defaults from base weapon
                 this.stats.weaponWindupTime = baseData.WindupTime || 0.5;
@@ -564,6 +569,7 @@ export class StatEngine {
                         this.stats.hasProjectile = true;
                         this.stats.projectileSpeed = projData.Speed || 0;
                         this.stats.projectileRadius = projData.CollisionRadius || 0;
+                        this.stats.projectileAffectedByGravity = !!projData.AffectedByGravity;
                     }
                 }
             }
@@ -716,6 +722,7 @@ export class StatEngine {
                     this.stats.weaponAttackRange = attackRange;
                     this.stats.weaponWindupTime = weaponData.WindupTime || 0.5;
                     this.stats.weaponAttackDuration = weaponData.AttackDuration || 1.0;
+                    this.stats.isAiming = !!weaponData.IsAiming;
 
                     // Projectile info
                     const projId = weaponData.ProjectileId;
@@ -725,6 +732,7 @@ export class StatEngine {
                             this.stats.hasProjectile = true;
                             this.stats.projectileSpeed = projData.Speed || 0;
                             this.stats.projectileRadius = projData.CollisionRadius || 0;
+                            this.stats.projectileAffectedByGravity = !!projData.AffectedByGravity;
                         }
                     }
 

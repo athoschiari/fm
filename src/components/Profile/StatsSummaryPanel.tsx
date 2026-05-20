@@ -1442,6 +1442,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 </div>
                                 <StatRow icon={<Target className="w-4 h-4" />} label="Atk Range" value={`${stats.weaponAttackRange.toFixed(1)}m`} color="text-cyan-400" />
                                 <StatRow icon={<Clock className="w-4 h-4" />} label="Windup" value={`${stats.weaponWindupTime.toFixed(2)}s`} color="text-amber-400" />
+                                <StatRow icon={<Target className="w-4 h-4" />} label="Is Aiming" value={stats.isAiming ? 'Yes' : 'No'} color="text-cyan-400" />
                                 {stats.hasProjectile && (
                                     <>
                                         <StatRow
@@ -1454,6 +1455,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                             icon={<Target className="w-4 h-4" />}
                                             label="Projectile Radius"
                                             value={`${stats.projectileRadius.toFixed(2)}m`}
+                                            color="text-sky-400"
+                                        />
+                                        <StatRow
+                                            icon={<Target className="w-4 h-4" />}
+                                            label="Affected By Gravity"
+                                            value={stats.projectileAffectedByGravity ? 'Yes' : 'No'}
                                             color="text-sky-400"
                                         />
                                     </>

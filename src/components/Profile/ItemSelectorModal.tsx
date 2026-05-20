@@ -410,7 +410,9 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     // Get weapon info from WeaponLibrary + Projectile info
     const weaponInfo = useMemo(() => {
         if (slot !== 'Weapon' || !weaponLibrary || !selectedItemData) return null;
-        const key = `{'Age': ${ageIdx}, 'Type': 'Weapon', 'Idx': ${selectedItemIdx}}`;
+        const ageToUse = ageIdx === -1 ? ((selectedItemData as any).age ?? 0) : ageIdx;
+        const idxToUse = ageIdx === -1 ? ((selectedItemData as any).idx ?? 0) : selectedItemIdx;
+        const key = `{'Age': ${ageToUse}, 'Type': 'Weapon', 'Idx': ${idxToUse}}`;
         const weaponData = weaponLibrary[key];
         if (!weaponData) return null;
 
@@ -426,8 +428,10 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             attackRange,
             windupTime: weaponData.WindupTime || 0.5,
             attackDuration: weaponData.AttackDuration || 1,
+            isAiming: !!weaponData.IsAiming,
             projectileSpeed: 0,
             projectileRadius: 0,
+            affectedByGravity: false,
             hasProjectile: false
         };
 
@@ -438,6 +442,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 info.hasProjectile = true;
                 info.projectileSpeed = projData.Speed || 0;
                 info.projectileRadius = projData.CollisionRadius || 0;
+                info.affectedByGravity = !!projData.AffectedByGravity;
             }
         }
 
@@ -463,8 +468,10 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
             attackRange: skinData.AttackRange || 0,
             windupTime: skinData.WindupTime || 0.5,
             attackDuration: skinData.AttackDuration || 1,
+            isAiming: !!skinData.IsAiming,
             projectileSpeed: 0,
             projectileRadius: 0,
+            affectedByGravity: false,
             hasProjectile: false
         };
 
@@ -474,6 +481,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                 info.hasProjectile = true;
                 info.projectileSpeed = projData.Speed || 0;
                 info.projectileRadius = projData.CollisionRadius || 0;
+                info.affectedByGravity = !!projData.AffectedByGravity;
             }
         }
 
@@ -876,7 +884,24 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                 <Target className="w-3 h-3 text-text-muted" />
                                 <span className="text-text-muted">Range:</span>
                             </div>
-                            <div className="font-mono">{weaponInfo.attackRange.toFixed(1)}</div>
+                            <div className="font-mono">
+                                {weaponInfo.attackRange.toFixed(1)}
+                                {skinWeaponInfo && Math.abs(skinWeaponInfo.attackRange - weaponInfo.attackRange) > 0.01 && (
+                                    <span className="text-amber-400 ml-1">→ {skinWeaponInfo.attackRange.toFixed(1)}</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                                <Target className="w-3 h-3 text-text-muted" />
+                                <span className="text-text-muted">Is Aiming:</span>
+                            </div>
+                            <div className="font-mono">
+                                {weaponInfo.isAiming ? 'Yes' : 'No'}
+                                {skinWeaponInfo && skinWeaponInfo.isAiming !== weaponInfo.isAiming && (
+                                    <span className="text-amber-400 ml-1">→ {skinWeaponInfo.isAiming ? 'Yes' : 'No'}</span>
+                                )}
+                            </div>
                         </div>
                         {weaponInfo.hasProjectile && (
                             <>
@@ -885,14 +910,36 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                         <Target className="w-3 h-3 text-text-muted" />
                                         <span className="text-text-muted">Proj Speed:</span>
                                     </div>
-                                    <div className="font-mono">{weaponInfo.projectileSpeed.toFixed(0)}</div>
+                                    <div className="font-mono">
+                                        {weaponInfo.projectileSpeed.toFixed(0)}
+                                        {skinWeaponInfo && skinWeaponInfo.hasProjectile && Math.abs(skinWeaponInfo.projectileSpeed - weaponInfo.projectileSpeed) > 0.01 && (
+                                            <span className="text-amber-400 ml-1">→ {skinWeaponInfo.projectileSpeed.toFixed(0)}</span>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-1">
                                         <Target className="w-3 h-3 text-text-muted" />
                                         <span className="text-text-muted">Proj Radius:</span>
                                     </div>
-                                    <div className="font-mono">{weaponInfo.projectileRadius.toFixed(2)}</div>
+                                    <div className="font-mono">
+                                        {weaponInfo.projectileRadius.toFixed(2)}
+                                        {skinWeaponInfo && skinWeaponInfo.hasProjectile && Math.abs(skinWeaponInfo.projectileRadius - weaponInfo.projectileRadius) > 0.01 && (
+                                            <span className="text-amber-400 ml-1">→ {skinWeaponInfo.projectileRadius.toFixed(2)}</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1">
+                                        <Target className="w-3 h-3 text-text-muted" />
+                                        <span className="text-text-muted">Affected By Gravity:</span>
+                                    </div>
+                                    <div className="font-mono">
+                                        {weaponInfo.affectedByGravity ? 'Yes' : 'No'}
+                                        {skinWeaponInfo && skinWeaponInfo.hasProjectile && skinWeaponInfo.affectedByGravity !== weaponInfo.affectedByGravity && (
+                                            <span className="text-amber-400 ml-1">→ {skinWeaponInfo.affectedByGravity ? 'Yes' : 'No'}</span>
+                                        )}
+                                    </div>
                                 </div>
                             </>
                         )}
@@ -1657,7 +1704,24 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                             <Target className="w-3 h-3 text-text-muted" />
                                             <span className="text-text-muted">Range:</span>
                                         </div>
-                                        <div className="font-mono">{weaponInfo.attackRange.toFixed(1)}</div>
+                                        <div className="font-mono">
+                                            {weaponInfo.attackRange.toFixed(1)}
+                                            {skinWeaponInfo && Math.abs(skinWeaponInfo.attackRange - weaponInfo.attackRange) > 0.01 && (
+                                                <span className="text-amber-400 ml-1">→ {skinWeaponInfo.attackRange.toFixed(1)}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1">
+                                            <Target className="w-3 h-3 text-text-muted" />
+                                            <span className="text-text-muted">Is Aiming:</span>
+                                        </div>
+                                        <div className="font-mono">
+                                            {weaponInfo.isAiming ? 'Yes' : 'No'}
+                                            {skinWeaponInfo && skinWeaponInfo.isAiming !== weaponInfo.isAiming && (
+                                                <span className="text-amber-400 ml-1">→ {skinWeaponInfo.isAiming ? 'Yes' : 'No'}</span>
+                                            )}
+                                        </div>
                                     </div>
                                     {weaponInfo.hasProjectile && (
                                         <>
@@ -1666,14 +1730,36 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                     <Target className="w-3 h-3 text-text-muted" />
                                                     <span className="text-text-muted">Proj Speed:</span>
                                                 </div>
-                                                <div className="font-mono">{weaponInfo.projectileSpeed.toFixed(0)}</div>
+                                                <div className="font-mono">
+                                                    {weaponInfo.projectileSpeed.toFixed(0)}
+                                                    {skinWeaponInfo && skinWeaponInfo.hasProjectile && Math.abs(skinWeaponInfo.projectileSpeed - weaponInfo.projectileSpeed) > 0.01 && (
+                                                        <span className="text-amber-400 ml-1">→ {skinWeaponInfo.projectileSpeed.toFixed(0)}</span>
+                                                    )}
+                                                </div>
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-1">
                                                     <Target className="w-3 h-3 text-text-muted" />
                                                     <span className="text-text-muted">Proj Radius:</span>
                                                 </div>
-                                                <div className="font-mono">{weaponInfo.projectileRadius.toFixed(2)}</div>
+                                                <div className="font-mono">
+                                                    {weaponInfo.projectileRadius.toFixed(2)}
+                                                    {skinWeaponInfo && skinWeaponInfo.hasProjectile && Math.abs(skinWeaponInfo.projectileRadius - weaponInfo.projectileRadius) > 0.01 && (
+                                                        <span className="text-amber-400 ml-1">→ {skinWeaponInfo.projectileRadius.toFixed(2)}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-1">
+                                                    <Target className="w-3 h-3 text-text-muted" />
+                                                    <span className="text-text-muted">Affected By Gravity:</span>
+                                                </div>
+                                                <div className="font-mono">
+                                                    {weaponInfo.affectedByGravity ? 'Yes' : 'No'}
+                                                    {skinWeaponInfo && skinWeaponInfo.hasProjectile && skinWeaponInfo.affectedByGravity !== weaponInfo.affectedByGravity && (
+                                                        <span className="text-amber-400 ml-1">→ {skinWeaponInfo.affectedByGravity ? 'Yes' : 'No'}</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </>
                                     )}
