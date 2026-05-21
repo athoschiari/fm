@@ -222,7 +222,7 @@ export default function BaseDrops() {
                                 <th className="p-4 bg-bg-secondary/95 w-[140px] text-center border-r border-b border-border/50 sticky top-0 z-20">
                                     <div className="flex flex-col items-center">
                                         <RefreshCw className="w-4 h-4 text-text-muted mb-1" />
-                                        <span className="text-[10px] uppercase text-text-muted">Required Summons</span>
+                                        <span className="text-[10px] uppercase text-text-muted">Required Summons to be unlocked</span>
                                     </div>
                                 </th>
                                 <th className="p-4 bg-bg-secondary/95 w-[140px] text-center border-r border-b border-border/50 sticky top-0 z-20">
