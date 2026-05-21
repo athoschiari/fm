@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/UI/Card';
 import { cn, getAgeIconStyle, getRarityBorderStyle } from '../lib/utils';
-import { HelpCircle, RefreshCw, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { HelpCircle, RefreshCw, ArrowRight, TrendingUp, TrendingDown, Sigma } from 'lucide-react';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { Button } from '../components/UI/Button';
 import { AGES, RARITIES } from '../utils/constants';
@@ -193,6 +193,21 @@ export default function BaseDrops() {
                 levels = Object.keys(targetData || {}).sort((a, b) => Number(a) - Number(b)).map(k => ({ ...targetData[k], key: k }));
             }
 
+        // Compute cumulative sums
+            let tCumulative = 0;
+            const targetCumSums = levels.map((l: any) => {
+                tCumulative += (l.SummonsRequired || 0);
+                return tCumulative;
+            });
+
+            let bCumulative = 0;
+            const baseLevels = summonConfigBase?.Levels;
+            const baseCumSums = levels.map((l: any, idx: number) => {
+                const bLvlRow = baseLevels ? baseLevels[idx] : baseData?.[l.key];
+                bCumulative += (bLvlRow?.SummonsRequired ?? l.SummonsRequired ?? 0);
+                return bCumulative;
+            });
+
             return (
                 <div className="overflow-auto custom-scrollbar max-h-[70vh] bg-bg-primary">
                     <table className="w-full text-sm text-left border-collapse table-fixed">
@@ -208,6 +223,12 @@ export default function BaseDrops() {
                                     <div className="flex flex-col items-center">
                                         <RefreshCw className="w-4 h-4 text-text-muted mb-1" />
                                         <span className="text-[10px] uppercase text-text-muted">Required Summons</span>
+                                    </div>
+                                </th>
+                                <th className="p-4 bg-bg-secondary/95 w-[140px] text-center border-r border-b border-border/50 sticky top-0 z-20">
+                                    <div className="flex flex-col items-center">
+                                        <Sigma className="w-4 h-4 text-text-muted mb-1" />
+                                        <span className="text-[10px] uppercase text-text-muted">Total Summons</span>
                                     </div>
                                 </th>
                                 {RARITIES.map(rarity => (
@@ -237,6 +258,9 @@ export default function BaseDrops() {
                                     bSummons = isCompareMode ? (summonConfigBase?.Levels?.[lvlIdx]?.SummonsRequired ?? tSummons) : tSummons;
                                 }
 
+                                const tCumSum = targetCumSums[lvlIdx];
+                                const bCumSum = baseCumSums[lvlIdx];
+
                                 return (
                                     <tr key={i} className="border-b border-border/10 hover:bg-white/5 transition-colors group">
                                         <td className="p-4 font-mono font-bold sticky left-0 bg-bg-primary shadow-r border-r border-border/50 text-center text-accent-primary z-10">
@@ -256,6 +280,22 @@ export default function BaseDrops() {
                                                 </div>
                                             ) : (
                                                 <span className="text-text-secondary">{tSummons || '-'}</span>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-center border-r border-border/30 font-mono font-bold bg-bg-secondary/5">
+                                            {isCompareMode && tCumSum !== bCumSum ? (
+                                                <div className="flex flex-col items-center">
+                                                    <div className="flex items-center gap-1.5 text-[10px] opacity-40">
+                                                        <span>{bCumSum}</span>
+                                                        <ArrowRight className="w-2.5 h-2.5" />
+                                                        <span className="font-bold">{tCumSum}</span>
+                                                    </div>
+                                                    <div className={cn("text-[9px]", tCumSum < bCumSum ? "text-green-400" : "text-red-400")}>
+                                                        {tCumSum < bCumSum ? '↓ Faster' : '↑ Slower'} ({(tCumSum - bCumSum)})
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-text-primary">{tCumSum || '-'}</span>
                                             )}
                                         </td>
                                         {RARITIES.map(rarity => {
