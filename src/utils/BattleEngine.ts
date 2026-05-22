@@ -730,8 +730,8 @@ export class BattleEngine {
                                     });
                                     // Set timer for the second strike (Sequential delay from stats)
                                     entity.pendingDoubleHit = true;
-                                    const baseDoubleDelay = this.playerStats.doubleHitDelay || 0.25;
-                                    entity.doubleHitTimer = Math.floor((baseDoubleDelay / entity.attackSpeed) * 10) / 10;
+                                    const baseDoubleDelay = this.playerStats.doubleHitDelay || (this.playerStats.weaponWindupTime || 0.5) * 0.25;
+                                    entity.doubleHitTimer = Math.max(0.1, Math.ceil((baseDoubleDelay / entity.attackSpeed) * 10) / 10);
                                 }
                             }
 

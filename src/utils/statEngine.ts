@@ -1715,10 +1715,10 @@ export class StatEngine {
         const steppedRecovery = Math.floor((baseRecovery / speedMult) * 10) / 10;
         const steppedCycle = Math.max(0.4, steppedWindup + steppedRecovery + 0.2);
 
-        // DOUBLE HIT SEQUENTIAL TIMING (0.25s base delay)
-        const baseDoubleDelay = 0.25;
+        // DOUBLE HIT SEQUENTIAL TIMING (base delay = 25% of windup time)
+        const baseDoubleDelay = baseWindup * 0.25;
         this.stats.doubleHitDelay = baseDoubleDelay;
-        const steppedDoubleDelay = Math.max(0.1, Math.floor((baseDoubleDelay / speedMult) * 10) / 10);
+        const steppedDoubleDelay = Math.max(0.1, Math.ceil((baseDoubleDelay / speedMult) * 10) / 10);
         const doubleHitCycle = steppedCycle + steppedDoubleDelay;
 
         // WEIGHTED AVERAGE REAL DPS (The "Second Table" logic)
