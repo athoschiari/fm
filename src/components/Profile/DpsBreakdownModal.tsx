@@ -399,6 +399,7 @@ const ModalContent = memo(({ stats, profile, skillLibrary, onClose, variant = 'd
                                             currentAttackSpeedMultiplier={stats.attackSpeedMultiplier}
                                             realCycleTime={stats.realCycleTime}
                                             realWindup={stats.weaponWindupTime / stats.attackSpeedMultiplier}
+                                            doubleDamageChance={stats.doubleDamageChance}
                                         />
 
                                         <BreakpointExplanation />

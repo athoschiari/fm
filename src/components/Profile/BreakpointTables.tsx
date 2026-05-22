@@ -7,6 +7,7 @@ interface BreakpointTablesProps {
     currentAttackSpeedMultiplier: number; // e.g. 1.5
     realCycleTime?: number;
     realWindup?: number;
+    doubleDamageChance?: number; // e.g. 0.25 (25%)
 }
 
 interface BreakpointMilestone {
@@ -22,7 +23,8 @@ export const BreakpointTables = memo(({
     weaponWindupTime,
     currentAttackSpeedMultiplier,
     realCycleTime: providedRealCycleTime,
-    realWindup: providedRealWindup
+    realWindup: providedRealWindup,
+    doubleDamageChance
 }: BreakpointTablesProps) => {
     const [showDetailedTables, setShowDetailedTables] = useState(false);
     const { data: secondaryStatLibrary } = useGameData<any>('SecondaryStatLibrary.json');
@@ -202,6 +204,13 @@ export const BreakpointTables = memo(({
                     As a result, your Attack Speed bonus only improves actual DPS when it provides enough speed multiplier to push your animation phase durations down past a 0.1s threshold. 
                     Any extra attack speed between these steps is mathematically "wasted" (does not affect combat frequency).
                 </p>
+                {doubleDamageChance !== undefined && doubleDamageChance < 0.3 && (
+                    <p className="text-[10px] text-amber-400/80 bg-amber-500/5 border border-amber-500/10 p-2 rounded leading-relaxed mt-1">
+                        <strong>Note:</strong> You have a relatively low Double Attack chance (<strong>{Math.round(doubleDamageChance * 100)}%</strong>). 
+                        The breakpoints marked with a dashed purple left border (Double Hit Delay and Double Cycle) are only relevant when Double Damage procs. 
+                        Focus on Primary Cycle and Windup targets first.
+                    </p>
+                )}
             </div>
 
             {/* Unified Timeline Table */}
@@ -229,54 +238,91 @@ export const BreakpointTables = memo(({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {finalGrouped.map(({ reqBonus, items, isReached, isNext }) => (
-                                <tr 
-                                    key={reqBonus} 
-                                    className={`group transition-colors ${
-                                        isReached 
-                                            ? 'text-green-400/80 hover:bg-green-500/[0.02]' 
-                                            : isNext 
-                                                ? 'text-purple-400 bg-purple-400/5 hover:bg-purple-400/[0.08]' 
-                                                : 'text-white/40 hover:bg-white/[0.01]'
-                                    }`}
-                                >
-                                    <td className="p-3 font-bold align-top">
-                                        +{reqBonus.toFixed(1)}%
-                                    </td>
-                                    <td className="p-3 space-y-1.5">
-                                        {items.map((item, idx) => {
-                                            let badgeColor = 'text-white/60 bg-white/5';
-                                            if (item.type === 'primary_cycle') badgeColor = 'text-orange-400 bg-orange-400/10 border border-orange-400/20';
-                                            if (item.type === 'windup') badgeColor = 'text-blue-400 bg-blue-400/10 border border-blue-400/20';
-                                            if (item.type === 'double_delay') badgeColor = 'text-purple-400 bg-purple-400/10 border border-purple-400/20';
-                                            if (item.type === 'double_cycle') badgeColor = 'text-fuchsia-400 bg-fuchsia-400/10 border border-fuchsia-400/20';
+                            {finalGrouped.map(({ reqBonus, items, isReached, isNext }) => {
+                                const hasDouble = items.some(item => item.type === 'double_delay' || item.type === 'double_cycle');
+                                const isOnlyDouble = items.every(item => item.type === 'double_delay' || item.type === 'double_cycle');
 
-                                            return (
-                                                <div key={idx} className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-3">
-                                                    <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-sans font-bold ${badgeColor}`}>
-                                                        {item.label}
-                                                    </span>
-                                                    <span className="text-[9px] text-white/40 font-sans italic">
-                                                        {item.details}
-                                                    </span>
+                                let rowStyle = `group transition-colors ${
+                                    isReached 
+                                        ? 'text-green-400/80 hover:bg-green-500/[0.02]' 
+                                        : isNext 
+                                            ? 'text-purple-400 bg-purple-400/5 hover:bg-purple-400/[0.08]' 
+                                            : 'text-white/40 hover:bg-white/[0.01]'
+                                }`;
+
+                                if (hasDouble) {
+                                    rowStyle += ' border-l-2 border-dashed border-l-purple-500/40 bg-purple-950/[0.03]';
+                                }
+
+                                return (
+                                    <tr key={reqBonus} className={rowStyle}>
+                                        <td className="p-3 font-bold align-top">
+                                            +{reqBonus.toFixed(1)}%
+                                        </td>
+                                        <td className="p-3 space-y-1.5">
+                                            {items.map((item, idx) => {
+                                                let badgeColor = 'text-white/60 bg-white/5';
+                                                if (item.type === 'primary_cycle') badgeColor = 'text-orange-400 bg-orange-400/10 border border-orange-400/20';
+                                                if (item.type === 'windup') badgeColor = 'text-blue-400 bg-blue-400/10 border border-blue-400/20';
+                                                if (item.type === 'double_delay') badgeColor = 'text-purple-400 bg-purple-400/10 border border-purple-400/20';
+                                                if (item.type === 'double_cycle') badgeColor = 'text-fuchsia-400 bg-fuchsia-400/10 border border-fuchsia-400/20';
+
+                                                const isDoubleItem = item.type === 'double_delay' || item.type === 'double_cycle';
+                                                const doublePct = doubleDamageChance !== undefined ? Math.round(doubleDamageChance * 100) : null;
+
+                                                return (
+                                                    <div key={idx} className="flex flex-col md:flex-row md:items-center gap-1.5 md:gap-3">
+                                                        <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] uppercase font-sans font-bold ${badgeColor}`}>
+                                                            {item.label}
+                                                        </span>
+                                                        <span className="text-[9px] text-white/40 font-sans italic">
+                                                            {item.details}
+                                                        </span>
+                                                        {isDoubleItem && (() => {
+                                                            let doubleImpactText = 'Double Attack';
+                                                            let doubleImpactStyle = 'text-purple-400/60 bg-purple-400/5';
+
+                                                            if (doublePct !== null) {
+                                                                if (doublePct < 15) {
+                                                                    doubleImpactText = `Low Impact (Double Chance: ${doublePct}%)`;
+                                                                    doubleImpactStyle = 'text-white/40 bg-white/5 border border-white/10';
+                                                                } else if (doublePct < 45) {
+                                                                    doubleImpactText = `Medium Impact (Double Chance: ${doublePct}%)`;
+                                                                    doubleImpactStyle = 'text-blue-400 bg-blue-400/10 border border-blue-400/20';
+                                                                } else if (doublePct < 75) {
+                                                                    doubleImpactText = `High Impact (Double Chance: ${doublePct}%)`;
+                                                                    doubleImpactStyle = 'text-purple-400 bg-purple-400/10 border border-purple-400/20';
+                                                                } else {
+                                                                    doubleImpactText = `Very High Impact (Double Chance: ${doublePct}%)`;
+                                                                    doubleImpactStyle = 'text-green-400 bg-green-400/10 border border-green-400/20';
+                                                                }
+                                                            }
+
+                                                            return (
+                                                                <span className={`text-[8px] px-1.5 py-0.5 rounded font-sans font-medium uppercase tracking-wide inline-block ${doubleImpactStyle}`}>
+                                                                    {doubleImpactText}
+                                                                </span>
+                                                            );
+                                                        })()}
+                                                    </div>
+                                                );
+                                            })}
+                                        </td>
+                                        <td className="p-3 text-right font-bold text-[9px] align-top">
+                                            {isReached ? (
+                                                <span className="text-green-400 bg-green-400/10 px-1.5 py-0.5 rounded uppercase font-sans">Reached</span>
+                                            ) : isNext ? (
+                                                <div className="space-y-0.5">
+                                                    <span className="text-purple-400 bg-purple-400/20 px-1.5 py-0.5 rounded uppercase font-sans animate-pulse">Next</span>
+                                                    <div className="text-[8px] text-purple-400/60 font-sans italic">+{((reqBonus - currentBonus)).toFixed(1)}% more</div>
                                                 </div>
-                                            );
-                                        })}
-                                    </td>
-                                    <td className="p-3 text-right font-bold text-[9px] align-top">
-                                        {isReached ? (
-                                            <span className="text-green-400 bg-green-400/10 px-1.5 py-0.5 rounded uppercase font-sans">Reached</span>
-                                        ) : isNext ? (
-                                            <div className="space-y-0.5">
-                                                <span className="text-purple-400 bg-purple-400/20 px-1.5 py-0.5 rounded uppercase font-sans animate-pulse">Next</span>
-                                                <div className="text-[8px] text-purple-400/60 font-sans italic">+{((reqBonus - currentBonus)).toFixed(1)}% more</div>
-                                            </div>
-                                        ) : (
-                                            <span className="text-white/20 bg-white/5 px-1.5 py-0.5 rounded uppercase font-sans">Locked</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
+                                            ) : (
+                                                <span className="text-white/20 bg-white/5 px-1.5 py-0.5 rounded uppercase font-sans">Locked</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
