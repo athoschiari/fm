@@ -9,6 +9,7 @@ import { useGameDataContext } from '../../context/GameDataContext';
 import { useProfile } from '../../context/ProfileContext';
 import { StatsSummaryPanel } from '../Profile/StatsSummaryPanel';
 import { cn } from '../../lib/utils';
+import { formatVersion } from '../../lib/formatVersion';
 
 const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
     const baseMessages = [
@@ -299,7 +300,7 @@ export default function AppShell() {
                             </div>
                             {selectedVersion && (
                                 <div className="mt-2 text-xs opacity-70">
-                                    Data Version: {selectedVersion}
+                                    Data Version: {formatVersion(selectedVersion)}
                                 </div>
                             )}
                         </div>

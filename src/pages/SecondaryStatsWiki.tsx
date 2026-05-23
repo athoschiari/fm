@@ -3,6 +3,7 @@ import { Card } from '../components/UI/Card';
 import { Button } from '../components/UI/Button';
 import { TrendingUp, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { formatVersion } from '../lib/formatVersion';
 import { getStatName } from '../utils/statNames';
 
 interface SecondaryStat {
@@ -129,7 +130,7 @@ export default function SecondaryStatsWiki() {
                             className="bg-transparent text-sm font-medium outline-none cursor-pointer hover:text-accent-primary transition-colors"
                         >
                             {versions.map(v => (
-                                <option key={v} value={v} className="bg-bg-card">{v}</option>
+                                <option key={v} value={v} className="bg-bg-card">{formatVersion(v)}</option>
                             ))}
                         </select>
                     </div>
@@ -143,7 +144,7 @@ export default function SecondaryStatsWiki() {
                         >
                             {versions.map(v => (
                                 <option key={v} value={v} className="bg-bg-card">
-                                    {v} {v === versions[0] ? '(Latest)' : ''}
+                                    {formatVersion(v)} {v === versions[0] ? '(Latest)' : ''}
                                 </option>
                             ))}
                         </select>

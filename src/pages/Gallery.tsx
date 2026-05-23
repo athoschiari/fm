@@ -4,6 +4,7 @@ import { Input } from '../components/UI/Input';
 import { Button } from '../components/UI/Button';
 import { Search, Image as ImageIcon, Download, X, Maximize2, ExternalLink, Columns, Layers, Hash, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { formatVersion } from '../lib/formatVersion';
 import { useGameDataContext } from '../context/GameDataContext';
 
 type DiffStatus = 'added' | 'removed' | 'changed' | null;
@@ -226,7 +227,7 @@ export default function Gallery() {
                             {versions
                                 .filter(v => v !== activeVersion && md5Manifest[v] && Object.keys(md5Manifest[v]).length > 0)
                                 .map(v => (
-                                    <option key={v} value={v}>{v}</option>
+                                    <option key={v} value={v}>{formatVersion(v)}</option>
                                 ))}
                         </select>
                         {compareVersion && (
@@ -339,8 +340,8 @@ export default function Gallery() {
                                     {selectedImage}
                                 </h2>
                                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-1">
-                                    <span className="text-[10px] font-bold text-text-muted uppercase bg-white/5 px-1.5 py-0.5 rounded">Version: {activeVersion}</span>
-                                    {compareVersion && <span className="text-[10px] font-bold text-accent-primary uppercase bg-accent-primary/10 px-1.5 py-0.5 rounded">vs {compareVersion}</span>}
+                                    <span className="text-[10px] font-bold text-text-muted uppercase bg-white/5 px-1.5 py-0.5 rounded">Version: {formatVersion(activeVersion)}</span>
+                                    {compareVersion && <span className="text-[10px] font-bold text-accent-primary uppercase bg-accent-primary/10 px-1.5 py-0.5 rounded">vs {formatVersion(compareVersion)}</span>}
                                 </div>
                             </div>
                             <div className="flex flex-col sm:flex-row items-center gap-3 px-2">
@@ -435,7 +436,7 @@ export default function Gallery() {
                                 compareVersion && mobileView === 'compare' && "hidden md:flex"
                             )}>
                                 <div className="text-[10px] font-black text-text-muted uppercase tracking-widest bg-bg-input px-2 py-1 rounded">
-                                    Version: {activeVersion}
+                                    Version: {formatVersion(activeVersion)}
                                 </div>
                                 <div className="flex-1 w-full flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative min-h-[300px] max-h-[60vh]">
                                     {md5Manifest[activeVersion]?.[selectedImage] ? (
@@ -472,7 +473,7 @@ export default function Gallery() {
                                     mobileView === 'active' && "hidden md:flex"
                                 )}>
                                     <div className="text-[10px] font-black text-accent-primary uppercase tracking-widest bg-accent-primary/10 px-2 py-1 rounded">
-                                        Comparison: {compareVersion}
+                                        Comparison: {formatVersion(compareVersion)}
                                     </div>
                                     <div className="flex-1 w-full flex items-center justify-center bg-bg-primary/30 rounded-lg overflow-hidden p-4 border border-border/20 relative min-h-[300px] max-h-[60vh]">
                                         {md5Manifest[compareVersion]?.[selectedImage] ? (

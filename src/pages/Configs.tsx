@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card } from '../components/UI/Card';
 import { Input } from '../components/UI/Input';
 import { cn } from '../lib/utils';
+import { formatVersion } from '../lib/formatVersion';
 import { Search, FileJson, FolderOpen, RefreshCw, Copy, Download, Check, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '../components/UI/Button';
 
@@ -539,7 +540,7 @@ export default function Configs() {
                                         >
                                             {versions.map(v => (
                                                 <option key={v} value={v} disabled={v === targetVersion}>
-                                                    {v}
+                                                    {formatVersion(v)}
                                                 </option>
                                             ))}
                                         </select>
@@ -553,7 +554,7 @@ export default function Configs() {
                                         >
                                             {versions.map(v => (
                                                 <option key={v} value={v} disabled={v === baseVersion}>
-                                                    {v} {v === versions[0] ? '(Latest)' : ''}
+                                                    {formatVersion(v)} {v === versions[0] ? '(Latest)' : ''}
                                                 </option>
                                             ))}
                                         </select>
@@ -568,7 +569,7 @@ export default function Configs() {
                                     >
                                         {versions.map(v => (
                                             <option key={v} value={v} className="bg-bg-card">
-                                                Version: {v} {v === versions[0] ? '(Latest)' : ''}
+                                                Version: {formatVersion(v)} {v === versions[0] ? '(Latest)' : ''}
                                             </option>
                                         ))}
                                     </select>
@@ -646,8 +647,8 @@ export default function Configs() {
                                 </h3>
                                 {isCompareMode && (
                                     <div className="text-[10px] flex gap-2 mt-0.5">
-                                        <span className="text-text-muted">Comparing: <span className="text-text-primary font-mono">{baseVersion}</span></span>
-                                        <span className="text-text-muted">→ <span className="text-blue-400 font-mono">{targetVersion}</span></span>
+                                        <span className="text-text-muted">Comparing: <span className="text-text-primary font-mono">{formatVersion(baseVersion)}</span></span>
+                                        <span className="text-text-muted">→ <span className="text-blue-400 font-mono">{formatVersion(targetVersion)}</span></span>
                                     </div>
                                 )}
                             </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/UI/Card';
 import { cn, getAgeIconStyle, getRarityBorderStyle } from '../lib/utils';
+import { formatVersion } from '../lib/formatVersion';
 import { HelpCircle, RefreshCw, ArrowRight, TrendingUp, TrendingDown, Sigma } from 'lucide-react';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { Button } from '../components/UI/Button';
@@ -341,7 +342,7 @@ export default function BaseDrops() {
                 </div>
 
                 <Card className="p-4 flex flex-wrap gap-4 items-center bg-bg-secondary/40 backdrop-blur-xl border-accent-primary/20 shadow-xl">
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
                         <div className="flex flex-col">
                             <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1 ml-1">Current Version</label>
                             <select
@@ -349,7 +350,7 @@ export default function BaseDrops() {
                                 onChange={(e) => setTargetVersion(e.target.value)}
                                 className="bg-bg-input border border-border/50 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors appearance-none cursor-pointer pr-8 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJ3aGl0ZSI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xOSA5bC03IDctNy03Ii8+PC9zdmc+')] bg-[length:16px] bg-[right_8px_center] bg-no-repeat"
                             >
-                                {versions.map(v => <option key={v} value={v}>{v}</option>)}
+                                {versions.map(v => <option key={v} value={v}>{formatVersion(v)}</option>)}
                             </select>
                         </div>
 
@@ -365,7 +366,7 @@ export default function BaseDrops() {
                                         onChange={(e) => setBaseVersion(e.target.value)}
                                         className="bg-bg-input border border-border/50 rounded-lg px-3 py-2 text-xs font-bold outline-none focus:border-accent-primary transition-colors appearance-none cursor-pointer pr-8 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJ3aGl0ZSI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBzdHJva2Utd2lkdGg9IjIiIGQ9Ik0xOSA5bC03IDctNy03Ii8+PC9zdmc+')] bg-[length:16px] bg-[right_8px_center] bg-no-repeat"
                                     >
-                                        {versions.map(v => <option key={v} value={v}>{v}</option>)}
+                                        {versions.map(v => <option key={v} value={v}>{formatVersion(v)}</option>)}
                                     </select>
                                 </div>
                             </>
