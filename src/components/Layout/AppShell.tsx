@@ -78,13 +78,13 @@ const formatVersionDate = (version: string): string => {
         const year = parts[0];
         const monthIndex = parseInt(parts[1], 10) - 1;
         const day = parseInt(parts[2], 10);
-        
+
         const monthNames = [
             "January", "February", "March", "April", "May", "June",
             "July", "August", "September", "October", "November", "December"
         ];
         const monthName = monthNames[monthIndex] || parts[1];
-        
+
         let suffix = 'th';
         if (day === 1 || day === 21 || day === 31) suffix = 'st';
         else if (day === 2 || day === 22) suffix = 'nd';
@@ -127,7 +127,7 @@ export default function AppShell() {
     const maxAgeVisuals = useMemo(() => {
         // profile.misc.forgeLevel is 0-indexed (0 = Lvl 1 in UI)
         const uiLevel = (profile.misc.forgeLevel || 0) + 1;
-        
+
         // Determine max age index based on level (Thresholds from forgeData.ts)
         let ageIdx = 0;
         if (uiLevel >= 30) ageIdx = 9;
@@ -307,7 +307,7 @@ export default function AppShell() {
     return (
         <div className="flex h-screen bg-bg-primary text-text-primary overflow-hidden font-sans text-left">
             {/* Hover zone to open sidebar */}
-            <div 
+            <div
                 className="fixed top-0 left-0 bottom-0 w-4 z-[45] group cursor-pointer"
                 onMouseEnter={() => setIsSidebarOpen(true)}
             >
@@ -402,9 +402,9 @@ export default function AppShell() {
                         "shadow-[0_8px_25px_-5px_rgba(0,0,0,0.4)] hover:shadow-[0_12px_35px_-5px_rgba(0,0,0,0.6)]"
                     )}
                 >
-                    <div 
-                        className={cn(maxAgeVisuals.anim, "rounded-full")} 
-                        style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${maxAgeVisuals.texture})` } as React.CSSProperties} 
+                    <div
+                        className={cn(maxAgeVisuals.anim, "rounded-full")}
+                        style={{ '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${maxAgeVisuals.texture})` } as React.CSSProperties}
                     >
                         {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (
                             <span key={i} />
@@ -431,7 +431,7 @@ export default function AppShell() {
                         <Coffee className="w-6 h-6 group-hover:rotate-[15deg] transition-transform duration-300 text-white icon-stroke-sm shrink-0" />
                         <AnimatePresence mode="wait">
                             {!isSidebarOpen && (
-                                <motion.span 
+                                <motion.span
                                     initial={{ width: 0, opacity: 0, x: -10 }}
                                     animate={{ width: "auto", opacity: 1, x: 0 }}
                                     exit={{ width: 0, opacity: 0, x: -10 }}
@@ -462,10 +462,10 @@ export default function AppShell() {
 
                             <div className="flex flex-col items-center gap-4 relative z-10">
                                 <div className="w-20 h-20 rounded-full bg-accent-primary/10 border border-accent-primary/30 flex items-center justify-center p-3 shadow-[0_0_20px_rgba(235,94,40,0.15)] relative">
-                                    <img 
-                                        src={getAnvilTexturePath(profile.misc.forgeAscensionLevel || 0, selectedVersion)} 
-                                        alt="Forge" 
-                                        className="w-full h-full object-contain" 
+                                    <img
+                                        src={getAnvilTexturePath(profile.misc.forgeAscensionLevel || 0, selectedVersion)}
+                                        alt="Forge"
+                                        className="w-full h-full object-contain"
                                     />
                                 </div>
 
@@ -480,9 +480,9 @@ export default function AppShell() {
                                 <p className="text-sm text-text-primary leading-relaxed text-center">
                                     Hear ye, Hear ye! The server hamsters have successfully forged and integrated the latest game configurations! 🐹
                                 </p>
-                                
+
                                 <p className="text-xs text-text-muted leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5 font-mono w-full text-center">
-                                    Updated as of:<br/>
+                                    Updated as of:<br />
                                     <span className="text-accent-primary font-bold text-sm block mt-1">
                                         {formatVersionDate(popupVersion)}
                                     </span>
@@ -493,7 +493,7 @@ export default function AppShell() {
                                         As you might have noticed, updates have been a bit slower lately. I've been extremely busy in my daily life recently, so I don't have much free time to actively code and implement new features. However, I will always do my best to keep the data updated for you all!
                                     </p>
                                     <p>
-                                        Special thanks to all the amazing supporters who buy me coffee and keep the furnace hot! ❤️☕
+                                        Special thanks to all the amazing supporters who buy me coffee and keep the furnace hot! ☕
                                     </p>
                                     <p className="font-bold text-accent-primary mt-2">
                                         Much love, Lucian ❤️
@@ -508,11 +508,11 @@ export default function AppShell() {
                                     )}
                                 >
                                     {/* The animated age-based overlay */}
-                                    <div 
-                                        className={cn(maxAgeVisuals.anim, "absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none")} 
-                                        style={{ 
-                                            '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${maxAgeVisuals.texture})` 
-                                        } as React.CSSProperties} 
+                                    <div
+                                        className={cn(maxAgeVisuals.anim, "absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none")}
+                                        style={{
+                                            '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${maxAgeVisuals.texture})`
+                                        } as React.CSSProperties}
                                     >
                                         {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (
                                             <span key={i} />

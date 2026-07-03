@@ -5,7 +5,7 @@ import { calculateStats, LibraryData, AggregatedStats } from '../utils/statEngin
 import { useTreeMode } from '../context/TreeModeContext';
 import { UserProfile } from '../types/Profile';
 
-export function useGlobalStats(): AggregatedStats | null {
+export function useGlobalStats(excludeSubstats = false): AggregatedStats | null {
     const { profile } = useProfile();
     const { treeMode } = useTreeMode();
 
@@ -115,8 +115,8 @@ export function useGlobalStats(): AggregatedStats | null {
         if (!itemBalancingConfig || !itemBalancingLibrary) {
             return null;
         }
-        return calculateStats(effectiveProfile, libs);
-    }, [effectiveProfile, libs, itemBalancingConfig, itemBalancingLibrary]);
+        return calculateStats(effectiveProfile, libs, excludeSubstats);
+    }, [effectiveProfile, libs, itemBalancingConfig, itemBalancingLibrary, excludeSubstats]);
 
     return stats;
 }

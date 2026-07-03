@@ -7,7 +7,7 @@ import { cn, getRarityBgStyle } from '../lib/utils';
 import { Zap, Search, Star, Clock, Crosshair, Sword, Heart, Package, TrendingUp } from 'lucide-react';
 import { formatNumber } from '../utils/format';
 import { AscensionStars } from '../components/UI/AscensionStars';
-
+import { getNormalizedTarget } from '../utils/ascensionUtils';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { useGameDataContext } from '../context/GameDataContext';
 import { useComparison } from '../context/ComparisonContext';
@@ -39,7 +39,7 @@ export default function Skills() {
             if (config) {
                 for (const s of config.StatContributions || []) {
                     const val = s.Value;
-                    const target = s.StatNode?.StatTarget?.$type;
+                    const target = getNormalizedTarget(s.StatNode).$type;
                     const statType = s.StatNode?.UniqueStat?.StatType;
                     if (target === 'ActiveSkillStatTarget') {
                         if (statType === 'Damage' || statType === 'AscensionDamage') activeDmg = val + 1;

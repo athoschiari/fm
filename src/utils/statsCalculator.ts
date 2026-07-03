@@ -5,6 +5,7 @@
  */
 
 import { UserProfile, PetSlot, SkillSlot, MountSlot, ItemSlot } from '../types/Profile';
+import { getNormalizedTarget } from './ascensionUtils';
 
 // Stat Natures from StatConfigLibrary.json
 export type StatNature = 'Multiplier' | 'Additive' | 'OneMinusMultiplier' | 'Divisor';
@@ -233,7 +234,7 @@ export function getItemStats(
                     statType,
                     statNature,
                     value,
-                    target: equipStat.StatNode?.StatTarget?.$type,
+                    target: getNormalizedTarget(equipStat.StatNode).$type,
                 });
             }
         }
@@ -497,7 +498,7 @@ export function getTechTreeStats(
                 const valueIncrease = stat.ValueIncrease || 0;
                 const totalValue = baseValue + (level - 1) * valueIncrease;
 
-                const target = stat.StatNode?.StatTarget?.$type;
+                const target = getNormalizedTarget(stat.StatNode).$type;
                 if (target === 'ActiveSkillStatTarget') {
                     console.log(`[DEBUG TechTree] ${tree} Node ${nodeId} (${node.Type}) lv${level}: SkillDamage +${(totalValue * 100).toFixed(1)}%`);
                 }

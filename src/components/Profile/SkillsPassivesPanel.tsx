@@ -12,7 +12,7 @@ import { useState, useMemo } from 'react';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { formatCompactNumber } from '../../utils/statsCalculator';
 
-import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { getAscensionTexturePath, getNormalizedTarget } from '../../utils/ascensionUtils';
 import { AscensionStars } from '../UI/AscensionStars';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 
@@ -53,7 +53,7 @@ export function SkillsPassivesPanel() {
             if (config) {
                 const stats = config.StatContributions || [];
                 for (const s of stats) {
-                    const sTarget = s.StatNode?.StatTarget?.$type;
+                    const sTarget = getNormalizedTarget(s.StatNode).$type;
                     if (sTarget === 'PassiveSkillStatTarget') {
                         const sType = s.StatNode?.UniqueStat?.StatType;
                         const sVal = s.Value + 1;
@@ -174,7 +174,7 @@ export function SkillsPassivesPanel() {
             if (config) {
                 const stats = config.StatContributions || [];
                 for (const s of stats) {
-                    const sTarget = s.StatNode?.StatTarget?.$type;
+                    const sTarget = getNormalizedTarget(s.StatNode).$type;
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     if (sTarget === 'ActiveSkillStatTarget') {
                         if (sType === 'Damage' || sType === 'AscensionDamage') ascActiveDmgMulti = s.Value + 1;

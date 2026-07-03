@@ -7,6 +7,8 @@ import { Search, Lock, Check } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useGameDataContext } from '../../context/GameDataContext';
 
+import { getNormalizedTarget } from '../../utils/ascensionUtils';
+
 const ICON_SIZE = 40;
 
 type TreeName = 'Forge' | 'Power' | 'SkillsPetTech' | 'Clan';
@@ -25,7 +27,7 @@ interface TechNode {
 function getStatSignature(stat: any): string {
     const type = stat.StatNode?.UniqueStat?.StatType || 'Unknown';
     const nature = stat.StatNode?.UniqueStat?.StatNature || 'Multiplier';
-    const target = stat.StatNode?.StatTarget || {};
+    const target = getNormalizedTarget(stat.StatNode);
     const cleanTarget = Object.entries(target).reduce((acc, [k, v]) => {
         if (v !== null && v !== undefined) acc[k] = v;
         return acc;

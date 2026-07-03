@@ -1,3 +1,5 @@
+import { getNormalizedTarget } from './ascensionUtils';
+
 /**
  * Maps technical tech node types to human-readable names
  */
@@ -21,7 +23,7 @@ export function getTechNodeDescription(nodeType: string, effect: any): string {
     }
 
     const stat = effect.Stats[0];
-    const target = stat.StatNode?.StatTarget;
+    const target = getNormalizedTarget(stat.StatNode);
     const type = stat.StatNode?.UniqueStat?.StatType;
     const nature = stat.StatNode?.UniqueStat?.StatNature;
 
@@ -30,7 +32,7 @@ export function getTechNodeDescription(nodeType: string, effect: any): string {
     if (type === 'TimerSpeed') action = "Increases speed of";
 
     let subject = "the attribute";
-    const targetType = target?.['$type'];
+    const targetType = target.$type;
 
     switch (targetType) {
         case 'WeaponStatTarget':
@@ -38,7 +40,7 @@ export function getTechNodeDescription(nodeType: string, effect: any): string {
             break;
         case 'EquipmentStatTarget':
             const itemTypes = ['Helmet', 'Armour', 'Gloves', 'Necklace', 'Ring', 'Weapon', 'Shoes', 'Belt'];
-            subject = target.ItemType !== null ? itemTypes[target.ItemType] : "Equipment";
+            subject = (target.ItemType !== undefined && target.ItemType !== null) ? (itemTypes[target.ItemType] || "Equipment") : "Equipment";
             break;
         case 'ForgeStatTarget':
             subject = "Forge";
@@ -60,14 +62,14 @@ export function getTechNodeDescription(nodeType: string, effect: any): string {
             break;
         case 'OfflineCurrencyStatTarget':
             const currencies = ['Coin', 'Gem', 'Hammer'];
-            subject = `Offline ${currencies[target.CurrencyType] || 'Currency'} rewards`;
+            subject = `Offline ${(target.CurrencyType !== undefined && target.CurrencyType !== null) ? (currencies[target.CurrencyType] || 'Currency') : 'Currency'} rewards`;
             break;
         case 'OfflineTimerStatTarget':
             subject = "Maximum offline duration";
             break;
         case 'DungeonStatTarget':
             const dungeons = ['Hammer Thief', 'Ghost Town', 'Egg Farm'];
-            subject = `${dungeons[target.DungeonType] || 'Dungeon'} rewards`;
+            subject = `${(target.DungeonType !== undefined && target.DungeonType !== null) ? (dungeons[target.DungeonType] || 'Dungeon') : 'Dungeon'} rewards`;
             break;
     }
 

@@ -5,6 +5,7 @@
 
 import { UserProfile } from '../types/Profile';
 import { SKILL_MECHANICS } from './constants';
+import { getNormalizedTarget } from './ascensionUtils';
 
 export type StatNature = 'Multiplier' | 'Additive' | 'OneMinusMultiplier' | 'Divisor';
 
@@ -366,9 +367,12 @@ export class StatEngine {
         'Shoe': 0
     };
 
-    constructor(profile: UserProfile, libs: LibraryData) {
+    private excludeSubstats: boolean;
+
+    constructor(profile: UserProfile, libs: LibraryData, excludeSubstats = false) {
         this.profile = profile;
         this.libs = libs;
+        this.excludeSubstats = excludeSubstats;
         this.stats = { ...DEFAULT_STATS };
     }
 
@@ -1054,7 +1058,8 @@ export class StatEngine {
             if (config) {
                 const stats = config.StatContributions || [];
                 for (const s of stats) {
-                    const sTarget = s.StatNode?.StatTarget?.$type;
+                    const targetInfo = getNormalizedTarget(s.StatNode);
+                    const sTarget = targetInfo.$type;
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     if (sTarget === 'ActiveSkillStatTarget') {
                         if (sType === 'Damage' || sType === 'AscensionDamage') {
@@ -1156,7 +1161,8 @@ export class StatEngine {
                 if (!nodeData?.Stats) continue;
 
                 for (const stat of nodeData.Stats) {
-                    const targetType = stat.StatNode?.StatTarget?.$type;
+                    const targetInfo = getNormalizedTarget(stat.StatNode);
+                    const targetType = targetInfo.$type;
                     const statType = stat.StatNode?.UniqueStat?.StatType;
 
                     // Skip Damage/Health stats for specific equipment/pet/mount targets 
@@ -1184,7 +1190,7 @@ export class StatEngine {
                         statNature: stat.StatNode?.UniqueStat?.StatNature as StatNature || 'Multiplier',
                         value: totalValue,
                         target: targetType,
-                        itemType: stat.StatNode?.StatTarget?.ItemType
+                        itemType: targetInfo.ItemType
                     } as any);
                 }
             }
@@ -1364,8 +1370,10 @@ export class StatEngine {
 
         // 4. Multiplier Layers
         // - Global/Common Layer: Tech Tree "Damage" nodes and Item "DamageMulti" secondary stats
-        const commonDamageMulti = this.stats.damageMultiplier + this.secondaryStats.damageMulti;
-        const commonHealthMulti = this.stats.healthMultiplier + this.secondaryStats.healthMulti;
+        const itemDmgMulti = this.excludeSubstats ? 0 : this.secondaryStats.damageMulti;
+        const itemHpMulti = this.excludeSubstats ? 0 : this.secondaryStats.healthMulti;
+        const commonDamageMulti = this.stats.damageMultiplier + itemDmgMulti;
+        const commonHealthMulti = this.stats.healthMultiplier + itemHpMulti;
 
         // Merge other secondary stats into final results (summing Tech Tree + Items/Pets)
         this.stats.criticalChance = this.combine(this.stats.criticalChance, this.secondaryStats.criticalChance, 'Additive');
@@ -1443,9 +1451,11 @@ export class StatEngine {
         const healthAfterGlobalMultis = totalHpBeforeGlobal * globalFactorHp;
 
         // 7. Melee/Ranged Specific Multipliers (Applied to everything at the end)
+        const itemMeleeDmgMulti = this.excludeSubstats ? 0 : this.secondaryStats.meleeDamageMulti;
+        const itemRangedDmgMulti = this.excludeSubstats ? 0 : this.secondaryStats.rangedDamageMulti;
         const specificDamageMulti = isWeaponMelee
-            ? (1 + this.secondaryStats.meleeDamageMulti)
-            : (1 + this.secondaryStats.rangedDamageMulti);
+            ? (1 + itemMeleeDmgMulti)
+            : (1 + itemRangedDmgMulti);
 
         const finalDamage = damageAfterGlobalMultis * specificDamageMulti;
 
@@ -1485,8 +1495,8 @@ export class StatEngine {
         // Melee/Ranged specific damage (for display)
         // Note: For display, we use the damageMultiplier (Common) as the base
         const globalDmgDisplayFactor = this.stats.damageMultiplier * (skinDmgFactor + setDmgFactor);
-        this.stats.meleeDamage = isWeaponMelee ? this.stats.totalDamage : (flatDamageWithMelee * globalDmgDisplayFactor * (1 + this.secondaryStats.meleeDamageMulti));
-        this.stats.rangedDamage = !isWeaponMelee ? this.stats.totalDamage : (flatDamageNoMelee * globalDmgDisplayFactor * (1 + this.secondaryStats.rangedDamageMulti));
+        this.stats.meleeDamage = isWeaponMelee ? this.stats.totalDamage : (flatDamageWithMelee * globalDmgDisplayFactor * (1 + itemMeleeDmgMulti));
+        this.stats.rangedDamage = !isWeaponMelee ? this.stats.totalDamage : (flatDamageNoMelee * globalDmgDisplayFactor * (1 + itemRangedDmgMulti));
 
         // --- Calculate Detailed Hit Metrics ---
         this.stats.hitDamage = finalDamage;
@@ -1754,8 +1764,8 @@ export class StatEngine {
     } // end finalizeCalculation
 } // end class
 
-export function calculateStats(profile: UserProfile, libs: LibraryData): any {
-    const engine = new StatEngine(profile, libs);
+export function calculateStats(profile: UserProfile, libs: LibraryData, excludeSubstats = false): any {
+    const engine = new StatEngine(profile, libs, excludeSubstats);
     if (typeof window !== 'undefined') {
         (window as any).debugCalculator = engine;
     }

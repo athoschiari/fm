@@ -14,7 +14,7 @@ import { MAX_ACTIVE_SKILLS, SKILL_MECHANICS } from '../../utils/constants';
 import { SkillSelectorModal } from './SkillSelectorModal';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 import { AscensionStars } from '../UI/AscensionStars';
-import { getAscensionTexturePath } from '../../utils/ascensionUtils';
+import { getAscensionTexturePath, getNormalizedTarget } from '../../utils/ascensionUtils';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
 import { formatNumber } from '../../utils/format';
@@ -73,7 +73,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
             if (config) {
                 const stats = config.StatContributions || [];
                 for (const s of stats) {
-                    const sTarget = s.StatNode?.StatTarget?.$type;
+                    const sTarget = getNormalizedTarget(s.StatNode).$type;
                     const sType = s.StatNode?.UniqueStat?.StatType;
                     if (sTarget === 'ActiveSkillStatTarget') {
                         if (sType === 'Damage' || sType === 'AscensionDamage') d = Math.max(d, s.Value + 1);

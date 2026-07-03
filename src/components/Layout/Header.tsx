@@ -1,16 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
-import { Menu, ChevronDown, Copy, Trash2, Check, Share2, Save, TrendingUp } from 'lucide-react';
+import { useState } from 'react';
+import { Menu, Copy, Check, Share2, Save, TrendingUp, ArrowLeftRight } from 'lucide-react';
 import LZString from 'lz-string';
 import { Button } from '../UI/Button';
 import { useTreeMode } from '../../context/TreeModeContext';
 import { useProfile } from '../../context/ProfileContext';
 import { ProfileIcon } from '../Profile/ProfileHeaderPanel';
-import { ConfirmModal } from '../UI/ConfirmModal';
 import { cn } from '../../lib/utils';
 import { AnimatedClock } from '../UI/AnimatedClock';
 import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { formatCompactNumber } from '../../utils/statsCalculator';
-import { useGameDataContext } from '../../context/GameDataContext';
+import { useComparison } from '../../context/ComparisonContext';
+
 interface HeaderProps {
     onMenuToggle: () => void;
     onStatsToggle: () => void;
@@ -18,55 +18,10 @@ interface HeaderProps {
 
 export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
     const { treeMode } = useTreeMode();
-    const { profile, profiles, activeProfileId, switchProfile, createProfile, cloneProfile, deleteProfile, saveSharedProfile } = useProfile();
-    const stats = useGlobalStats();
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
+    const { profile, saveSharedProfile } = useProfile();
+    const { excludeSubstats, setExcludeSubstats } = useComparison();
+    const stats = useGlobalStats(excludeSubstats);
     const [justCopied, setJustCopied] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const { selectedVersion } = useGameDataContext();
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const handleSwitchProfile = (profileId: string) => {
-        switchProfile(profileId);
-        setIsDropdownOpen(false);
-    };
-
-    const handleCreateProfile = () => {
-        createProfile();
-        setIsDropdownOpen(false);
-    };
-
-    const handleCloneProfile = () => {
-        cloneProfile();
-        setIsDropdownOpen(false);
-    };
-
-    const handleDeleteProfile = (profileId: string, e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (profiles.length <= 1) {
-            alert('Cannot delete the last profile');
-            return;
-        }
-        setProfileToDelete(profileId);
-    };
-
-    const confirmDelete = () => {
-        if (profileToDelete) {
-            deleteProfile(profileToDelete);
-            setProfileToDelete(null);
-        }
-    };
 
     const handleShare = () => {
         try {
@@ -85,116 +40,79 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
     return (
         <header className="h-16 sticky top-0 bg-bg-secondary/80 backdrop-blur-md border-b border-border z-50 flex items-center justify-between px-2 sm:px-4 lg:px-8">
             <div className="flex items-center gap-2 sm:gap-4">
-                <Button
-                    variant="ghost"
-                    size="sm"
+                {/* Combined Menu / Profile Button */}
+                <button
                     onClick={onMenuToggle}
+                    className="flex items-center gap-2 p-1.5 pr-2.5 sm:pr-3 rounded-xl hover:bg-bg-input border border-border hover:border-accent-primary/30 transition-all active:scale-95 group shadow-sm shrink-0"
+                    title="Open Navigation Menu & Profiles"
                 >
-                    <Menu className="w-6 h-6" />
-                </Button>
-
-                {/* Profile Selector */}
-                <div className="relative" ref={dropdownRef}>
-                    <button
-                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-bg-input border border-border hover:border-accent-primary/50 transition-colors"
-                    >
-                        <ProfileIcon iconIndex={profile.iconIndex} size={28} className="border-0" />
-                        <span className="font-medium text-sm max-w-[120px] truncate hidden sm:block">{profile.name}</span>
-                        <ChevronDown className={cn("w-4 h-4 text-text-muted transition-transform", isDropdownOpen && "rotate-180")} />
-                    </button>
-
-                    {isDropdownOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-64 bg-bg-primary border border-border rounded-xl shadow-2xl overflow-hidden z-50">
-                            <div className="p-2 border-b border-border">
-                                <p className="text-xs text-text-muted uppercase font-bold px-2 mb-2">Profiles</p>
-                                <div className="max-h-48 overflow-y-auto space-y-1">
-                                    {profiles.map((p) => (
-                                        <div
-                                            key={p.id}
-                                            className={cn(
-                                                "w-full flex items-center gap-2 px-2 py-2 rounded-lg transition-colors group relative",
-                                                p.id === activeProfileId
-                                                    ? "bg-accent-primary/20 text-accent-primary"
-                                                    : "hover:bg-bg-input text-text-primary"
-                                            )}
-                                        >
-                                            <button
-                                                onClick={() => handleSwitchProfile(p.id)}
-                                                className="flex-1 flex items-center gap-2 min-w-0 text-left"
-                                            >
-                                                <ProfileIcon iconIndex={p.iconIndex} size={32} className="border-0 shrink-0" />
-                                                <span className="truncate text-sm font-medium">{p.name}</span>
-                                            </button>
-
-                                            {p.id === activeProfileId && (
-                                                <Check className="w-4 h-4 text-accent-primary shrink-0" />
-                                            )}
-                                            {profiles.length > 1 && (
-                                                <button
-                                                    onClick={(e) => handleDeleteProfile(p.id, e)}
-                                                    className="p-1 text-text-muted hover:text-red-400 transition-colors shrink-0 z-10"
-                                                    title="Delete profile"
-                                                >
-                                                    <Trash2 className="w-3 h-3" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="p-2 space-y-1">
-                                <button
-                                    onClick={handleCreateProfile}
-                                    className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-bg-input text-text-secondary hover:text-text-primary transition-colors"
-                                >
-                                    <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/PlusIcon.png`} alt="New Profile" className="w-4 h-4 object-contain" />
-                                    <span className="text-sm">New Profile</span>
-                                </button>
-                                <button
-                                    onClick={handleCloneProfile}
-                                    className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-bg-input text-text-secondary hover:text-text-primary transition-colors"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                    <span className="text-sm">Clone Current</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                    <div className="relative shrink-0">
+                        <ProfileIcon iconIndex={profile.iconIndex} size={28} className="border-0 group-hover:scale-105 transition-transform" />
+                        <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-accent-primary border border-bg-secondary rounded-full flex items-center justify-center shadow-sm">
+                            <Menu className="w-2.5 h-2.5 text-white" />
+                        </span>
+                    </div>
+                    <span className="font-semibold text-xs text-text-secondary group-hover:text-text-primary truncate max-w-[80px] hidden sm:inline leading-none animate-pulse-subtle">
+                        {profile.name}
+                    </span>
+                </button>
             </div>
 
             {/* Global Stats - Visible on all screens, adjusting size/layout */}
             <div className="flex-1 px-1 sm:px-4 flex justify-center items-center min-w-0">
-                <div className="flex items-center gap-1 sm:gap-6 bg-bg-input/50 px-1.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border/50 backdrop-blur-sm overflow-x-auto no-scrollbar max-w-full">
-                    {/* Power */}
-                    <div className="flex flex-col items-center shrink-0">
-                        <span className="text-[9px] sm:text-[10px] text-accent-primary font-bold uppercase tracking-wider">Pwr</span>
-                        <span className="text-xs sm:text-sm font-bold text-text-primary leading-none">
-                            {stats ? formatCompactNumber(stats.power) : '-'}
-                        </span>
-                    </div>
+                <div className="relative">
+                    {/* Clickable Mode Indicator Tag - Overlay floating button */}
+                    <button
+                        onClick={() => setExcludeSubstats(!excludeSubstats)}
+                        className={cn(
+                            "absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border flex items-center justify-center shadow-lg active:scale-95 transition-all z-20 hover:scale-110",
+                            excludeSubstats
+                                ? "bg-purple-600 text-white border-purple-400 hover:bg-purple-500 shadow-purple-500/20"
+                                : "bg-orange-600 text-white border-orange-400 hover:bg-orange-500 shadow-orange-500/20"
+                        )}
+                        title={excludeSubstats ? "New Stats (Substats excluded). Click to switch to Old Stats." : "Old Stats (Substats included). Click to switch to New Stats."}
+                    >
+                        <ArrowLeftRight className="w-3 h-3" />
+                    </button>
 
-                    {/* Separator */}
-                    <div className="w-px h-6 bg-border/50 shrink-0" />
+                    <div className={cn(
+                        "flex items-center gap-1.5 sm:gap-6 pl-5 pr-1.5 sm:pr-3 py-1 sm:py-1.5 rounded-lg border backdrop-blur-sm overflow-x-auto no-scrollbar max-w-full transition-all duration-300",
+                        excludeSubstats
+                            ? "bg-purple-950/20 border-purple-500/30 text-purple-200 shadow-[0_0_15px_rgba(147,51,234,0.05)]"
+                            : "bg-orange-950/20 border-orange-500/30 text-orange-200 shadow-[0_0_15px_rgba(249,115,22,0.05)]"
+                    )}>
+                        {/* Power */}
+                        <div className="flex flex-col items-center shrink-0">
+                            <span className={cn(
+                                "text-[9px] sm:text-[10px] font-bold uppercase tracking-wider transition-colors",
+                                excludeSubstats ? "text-purple-400" : "text-orange-400"
+                            )}>Pwr</span>
+                            <span className="text-xs sm:text-sm font-bold text-text-primary leading-none">
+                                {stats ? formatCompactNumber(stats.power) : '-'}
+                            </span>
+                        </div>
 
-                    {/* Damage */}
-                    <div className="flex flex-col items-center shrink-0">
-                        <span className="text-[9px] sm:text-[10px] text-red-400 font-bold uppercase tracking-wider">Dmg</span>
-                        <span className="text-xs sm:text-sm font-bold text-text-primary leading-none">
-                            {stats ? formatCompactNumber(stats.totalDamage) : '-'}
-                        </span>
-                    </div>
+                        {/* Separator */}
+                        <div className="w-px h-6 bg-border/50 shrink-0" />
 
-                    {/* Separator */}
-                    <div className="w-px h-6 bg-border/50 shrink-0" />
+                        {/* Damage */}
+                        <div className="flex flex-col items-center shrink-0">
+                            <span className="text-[9px] sm:text-[10px] text-red-400 font-bold uppercase tracking-wider">Dmg</span>
+                            <span className="text-xs sm:text-sm font-bold text-text-primary leading-none">
+                                {stats ? formatCompactNumber(stats.totalDamage) : '-'}
+                            </span>
+                        </div>
 
-                    {/* Health */}
-                    <div className="flex flex-col items-center shrink-0">
-                        <span className="text-[9px] sm:text-[10px] text-green-400 font-bold uppercase tracking-wider">HP</span>
-                        <span className="text-xs sm:text-sm font-bold text-text-primary leading-none">
-                            {stats ? formatCompactNumber(stats.totalHealth) : '-'}
-                        </span>
+                        {/* Separator */}
+                        <div className="w-px h-6 bg-border/50 shrink-0" />
+
+                        {/* Health */}
+                        <div className="flex flex-col items-center shrink-0">
+                            <span className="text-[9px] sm:text-[10px] text-green-400 font-bold uppercase tracking-wider">HP</span>
+                            <span className="text-xs sm:text-sm font-bold text-text-primary leading-none">
+                                {stats ? formatCompactNumber(stats.totalHealth) : '-'}
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -241,15 +159,7 @@ export function Header({ onMenuToggle, onStatsToggle }: HeaderProps) {
 
             </div>
 
-            <ConfirmModal
-                isOpen={!!profileToDelete}
-                title="Delete Profile"
-                message="Are you sure you want to delete this profile? This action cannot be undone."
-                onConfirm={confirmDelete}
-                onCancel={() => setProfileToDelete(null)}
-                confirmText="Delete"
-                variant="primary"
-            />
+            {/* ConfirmModal removed - using native window.confirm inside Sidebar */}
         </header>
     );
 }

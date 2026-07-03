@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom';
 import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
-    ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download
+    ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download,
+    ArrowLeftRight
 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
@@ -357,8 +358,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     };
     const [openSection, setOpenSection] = useState<string | null>(null);
     const [viewTab, setViewTab] = useState<'general' | 'metrics' | 'hits' | 'passives'>(defaultTab);
-    const stats = useGlobalStats();
-    const techModifiers = useTreeModifiers();
     const {
         isComparing,
         originalItems,
@@ -384,8 +383,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         applyTestBuild,
         loadProfileIntoTest,
         isCompactStats,
-        setIsCompactStats
+        setIsCompactStats,
+        excludeSubstats,
+        setExcludeSubstats
     } = useComparison();
+    const stats = useGlobalStats(excludeSubstats);
+    const techModifiers = useTreeModifiers() as Record<string, number>;
     const { profile, profiles, activeProfileId } = useProfile();
 
     const { treeMode, setTreeMode } = useTreeMode();
@@ -497,8 +500,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
             }
         };
 
-        const origStats = calculateStats(originalProfile, libs);
-        const testStats = calculateStats(testProfile, libs);
+        const origStats = calculateStats(originalProfile, libs, excludeSubstats);
+        const testStats = calculateStats(testProfile, libs, excludeSubstats);
 
         return { originalStats: origStats, testStats: testStats, originalProfile, testProfile };
     }, [
@@ -508,7 +511,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         originalPets, testPets, originalSkills, testSkills,
         originalPetAscension, testPetAscension, originalSkillAscension, testSkillAscension,
         originalUseSkinWindup, testUseSkinWindup,
-        treeMode, techTreePositionLibrary, techTreeLibrary, libs
+        treeMode, techTreePositionLibrary, techTreeLibrary, libs, excludeSubstats
     ]);
 
     const activePerfectionDetails = useMemo(() => {
@@ -1123,24 +1126,68 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
 
     // Main unified Sidebar/Drawer rendering
     return (
-        <Card className="h-full flex flex-col overflow-hidden shadow-2xl border-border/50 bg-bg-primary">
+        <Card className={cn(
+            "h-full flex flex-col overflow-hidden shadow-2xl transition-all duration-300",
+            excludeSubstats
+                ? "border-purple-500/20 bg-gradient-to-b from-purple-950/5 to-bg-primary"
+                : "border-orange-500/20 bg-gradient-to-b from-orange-950/5 to-bg-primary"
+        )}>
             {/* Unified Header */}
-            <div className="p-5 border-b border-border bg-bg-secondary/30">
-                <div className="flex items-center justify-between mb-4">
+            <div className={cn(
+                "p-5 border-b transition-all duration-300",
+                excludeSubstats
+                    ? "border-purple-500/20 bg-purple-950/10"
+                    : "border-orange-500/20 bg-orange-950/10"
+            )}>
+                <div 
+                    onClick={() => setExcludeSubstats(!excludeSubstats)}
+                    className="flex items-center justify-between mb-4 cursor-pointer select-none hover:opacity-90 transition-opacity"
+                    title="Click to toggle between Sheet Stats (excludes substats) and Combat Stats (includes substats)"
+                >
                     <h3 className="text-xl font-black uppercase tracking-wider flex items-center gap-3">
-                        <AnimatedClock className="w-8 h-8 text-accent-primary" />
-                        <span className="bg-gradient-to-r from-white to-text-muted bg-clip-text text-transparent">
-                            Character Stats
-                        </span>
+                        <AnimatedClock className="w-8 h-8 text-accent-primary animate-pulse" />
+                        <div className="flex flex-col">
+                            <span className="bg-gradient-to-r from-white to-text-muted bg-clip-text text-transparent leading-none">
+                                Character Stats
+                            </span>
+                            <span className={cn(
+                                "text-[9px] font-bold tracking-wider mt-1 uppercase",
+                                excludeSubstats ? "text-purple-400" : "text-orange-400"
+                            )}>
+                                {excludeSubstats ? "New Stats (Substats Off)" : "Old Stats (Substats On)"}
+                            </span>
+                        </div>
                     </h3>
-                    {onClose && (
+                    <div className="flex items-center gap-2">
+                        {/* Substats Exclusion Toggle */}
                         <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-white/10 rounded-full transition-colors text-text-muted hover:text-white"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setExcludeSubstats(!excludeSubstats);
+                            }}
+                            className={cn(
+                                "p-2 rounded-lg border transition-all shadow-md active:scale-95",
+                                excludeSubstats
+                                    ? "bg-purple-500/10 text-purple-400 border-purple-500/30 hover:bg-purple-500/20"
+                                    : "bg-orange-500/10 text-orange-400 border-orange-500/30 hover:bg-orange-500/20"
+                            )}
+                            title={excludeSubstats ? "Current: New Stats (Click to switch to Old)" : "Current: Old Stats (Click to switch to New)"}
                         >
-                            <X className="w-6 h-6" />
+                            <ArrowLeftRight className="w-4 h-4" />
                         </button>
-                    )}
+
+                        {onClose && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClose();
+                                }}
+                                className="p-2 hover:bg-white/10 rounded-full transition-colors text-text-muted hover:text-white"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Tree Mode Selection - Top Level Segmented Control */}
@@ -1264,6 +1311,19 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
                 {(isComparing && originalStats && testStats) ? (
                     <div className="space-y-6">
+                        {/* Substats Toggle Mode Warning/Notice */}
+                        <div className={cn(
+                            "p-2.5 rounded-xl border text-xs text-center flex items-center justify-center gap-2 shadow-sm font-semibold select-none cursor-pointer active:scale-98 transition-transform",
+                            excludeSubstats
+                                ? "bg-purple-500/5 text-purple-400 border-purple-500/20"
+                                : "bg-orange-500/5 text-orange-400 border-orange-500/20"
+                        )}
+                        onClick={() => setExcludeSubstats(!excludeSubstats)}
+                        title="Click to toggle calculation basis between New Stats and Old Stats"
+                        >
+                            <ArrowLeftRight className="w-4 h-4 shrink-0" />
+                            <span>Comparing: {excludeSubstats ? 'New Stats (Substats Excluded)' : 'Old Stats (Substats Included)'}</span>
+                        </div>
                         <div className="flex bg-bg-secondary border border-border/50 rounded-xl p-1 shadow-lg flex-wrap gap-1">
                             <button
                                 onClick={() => setViewTab('general')}
