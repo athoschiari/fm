@@ -492,6 +492,9 @@ export default function AppShell() {
                                     <p>
                                         As you might have noticed, updates have been a bit slower lately. I've been extremely busy in my daily life recently, so I don't have much free time to actively code and implement new features. However, I will always do my best to keep the data updated for you all!
                                     </p>
+                                    <p>
+                                        Special thanks to all the amazing supporters who buy me coffee and keep the furnace hot! ❤️☕
+                                    </p>
                                     <p className="font-bold text-accent-primary mt-2">
                                         Much love, Lucian ❤️
                                     </p>
