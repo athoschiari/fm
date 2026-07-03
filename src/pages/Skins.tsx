@@ -197,7 +197,9 @@ export default function Skins() {
                 {Object.entries(groupedSkins.sets).map(([setId, skins]) => {
                     const setInfo = setsData?.[setId];
                     if (!setInfo) return null;
-                    const setIcon = spriteMapping?.skinSets?.[setId];
+                    const setKeys = setsData ? Object.keys(setsData) : [];
+                    const setIdx = setKeys.indexOf(setId);
+                    const setIcon = spriteMapping?.skinSets?.[setId] || (setIdx >= 0 ? `SteppingStoneCharIcon${setIdx}.png` : undefined);
 
                     return (
                         <div key={setId} className="bg-bg-secondary/20 border border-border rounded-xl overflow-hidden">

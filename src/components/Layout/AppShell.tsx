@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { Coffee, ExternalLink, Github } from 'lucide-react';
+import { Coffee, ExternalLink, Github, Sparkles } from 'lucide-react';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { useProfile } from '../../context/ProfileContext';
 import { StatsSummaryPanel } from '../Profile/StatsSummaryPanel';
 import { cn } from '../../lib/utils';
 import { formatVersion } from '../../lib/formatVersion';
+import { getAnvilTexturePath } from '../../utils/ascensionUtils';
 
 const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
     const baseMessages = [
@@ -71,12 +72,57 @@ const FRIENDLY_MESSAGES = (userName: string, hasRealName: boolean) => {
     return baseMessages;
 };
 
+const formatVersionDate = (version: string): string => {
+    const parts = version.split('_');
+    if (parts.length >= 3) {
+        const year = parts[0];
+        const monthIndex = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        
+        const monthNames = [
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+        const monthName = monthNames[monthIndex] || parts[1];
+        
+        let suffix = 'th';
+        if (day === 1 || day === 21 || day === 31) suffix = 'st';
+        else if (day === 2 || day === 22) suffix = 'nd';
+        else if (day === 3 || day === 23) suffix = 'rd';
+
+        let dateStr = `${monthName} ${day}${suffix}, ${year}`;
+        if (parts.length >= 5) {
+            dateStr += ` at ${parts[3]}:${parts[4]}`;
+        }
+        return dateStr;
+    }
+    return version;
+};
+
 export default function AppShell() {
-    const { selectedVersion } = useGameDataContext();
+    const { selectedVersion, versions, isLoadingVersions } = useGameDataContext();
     const { profile } = useProfile();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isStatsOpen, setIsStatsOpen] = useState(false);
     const [isHoveringCoffee, setIsHoveringCoffee] = useState(false);
+    const [showVersionPopup, setShowVersionPopup] = useState(false);
+    const [popupVersion, setPopupVersion] = useState('');
+
+    useEffect(() => {
+        if (!isLoadingVersions && versions && versions.length > 0) {
+            const latest = versions[0];
+            const lastSeen = localStorage.getItem('fm_last_seen_config_version');
+            if (lastSeen !== latest) {
+                setPopupVersion(latest);
+                setShowVersionPopup(true);
+            }
+        }
+    }, [isLoadingVersions, versions]);
+
+    const handleClosePopup = () => {
+        localStorage.setItem('fm_last_seen_config_version', popupVersion);
+        setShowVersionPopup(false);
+    };
 
     const maxAgeVisuals = useMemo(() => {
         // profile.misc.forgeLevel is 0-indexed (0 = Lvl 1 in UI)
@@ -221,6 +267,17 @@ export default function AppShell() {
             delete (window as any).__triggerTestToast;
         };
     }, [profile.name]);
+
+    useEffect(() => {
+        (window as any).__triggerUpdateModal = () => {
+            const latest = versions[0] || "2026_07_03_12_39";
+            setPopupVersion(latest);
+            setShowVersionPopup(true);
+        };
+        return () => {
+            delete (window as any).__triggerUpdateModal;
+        };
+    }, [versions]);
 
     const CoffeeFountain = () => (
         <div className="absolute inset-0 pointer-events-none overflow-visible">
@@ -388,6 +445,86 @@ export default function AppShell() {
                     </div>
                 </motion.a>
             </div>
+
+            <AnimatePresence>
+                {showVersionPopup && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            transition={{ type: "spring", duration: 0.5 }}
+                            className="bg-bg-secondary/90 border border-accent-primary/20 p-6 md:p-8 rounded-3xl max-w-md w-full shadow-2xl relative overflow-hidden backdrop-blur-xl ring-1 ring-white/10 text-center"
+                        >
+                            {/* Decorative background glow */}
+                            <div className="absolute -right-16 -top-16 w-36 h-36 bg-accent-primary/20 rounded-full blur-2xl pointer-events-none" />
+                            <div className="absolute -left-16 -bottom-16 w-36 h-36 bg-yellow-500/10 rounded-full blur-2xl pointer-events-none" />
+
+                            <div className="flex flex-col items-center gap-4 relative z-10">
+                                <div className="w-20 h-20 rounded-full bg-accent-primary/10 border border-accent-primary/30 flex items-center justify-center p-3 shadow-[0_0_20px_rgba(235,94,40,0.15)] relative">
+                                    <img 
+                                        src={getAnvilTexturePath(profile.misc.forgeAscensionLevel || 0, selectedVersion)} 
+                                        alt="Forge" 
+                                        className="w-full h-full object-contain" 
+                                    />
+                                </div>
+
+                                <h2 className="text-xl md:text-2xl font-black uppercase tracking-wide text-white flex items-center gap-2">
+                                    <Sparkles className="w-5 h-5 text-yellow-400 animate-pulse" />
+                                    Forge Master Updated!
+                                    <Sparkles className="w-5 h-5 text-yellow-400 animate-pulse" />
+                                </h2>
+
+                                <div className="w-full h-px bg-white/10 my-1" />
+
+                                <p className="text-sm text-text-primary leading-relaxed text-center">
+                                    Hear ye, Hear ye! The server hamsters have successfully forged and integrated the latest game configurations! 🐹
+                                </p>
+                                
+                                <p className="text-xs text-text-muted leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5 font-mono w-full text-center">
+                                    Updated as of:<br/>
+                                    <span className="text-accent-primary font-bold text-sm block mt-1">
+                                        {formatVersionDate(popupVersion)}
+                                    </span>
+                                </p>
+
+                                <div className="text-xs text-text-muted text-center space-y-2 mt-1">
+                                    <p>
+                                        As you might have noticed, updates have been a bit slower lately. I've been extremely busy in my daily life recently, so I don't have much free time to actively code and implement new features. However, I will always do my best to keep the data updated for you all!
+                                    </p>
+                                    <p className="font-bold text-accent-primary mt-2">
+                                        Much love, Lucian ❤️
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={handleClosePopup}
+                                    className={cn(
+                                        "mt-4 w-full py-3.5 relative overflow-hidden text-white font-black uppercase tracking-wider rounded-2xl transition-all duration-300 hover:shadow-lg active:scale-95 text-sm select-none shadow-[0_4px_20px_rgba(0,0,0,0.3)]",
+                                        maxAgeVisuals.bg
+                                    )}
+                                >
+                                    {/* The animated age-based overlay */}
+                                    <div 
+                                        className={cn(maxAgeVisuals.anim, "absolute inset-0 opacity-40 mix-blend-overlay pointer-events-none")} 
+                                        style={{ 
+                                            '--theme-url': `url(${import.meta.env.BASE_URL}Texture2D/${selectedVersion ? `${selectedVersion}/` : ''}${maxAgeVisuals.texture})` 
+                                        } as React.CSSProperties} 
+                                    >
+                                        {maxAgeVisuals.id === 'quantum' && Array.from({ length: 8 }).map((_, i) => (
+                                            <span key={i} />
+                                        ))}
+                                    </div>
+
+                                    <span className="relative z-10 text-white font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+                                        Heck yeah, let's forge!
+                                    </span>
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

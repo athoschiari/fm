@@ -27,11 +27,12 @@ interface StatRowProps {
     value: string | number;
     subValue?: string;
     count?: number;
+    perf?: number;
     color?: string;
     onInfoPointsClick?: () => void;
 }
 
-function StatRow({ icon, label, value, subValue, count, color = 'text-accent-primary', onInfoPointsClick }: StatRowProps) {
+function StatRow({ icon, label, value, subValue, count, perf, color = 'text-accent-primary', onInfoPointsClick }: StatRowProps) {
     return (
         <div className="flex flex-col justify-between p-2.5 bg-bg-input/30 rounded-lg border border-border/30 hover:bg-bg-input/50 transition-colors min-h-[5rem]">
             <div className="flex items-center gap-2 w-full">
@@ -56,7 +57,10 @@ function StatRow({ icon, label, value, subValue, count, color = 'text-accent-pri
                         )}
                     </div>
                     {count !== undefined && count > 0 && (
-                        <div className="text-[11px] text-text-muted">({count} Stats)</div>
+                        <div className="text-[11px] text-text-muted mt-0.5">
+                            {count} {count === 1 ? 'Slot' : 'Slots'}
+                            {perf !== undefined && ` (${perf.toFixed(1)}% Perfection)`}
+                        </div>
                     )}
                 </div>
             </div>
@@ -71,14 +75,22 @@ function StatRow({ icon, label, value, subValue, count, color = 'text-accent-pri
 }
 
 // Compact stat for grid layouts
-function CompactStat({ icon, label, value, subValue, color = 'text-accent-primary' }: StatRowProps) {
+function CompactStat({ icon, label, value, subValue, count, perf, color = 'text-accent-primary' }: StatRowProps) {
     return (
         <div className="flex flex-col justify-between p-2.5 bg-bg-input/30 rounded-lg border border-border/30 hover:bg-bg-input/50 transition-colors min-h-[4.5rem]">
-            <div className="flex items-center gap-1.5 mb-1">
-                <div className={cn("w-5 h-5 rounded flex items-center justify-center", color)}>
+            <div className="flex items-center gap-1.5 mb-1 min-w-0">
+                <div className={cn("w-5 h-5 rounded flex items-center justify-center bg-bg-secondary shrink-0", color)}>
                     {icon}
                 </div>
-                <span className="text-sm text-text-muted break-words leading-tight">{label}</span>
+                <div className="flex flex-col min-w-0">
+                    <span className="text-sm text-text-muted break-words leading-tight block">{label}</span>
+                    {count !== undefined && count > 0 && (
+                        <span className="text-[9px] text-text-muted leading-none mt-0.5">
+                            {count} {count === 1 ? 'Slot' : 'Slots'}
+                            {perf !== undefined && ` (${perf.toFixed(1)}% Perf)`}
+                        </span>
+                    )}
+                </div>
             </div>
             <div className="flex flex-col items-end mt-auto">
                 <div className={cn("font-mono font-bold text-base", color)}>
@@ -330,7 +342,7 @@ function ComparisonStatRow({
     );
 }
 
-export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = false, defaultTab = 'general' }: { variant?: 'sidebar' | 'horizontal-strip', onClose?: () => void, hideActions?: boolean, defaultTab?: 'general' | 'metrics' | 'hits' }) {
+export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = false, defaultTab = 'general' }: { variant?: 'sidebar' | 'horizontal-strip', onClose?: () => void, hideActions?: boolean, defaultTab?: 'general' | 'metrics' | 'hits' | 'passives' }) {
     const isStrip = variant === 'horizontal-strip';
     const location = useLocation();
     const isSubstatsPage = location.pathname.includes('/calculators/substats');
@@ -344,7 +356,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         setShowDpsModal(true);
     };
     const [openSection, setOpenSection] = useState<string | null>(null);
-    const [viewTab, setViewTab] = useState<'general' | 'metrics' | 'hits'>(defaultTab);
+    const [viewTab, setViewTab] = useState<'general' | 'metrics' | 'hits' | 'passives'>(defaultTab);
     const stats = useGlobalStats();
     const techModifiers = useTreeModifiers();
     const {
@@ -499,6 +511,55 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         treeMode, techTreePositionLibrary, techTreeLibrary, libs
     ]);
 
+    const activePerfectionDetails = useMemo(() => {
+        if (!secondaryStatLibrary) return {};
+
+        const totals: Record<string, { sum: number; count: number }> = {};
+
+        const addStatsFromSlot = (statsList?: { statId: string; value: number }[]) => {
+            if (!statsList) return;
+            statsList.forEach(s => {
+                const libStat = secondaryStatLibrary[s.statId];
+                if (libStat && libStat.UpperRange > 0) {
+                    const maxVal = libStat.UpperRange * 100;
+                    const perf = (s.value / maxVal) * 100;
+                    if (!totals[s.statId]) {
+                        totals[s.statId] = { sum: 0, count: 0 };
+                    }
+                    totals[s.statId].sum += Math.min(100, perf);
+                    totals[s.statId].count += 1;
+                }
+            });
+        };
+
+        // Scan items
+        const itemSlots: (keyof UserProfile['items'])[] = ['Weapon', 'Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'];
+        itemSlots.forEach(slot => {
+            const item = profile.items[slot];
+            if (item) addStatsFromSlot(item.secondaryStats);
+        });
+
+        // Scan pets
+        profile.pets.active.forEach(pet => {
+            if (pet) addStatsFromSlot(pet.secondaryStats);
+        });
+
+        // Scan mount
+        if (profile.mount.active) {
+            addStatsFromSlot(profile.mount.active.secondaryStats);
+        }
+
+        const result: Record<string, { count: number; avgPerfection: number }> = {};
+        Object.entries(totals).forEach(([statId, info]) => {
+            result[statId] = {
+                count: info.count,
+                avgPerfection: info.sum / info.count
+            };
+        });
+
+        return result;
+    }, [profile, secondaryStatLibrary]);
+
     if (!stats) {
         return (
             <Card className="h-full flex items-center justify-center">
@@ -599,12 +660,45 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     />
                     <ComparisonStatRow
                         isCompact={isCompactStats}
+                        icon={<Swords className="w-4 h-4" />}
+                        label="Melee DMG"
+                        originalValue={originalStats.meleeDamage}
+                        testValue={testStats.meleeDamage}
+                        color="text-amber-400"
+                    />
+                    <ComparisonStatRow
+                        isCompact={isCompactStats}
+                        icon={<Crosshair className="w-4 h-4" />}
+                        label="Ranged DMG"
+                        originalValue={originalStats.rangedDamage}
+                        testValue={testStats.rangedDamage}
+                        color="text-sky-400"
+                    />
+                    <ComparisonStatRow
+                        isCompact={isCompactStats}
                         icon={<Heart className="w-4 h-4" />}
                         label="Health"
                         originalValue={originalStats.totalHealth}
                         testValue={testStats.totalHealth}
                         color="text-green-400"
                     />
+                </div>
+            )}
+            {viewTab === 'passives' && (
+                <div className="space-y-3">
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Star className="w-4 h-4 text-yellow-400" />} label="Crit %" originalValue={originalStats.criticalChance || 0} testValue={testStats.criticalChance || 0} formatFn={formatPercent} color="text-yellow-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<TrendingUp className="w-4 h-4 text-yellow-500" />} label="Crit Damage" originalValue={originalStats.criticalDamage || 0} testValue={testStats.criticalDamage || 0} formatFn={formatMultiplier} color="text-yellow-500" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Shield className="w-4 h-4 text-blue-400" />} label="Block %" originalValue={originalStats.blockChance || 0} testValue={testStats.blockChance || 0} formatFn={formatPercent} color="text-blue-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Zap className="w-4 h-4 text-purple-400" />} label="Double %" originalValue={originalStats.doubleDamageChance || 0} testValue={testStats.doubleDamageChance || 0} formatFn={formatPercent} color="text-purple-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Heart className="w-4 h-4 text-purple-400" />} label="Life Steal %" originalValue={originalStats.lifeSteal || 0} testValue={testStats.lifeSteal || 0} formatFn={formatPercent} color="text-purple-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Heart className="w-4 h-4 text-purple-400" />} label="Health Regen %" originalValue={originalStats.healthRegen || 0} testValue={testStats.healthRegen || 0} formatFn={formatPercent} color="text-purple-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<TrendingUp className="w-4 h-4 text-orange-400" />} label="Attack Speed" originalValue={originalStats.attackSpeedMultiplier || 0} testValue={testStats.attackSpeedMultiplier || 0} formatFn={formatMultiplier} color="text-orange-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Skill CDR %" originalValue={originalStats.skillCooldownReduction || 0} testValue={testStats.skillCooldownReduction || 0} formatFn={formatPercent} color="text-emerald-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Swords className="w-4 h-4 text-red-400" />} label="Damage %" originalValue={originalStats.secondaryDamageMulti || 0} testValue={testStats.secondaryDamageMulti || 0} formatFn={formatPercent} color="text-red-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Heart className="w-4 h-4 text-green-400" />} label="Health %" originalValue={originalStats.secondaryHealthMulti || 0} testValue={testStats.secondaryHealthMulti || 0} formatFn={formatPercent} color="text-green-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Swords className="w-4 h-4 text-amber-400" />} label="Melee DMG %" originalValue={originalStats.meleeDamageMultiplier || 0} testValue={testStats.meleeDamageMultiplier || 0} formatFn={formatPercent} color="text-amber-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Crosshair className="w-4 h-4 text-sky-400" />} label="Ranged DMG %" originalValue={originalStats.rangedDamageMultiplier || 0} testValue={testStats.rangedDamageMultiplier || 0} formatFn={formatPercent} color="text-sky-400" />
+                    <ComparisonStatRow isCompact={isCompactStats} icon={<Swords className="w-4 h-4 text-red-400" />} label="Skill Damage %" originalValue={originalStats.skillDamageMultiplier || 0} testValue={testStats.skillDamageMultiplier || 0} formatFn={formatMultiplier} color="text-red-400" />
                 </div>
             )}
 
@@ -828,6 +922,17 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <Swords className="w-3 h-3" />
                             <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Hits</span>
                         </button>
+                        <button
+                            onClick={() => setViewTab('passives')}
+                            className={cn(
+                                "p-1.5 rounded-full transition-all flex items-center sm:gap-1.5 sm:px-2",
+                                viewTab === 'passives' ? "bg-yellow-500 text-white scale-105 shadow-md" : "text-text-muted hover:text-text-primary"
+                            )}
+                            title="Secondary Stats"
+                        >
+                            <Sparkles className="w-3 h-3" />
+                            <span className="hidden sm:block text-[8px] font-black uppercase tracking-tighter">Stats</span>
+                        </button>
                     </div>
                 </div>
 
@@ -868,6 +973,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-red-400" />} label="Damage" originalValue={originalStats?.totalDamage ?? 0} testValue={testStats?.totalDamage ?? 0} color="text-red-400" />
                             </div>
                             <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-amber-400" />} label="Melee DMG" originalValue={originalStats?.meleeDamage ?? 0} testValue={testStats?.meleeDamage ?? 0} color="text-amber-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Crosshair className="w-4 h-4 text-sky-400" />} label="Ranged DMG" originalValue={originalStats?.rangedDamage ?? 0} testValue={testStats?.rangedDamage ?? 0} color="text-sky-400" />
+                            </div>
+                            <div className="shrink-0">
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-green-400" />} label="Health" originalValue={originalStats?.totalHealth ?? 0} testValue={testStats?.totalHealth ?? 0} color="text-green-400" />
                             </div>
                         </>
@@ -885,6 +996,45 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real DPS" originalValue={originalDpsDetails.realTotal} testValue={testDpsDetails.realTotal} color="text-orange-500" onTestDetailsClick={() => { if (testStats && testProfile) { setModalData({ stats: testStats, profile: testProfile, variant: 'test' }); setShowDpsModal(true); } }} />
                                 <div className="w-px h-6 bg-orange-500/10" />
                                 <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-500" />} label="Real HPS" originalValue={originalRealHps} testValue={testRealHps} color="text-emerald-500" />
+                            </div>
+                        </>
+                    ) : viewTab === 'passives' ? (
+                        <>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Star className="w-4 h-4 text-yellow-400" />} label="Crit %" originalValue={originalStats?.criticalChance ?? 0} testValue={testStats?.criticalChance ?? 0} formatFn={formatPercent} color="text-yellow-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-yellow-500" />} label="Crit DMG" originalValue={originalStats?.criticalDamage ?? 0} testValue={testStats?.criticalDamage ?? 0} formatFn={formatMultiplier} color="text-yellow-500" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Shield className="w-4 h-4 text-blue-400" />} label="Block %" originalValue={originalStats?.blockChance ?? 0} testValue={testStats?.blockChance ?? 0} formatFn={formatPercent} color="text-blue-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-purple-400" />} label="Double %" originalValue={originalStats?.doubleDamageChance ?? 0} testValue={testStats?.doubleDamageChance ?? 0} formatFn={formatPercent} color="text-purple-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-400" />} label="Lifesteal %" originalValue={originalStats?.lifeSteal ?? 0} testValue={testStats?.lifeSteal ?? 0} formatFn={formatPercent} color="text-purple-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-400" />} label="Regen %" originalValue={originalStats?.healthRegen ?? 0} testValue={testStats?.healthRegen ?? 0} formatFn={formatPercent} color="text-purple-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-orange-400" />} label="Atk Speed" originalValue={originalStats?.attackSpeedMultiplier ?? 0} testValue={testStats?.attackSpeedMultiplier ?? 0} formatFn={formatMultiplier} color="text-orange-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Skill CDR" originalValue={originalStats?.skillCooldownReduction ?? 0} testValue={testStats?.skillCooldownReduction ?? 0} formatFn={formatPercent} color="text-emerald-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-red-400" />} label="Damage %" originalValue={originalStats?.secondaryDamageMulti ?? 0} testValue={testStats?.secondaryDamageMulti ?? 0} formatFn={formatPercent} color="text-red-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-green-400" />} label="Health %" originalValue={originalStats?.secondaryHealthMulti ?? 0} testValue={testStats?.secondaryHealthMulti ?? 0} formatFn={formatPercent} color="text-green-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Swords className="w-4 h-4 text-amber-400" />} label="Melee DMG %" originalValue={originalStats?.meleeDamageMultiplier ?? 0} testValue={testStats?.meleeDamageMultiplier ?? 0} formatFn={formatPercent} color="text-amber-400" />
+                            </div>
+                            <div className="shrink-0">
+                                <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Crosshair className="w-4 h-4 text-sky-400" />} label="Ranged DMG %" originalValue={originalStats?.rangedDamageMultiplier ?? 0} testValue={testStats?.rangedDamageMultiplier ?? 0} formatFn={formatPercent} color="text-sky-400" />
                             </div>
                         </>
                     ) : (
@@ -1114,11 +1264,11 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
                 {(isComparing && originalStats && testStats) ? (
                     <div className="space-y-6">
-                        <div className="flex bg-bg-secondary border border-border/50 rounded-xl p-1 shadow-lg">
+                        <div className="flex bg-bg-secondary border border-border/50 rounded-xl p-1 shadow-lg flex-wrap gap-1">
                             <button
                                 onClick={() => setViewTab('general')}
                                 className={cn(
-                                    "flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider",
+                                    "flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider min-w-[70px]",
                                     viewTab === 'general' ? "bg-accent-primary text-white shadow-md" : "text-text-muted hover:text-text-primary"
                                 )}
                             >
@@ -1128,7 +1278,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <button
                                 onClick={() => setViewTab('metrics')}
                                 className={cn(
-                                    "flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider",
+                                    "flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider min-w-[70px]",
                                     viewTab === 'metrics' ? "bg-orange-500 text-white shadow-md" : "text-text-muted hover:text-text-primary"
                                 )}
                             >
@@ -1138,12 +1288,22 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             <button
                                 onClick={() => setViewTab('hits')}
                                 className={cn(
-                                    "flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-wider",
+                                    "flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider min-w-[70px]",
                                     viewTab === 'hits' ? "bg-red-500 text-white shadow-md" : "text-text-muted hover:text-text-primary"
                                 )}
                             >
                                 <Swords className="w-3.5 h-3.5" />
                                 <span>Hits</span>
+                            </button>
+                            <button
+                                onClick={() => setViewTab('passives')}
+                                className={cn(
+                                    "flex-1 py-1.5 px-2 rounded-lg transition-all flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-wider min-w-[70px]",
+                                    viewTab === 'passives' ? "bg-yellow-500 text-white shadow-md" : "text-text-muted hover:text-text-primary"
+                                )}
+                            >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>Stats</span>
                             </button>
                         </div>
                         {comparisonContent}
@@ -1314,6 +1474,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 label="Crit %"
                                                 value={formatPercent(stats.criticalChance || 0)}
                                                 subValue={formatBreakdown(stats.critChanceBreakdown) ?? undefined}
+                                                count={activePerfectionDetails['CriticalChance']?.count}
+                                                perf={activePerfectionDetails['CriticalChance']?.avgPerfection}
                                                 color="text-yellow-400"
                                             />
                                             <CompactStat
@@ -1321,23 +1483,50 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 label="Crit Damage"
                                                 value={formatMultiplier(stats.criticalDamage || 0)}
                                                 subValue={formatBreakdown(stats.critDamageBreakdown, true) ?? undefined}
+                                                count={activePerfectionDetails['CriticalMulti']?.count}
+                                                perf={activePerfectionDetails['CriticalMulti']?.avgPerfection}
                                                 color="text-yellow-500"
                                             />
-                                            <CompactStat icon={<Shield className="w-3 h-3" />} label="Block %" value={formatPercent(stats.blockChance || 0)} color="text-blue-400" />
+                                            <CompactStat
+                                                icon={<Shield className="w-3 h-3" />}
+                                                label="Block %"
+                                                value={formatPercent(stats.blockChance || 0)}
+                                                count={activePerfectionDetails['BlockChance']?.count}
+                                                perf={activePerfectionDetails['BlockChance']?.avgPerfection}
+                                                color="text-blue-400"
+                                            />
                                             <CompactStat
                                                 icon={<Zap className="w-3 h-3" />}
                                                 label="Double %"
                                                 value={formatPercent(stats.doubleDamageChance || 0)}
                                                 subValue={formatBreakdown(stats.doubleDamageBreakdown) ?? undefined}
+                                                count={activePerfectionDetails['DoubleDamageChance']?.count}
+                                                perf={activePerfectionDetails['DoubleDamageChance']?.avgPerfection}
                                                 color="text-purple-400"
                                             />
-                                            <CompactStat icon={<Heart className="w-3 h-3" />} label="Life Steal %" value={formatPercent(stats.lifeSteal || 0)} color="text-purple-400" />
-                                            <CompactStat icon={<Heart className="w-3 h-3" />} label="Health Regen %" value={formatPercent(stats.healthRegen || 0)} color="text-purple-400" />
+                                            <CompactStat
+                                                icon={<Heart className="w-3 h-3" />}
+                                                label="Life Steal %"
+                                                value={formatPercent(stats.lifeSteal || 0)}
+                                                count={activePerfectionDetails['LifeSteal']?.count}
+                                                perf={activePerfectionDetails['LifeSteal']?.avgPerfection}
+                                                color="text-purple-400"
+                                            />
+                                            <CompactStat
+                                                icon={<Heart className="w-3 h-3" />}
+                                                label="Health Regen %"
+                                                value={formatPercent(stats.healthRegen || 0)}
+                                                count={activePerfectionDetails['HealthRegen']?.count}
+                                                perf={activePerfectionDetails['HealthRegen']?.avgPerfection}
+                                                color="text-purple-400"
+                                            />
                                             <CompactStat
                                                 icon={<TrendingUp className="w-3 h-3" />}
                                                 label="Attack Speed"
                                                 value={formatMultiplier(stats.attackSpeedMultiplier)}
                                                 subValue={formatBreakdown(stats.attackSpeedBreakdown, true) ?? undefined}
+                                                count={activePerfectionDetails['AttackSpeed']?.count}
+                                                perf={activePerfectionDetails['AttackSpeed']?.avgPerfection}
                                                 color="text-orange-400"
                                             />
                                             <CompactStat
@@ -1345,7 +1534,41 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                                 label="Skill CDR %"
                                                 value={formatPercent(stats.skillCooldownReduction)}
                                                 subValue={formatBreakdown(stats.skillCooldownBreakdown) ?? undefined}
+                                                count={activePerfectionDetails['SkillCooldownMulti']?.count}
+                                                perf={activePerfectionDetails['SkillCooldownMulti']?.avgPerfection}
                                                 color="text-emerald-400"
+                                            />
+                                            <CompactStat
+                                                icon={<Swords className="w-3 h-3" />}
+                                                label="Damage %"
+                                                value={formatPercent(stats.secondaryDamageMulti || 0)}
+                                                count={activePerfectionDetails['DamageMulti']?.count}
+                                                perf={activePerfectionDetails['DamageMulti']?.avgPerfection}
+                                                color="text-red-400"
+                                            />
+                                            <CompactStat
+                                                icon={<Heart className="w-3 h-3" />}
+                                                label="Health %"
+                                                value={formatPercent(stats.secondaryHealthMulti || 0)}
+                                                count={activePerfectionDetails['HealthMulti']?.count}
+                                                perf={activePerfectionDetails['HealthMulti']?.avgPerfection}
+                                                color="text-green-400"
+                                            />
+                                            <CompactStat
+                                                icon={<Swords className="w-3 h-3" />}
+                                                label="Melee DMG %"
+                                                value={formatPercent(stats.meleeDamageMultiplier || 0)}
+                                                count={activePerfectionDetails['MeleeDamageMulti']?.count}
+                                                perf={activePerfectionDetails['MeleeDamageMulti']?.avgPerfection}
+                                                color="text-amber-400"
+                                            />
+                                            <CompactStat
+                                                icon={<Crosshair className="w-3 h-3" />}
+                                                label="Ranged DMG %"
+                                                value={formatPercent(stats.rangedDamageMultiplier || 0)}
+                                                count={activePerfectionDetails['RangedDamageMulti']?.count}
+                                                perf={activePerfectionDetails['RangedDamageMulti']?.avgPerfection}
+                                                color="text-sky-400"
                                             />
                                         </div>
                                     );
@@ -1363,6 +1586,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         if (b.ascension > 0) parts.push(`Asc: +${formatPercent(b.ascension, 1)}`);
                                         return parts.join(', ');
                                     })()}
+                                    count={activePerfectionDetails['SkillDamageMulti']?.count}
+                                    perf={activePerfectionDetails['SkillDamageMulti']?.avgPerfection}
                                     color="text-red-400"
                                 />
                                 <StatRow
@@ -1442,7 +1667,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 </div>
                                 <StatRow icon={<Target className="w-4 h-4" />} label="Atk Range" value={`${stats.weaponAttackRange.toFixed(1)}m`} color="text-cyan-400" />
                                 <StatRow icon={<Clock className="w-4 h-4" />} label="Windup" value={`${stats.weaponWindupTime.toFixed(2)}s`} color="text-amber-400" />
-                                <StatRow icon={<Target className="w-4 h-4" />} label="Is Aiming" value={stats.isAiming ? 'Yes' : 'No'} color="text-cyan-400" />
+                                 <StatRow icon={<Target className="w-4 h-4" />} label="Is Aiming" value={stats.isAiming ? 'Yes' : 'No'} color="text-cyan-400" />
                                 {stats.hasProjectile && (
                                     <>
                                         <StatRow
