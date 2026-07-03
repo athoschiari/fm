@@ -388,6 +388,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         setExcludeSubstats
     } = useComparison();
     const stats = useGlobalStats(excludeSubstats);
+    const fullStats = useGlobalStats(false);
     const techModifiers = useTreeModifiers() as Record<string, number>;
     const { profile, profiles, activeProfileId } = useProfile();
 
@@ -443,9 +444,9 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         skinsLibrary, setsLibrary, ascensionConfigsLibrary
     ]);
 
-    const { originalStats, testStats, originalProfile, testProfile } = useMemo(() => {
+    const { originalStats, testStats, originalFullStats, testFullStats, originalProfile, testProfile } = useMemo(() => {
         if (!isComparing || !originalItems || !testItems || !itemBalancingConfig || !itemBalancingLibrary) {
-            return { originalStats: null, testStats: null, originalProfile: null, testProfile: null };
+            return { originalStats: null, testStats: null, originalFullStats: null, testFullStats: null, originalProfile: null, testProfile: null };
         }
 
         let effectiveTechTree = profile.techTree;
@@ -502,8 +503,17 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
 
         const origStats = calculateStats(originalProfile, libs, excludeSubstats);
         const testStats = calculateStats(testProfile, libs, excludeSubstats);
+        const origFullStats = calculateStats(originalProfile, libs, false);
+        const testFullStats = calculateStats(testProfile, libs, false);
 
-        return { originalStats: origStats, testStats: testStats, originalProfile, testProfile };
+        return { 
+            originalStats: origStats, 
+            testStats: testStats, 
+            originalFullStats: origFullStats,
+            testFullStats: testFullStats,
+            originalProfile, 
+            testProfile 
+        };
     }, [
         isComparing, originalItems, testItems, itemBalancingConfig, itemBalancingLibrary,
         profile, originalMount, testMount, originalForgeAscension, originalMountAscension,
@@ -563,7 +573,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         return result;
     }, [profile, secondaryStatLibrary]);
 
-    if (!stats) {
+    if (!stats || !fullStats) {
         return (
             <Card className="h-full flex items-center justify-center">
                 <div className="text-center">
@@ -575,7 +585,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         );
     }
 
-    const calculateDpsDetails = (s: typeof stats) => {
+    const calculateDpsDetails = (s: AggregatedStats) => {
         const cappedCrit = Math.min(s.criticalChance, 1);
         const cappedDouble = Math.min(s.doubleDamageChance, 1);
         const critMult = 1 + cappedCrit * (s.criticalDamage - 1);
@@ -587,7 +597,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         return { total: weapon + skills, weapon, skills, realTotal: realWeapon + skills, realWeapon };
     };
 
-    const calculateHpsDetails = (s: typeof stats, dps: number) => {
+    const calculateHpsDetails = (s: AggregatedStats, dps: number) => {
         const regen = s.totalHealth * s.healthRegen;
         const lifesteal = dps * s.lifeSteal;
         const skills = s.skillHps;
@@ -610,23 +620,23 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         };
     };
 
-    const currentDpsDetails = calculateDpsDetails(stats);
+    const currentDpsDetails = calculateDpsDetails(fullStats);
     const weaponDps = currentDpsDetails.weapon;
     const effectiveDps = currentDpsDetails.total;
-    const currentHpsDetails = calculateHpsDetails(stats, weaponDps);
-    const currentRealHpsDetails = calculateHpsDetails(stats, currentDpsDetails.realWeapon);
+    const currentHpsDetails = calculateHpsDetails(fullStats, weaponDps);
+    const currentRealHpsDetails = calculateHpsDetails(fullStats, currentDpsDetails.realWeapon);
     
     const effectiveHps = currentHpsDetails.total;
     const realHps = currentRealHpsDetails.total;
     
     const treeBonusEntries = Object.entries(techModifiers).filter(([_, v]) => v > 0);
 
-    const originalDpsDetails = originalStats ? calculateDpsDetails(originalStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
-    const testDpsDetails = testStats ? calculateDpsDetails(testStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
-    const originalHpsDetails = originalStats ? calculateHpsDetails(originalStats, originalDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const originalRealHpsDetails = originalStats ? calculateHpsDetails(originalStats, originalDpsDetails.realWeapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const testHpsDetails = testStats ? calculateHpsDetails(testStats, testDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
-    const testRealHpsDetails = testStats ? calculateHpsDetails(testStats, testDpsDetails.realWeapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const originalDpsDetails = originalFullStats ? calculateDpsDetails(originalFullStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
+    const testDpsDetails = testFullStats ? calculateDpsDetails(testFullStats) : { total: 0, weapon: 0, skills: 0, realTotal: 0, realWeapon: 0 };
+    const originalHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, originalDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const originalRealHpsDetails = originalFullStats ? calculateHpsDetails(originalFullStats, originalDpsDetails.realWeapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const testHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, testDpsDetails.weapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
+    const testRealHpsDetails = testFullStats ? calculateHpsDetails(testFullStats, testDpsDetails.realWeapon) : { total: 0, regen: 0, lifesteal: 0, skills: 0 };
 
     const originalDps = originalDpsDetails.total;
     const testDps = testDpsDetails.total;
@@ -729,13 +739,13 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     { label: 'Skills', value: testDpsDetails.skills }
                                 ]}
                                 onOriginalDetailsClick={() => {
-                                    if (originalStats && originalProfile) {
-                                        openDpsModal(originalStats, originalProfile, 'original');
+                                    if (originalFullStats && originalProfile) {
+                                        openDpsModal(originalFullStats, originalProfile, 'original');
                                     }
                                 }}
                                 onTestDetailsClick={() => {
-                                    if (testStats && testProfile) {
-                                        openDpsModal(testStats, testProfile, 'test');
+                                    if (testFullStats && testProfile) {
+                                        openDpsModal(testFullStats, testProfile, 'test');
                                     }
                                 }}
                             />
@@ -783,13 +793,13 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     { label: 'Skills', value: testDpsDetails.skills }
                                 ]}
                                 onOriginalDetailsClick={() => {
-                                    if (originalStats && originalProfile) {
-                                        openDpsModal(originalStats, originalProfile, 'original');
+                                    if (originalFullStats && originalProfile) {
+                                        openDpsModal(originalFullStats, originalProfile, 'original');
                                     }
                                 }}
                                 onTestDetailsClick={() => {
-                                    if (testStats && testProfile) {
-                                        openDpsModal(testStats, testProfile, 'test');
+                                    if (testFullStats && testProfile) {
+                                        openDpsModal(testFullStats, testProfile, 'test');
                                     }
                                 }}
                             />
@@ -828,8 +838,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 isCompact={true}
                                 icon={<Swords className="w-4 h-4" />}
                                 label="Normal"
-                                originalValue={originalStats.hitDamage}
-                                testValue={testStats.hitDamage}
+                                originalValue={originalFullStats.hitDamage}
+                                testValue={testFullStats.hitDamage}
                                 color="text-red-400"
                                 className="!p-1.5 !bg-transparent !border-0"
                             />
@@ -837,8 +847,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 isCompact={true}
                                 icon={<Sparkles className="w-4 h-4" />}
                                 label="Critical"
-                                originalValue={originalStats.hitDamageCrit}
-                                testValue={testStats.hitDamageCrit}
+                                originalValue={originalFullStats.hitDamageCrit}
+                                testValue={testFullStats.hitDamageCrit}
                                 color="text-yellow-400"
                                 className="!p-1.5 !bg-transparent !border-0"
                             />
@@ -846,7 +856,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     </div>
 
                     {/* All Buffs Card */}
-                    {(testStats.hitDamageBuffed !== testStats.hitDamage || originalStats.hitDamageBuffed !== originalStats.hitDamage) && (
+                    {(testFullStats.hitDamageBuffed !== testFullStats.hitDamage || originalFullStats.hitDamageBuffed !== originalFullStats.hitDamage) && (
                         <div className="bg-orange-500/5 rounded-xl border border-orange-500/10 overflow-hidden ring-1 ring-orange-500/10">
                             <div className="px-3 py-1.5 bg-orange-500/10 border-b border-orange-500/10">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">All Buffs Active</span>
@@ -856,8 +866,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     isCompact={true}
                                     icon={<Zap className="w-4 h-4" />}
                                     label="Normal"
-                                    originalValue={originalStats.hitDamageBuffed}
-                                    testValue={testStats.hitDamageBuffed}
+                                    originalValue={originalFullStats.hitDamageBuffed}
+                                    testValue={testFullStats.hitDamageBuffed}
                                     color="text-orange-400"
                                     className="!p-1.5 !bg-transparent !border-0"
                                 />
@@ -865,8 +875,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     isCompact={true}
                                     icon={<Sparkles className="w-4 h-4" />}
                                     label="Critical"
-                                    originalValue={originalStats.hitDamageBuffedCrit}
-                                    testValue={testStats.hitDamageBuffedCrit}
+                                    originalValue={originalFullStats.hitDamageBuffedCrit}
+                                    testValue={testFullStats.hitDamageBuffedCrit}
                                     color="text-orange-500"
                                     className="!p-1.5 !bg-transparent !border-0"
                                 />
@@ -1443,8 +1453,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     <StatRow
                                         icon={<Zap className="w-4 h-4" />}
                                         label="Real-Time DPS"
-                                        value={formatValue(stats.realTotalDps)}
-                                        subValue={`Weapon: ${formatCompactNumber(stats.realWeaponDps)}, Skills: ${formatCompactNumber(stats.skillDps + (stats.skillBuffDps || 0))}`}
+                                        value={formatValue(fullStats.realTotalDps)}
+                                        subValue={`Weapon: ${formatCompactNumber(fullStats.realWeaponDps)}, Skills: ${formatCompactNumber(fullStats.skillDps + (fullStats.skillBuffDps || 0))}`}
                                         color="text-orange-500"
                                         onInfoPointsClick={() => setShowDpsModal(true)}
                                     />
@@ -1471,28 +1481,28 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 <StatRow
                                     icon={<Swords className="w-4 h-4" />}
                                     label="Base Hit"
-                                    value={formatValue(stats.hitDamage)}
-                                    subValue={`Crit: ${formatValue(stats.hitDamageCrit)}`}
+                                    value={formatValue(fullStats.hitDamage)}
+                                    subValue={`Crit: ${formatValue(fullStats.hitDamageCrit)}`}
                                     color="text-red-400"
                                 />
-                                {stats.hitDamageBuffed !== stats.hitDamage && (
+                                {fullStats.hitDamageBuffed !== fullStats.hitDamage && (
                                     <StatRow
                                         icon={<Sparkles className="w-4 h-4" />}
                                         label="All Buffs Active"
-                                        value={formatValue(stats.hitDamageBuffed)}
-                                        subValue={`Crit: ${formatValue(stats.hitDamageBuffedCrit)}`}
+                                        value={formatValue(fullStats.hitDamageBuffed)}
+                                        subValue={`Crit: ${formatValue(fullStats.hitDamageBuffedCrit)}`}
                                         color="text-orange-500"
                                     />
                                 )}
 
                                 {/* Grouped Buff Scenarios Card */}
-                                {stats.buffHitMetrics && stats.buffHitMetrics.length > 0 && (
+                                {fullStats.buffHitMetrics && fullStats.buffHitMetrics.length > 0 && (
                                     <div className="mt-2 bg-black/20 rounded-xl border border-white/5 overflow-hidden">
                                         <div className="px-3 py-1.5 bg-white/5 border-b border-white/5">
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">Buff Scenarios</span>
                                         </div>
                                         <div className="divide-y divide-white/5">
-                                            {stats.buffHitMetrics.map((metric, idx) => (
+                                            {fullStats.buffHitMetrics.map((metric, idx) => (
                                                 <div key={`buff-${idx}`} className="px-3 py-2 flex items-center justify-between gap-4">
                                                     <div className="flex flex-col min-w-0">
                                                         <span className="text-xs font-medium text-text-primary">{metric.name}</span>
@@ -1800,7 +1810,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
             <DpsBreakdownModal
                 isOpen={showDpsModal}
                 onClose={() => { setShowDpsModal(false); setModalData(null); }}
-                stats={modalData?.stats || stats}
+                stats={modalData?.stats || fullStats}
                 profile={modalData?.profile || profile}
                 variant={modalData?.variant || 'default'}
                 skillLibrary={skillLibrary}
