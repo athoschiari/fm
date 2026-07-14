@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useGameData } from '../hooks/useGameData';
+import { useTreeModifiers, useClanNodeMax } from '../hooks/useCalculatedStats';
+import { SandboxPanel } from '../components/UI/SandboxPanel';
 import { Card } from '../components/UI/Card';
 import { GameIcon } from '../components/UI/GameIcon';
 import { Target, Trophy, Sword, Swords, Settings, Clock, Users, Shield, Zap, Info, Gift, Hammer as HammerIcon, ChevronRight, Search, Activity, Heart, TrendingUp, Star, Check, Play } from 'lucide-react';
@@ -48,7 +50,8 @@ interface MissionReward {
 
 interface MissionAllMemberReward {
     Level: number;
-    Hammers: number;
+    Hammers?: number;
+    Reward?: { Amount: number; Type: string; $type: string };
 }
 
 interface MissionBaseConfig {
@@ -160,10 +163,23 @@ export default function MissionSolo() {
             .sort((a, b) => a.MinLevel - b.MinLevel);
     }, [battleLibrary, searchTerm]);
 
+    // Clan tech tree boost to mission rewards + sandbox override.
+    const treeModifiers = useTreeModifiers();
+    const clanMax = useClanNodeMax();
+    const profileMissionRewardBonus = treeModifiers['MissionRewards'] || 0;
+    const [sandbox, setSandbox] = useState<Record<string, number>>({});
+    const missionRewardBonus = sandbox.missionRewards ?? profileMissionRewardBonus;
+    const missionSandbox = {
+        reset: () => setSandbox({}),
+        fields: [
+            { key: 'missionRewards', label: 'Mission rewards', value: missionRewardBonus, profileValue: profileMissionRewardBonus, min: 0, max: clanMax['MissionRewards'] || 0.1, step: 0.005, onChange: (v: number) => setSandbox(p => ({ ...p, missionRewards: v })) },
+        ],
+    };
+
     const displayRewards = useMemo(() => {
         if (!currentRewards?.Rewards) return [];
-        return currentRewards.Rewards;
-    }, [currentRewards]);
+        return currentRewards.Rewards.map((r: Reward) => ({ ...r, Amount: r.Amount * (1 + missionRewardBonus) }));
+    }, [currentRewards, missionRewardBonus]);
 
     const getScaledValue = (base: number) => {
         if (!baseConfig) return base;
@@ -187,7 +203,7 @@ export default function MissionSolo() {
                 <div className="space-y-2 text-center md:text-left">
                     <h1 className="text-4xl font-black text-text-primary flex items-center justify-center md:justify-start gap-4">
                         <Target className="w-10 h-10 text-accent-primary" />
-                        Solo Predictor
+                        Mission Calculator
                     </h1>
                     <p className="text-text-secondary text-lg font-medium">Test your strength and see if you can defeat missions alone, without your clan's help.</p>
                 </div>
@@ -202,6 +218,8 @@ export default function MissionSolo() {
                     <ConfigStat label="Owner Rewards" value={`${baseConfig.MissionOwnerRewardsCount}x`} icon={Trophy} />
                 </div>
             </div>
+
+            <SandboxPanel fields={missionSandbox.fields} onReset={missionSandbox.reset} />
 
             {/* Level Slider Section */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -270,13 +288,13 @@ export default function MissionSolo() {
                             <div key={idx} className="bg-bg-primary/50 p-4 rounded-xl border border-border/50 flex flex-col items-center text-center group hover:border-accent-primary/50 transition-all">
                                 <GameIcon name={getRewardIcon(r.Type)} className="w-12 h-12 mb-2 group-hover:scale-110 transition-transform" />
                                 <div className="text-[9px] font-black text-text-muted uppercase mb-1">{r.Type.replace(/([A-Z])/g, ' $1').trim()}</div>
-                                <div className="text-lg font-black text-white">{formatNumber(r.Amount)}</div>
+                                <div className="text-lg font-black text-white">{formatNumber(Math.round(r.Amount))}</div>
                             </div>
                         ))}
                         <div className="bg-accent-primary/5 p-4 rounded-xl border border-accent-primary/30 flex flex-col items-center text-center group">
                             <GameIcon name="Hammer" className="w-12 h-12 mb-2 group-hover:rotate-12 transition-transform" />
                             <div className="text-[9px] font-black text-accent-primary uppercase mb-1">Shared Hammers</div>
-                            <div className="text-lg font-black text-white">{currentAllMemberReward?.Hammers || 0}</div>
+                            <div className="text-lg font-black text-white">{currentAllMemberReward?.Hammers ?? currentAllMemberReward?.Reward?.Amount ?? 0}</div>
                         </div>
                     </div>
                 </Card>

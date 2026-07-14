@@ -2,6 +2,9 @@
 import { useState, useMemo } from 'react';
 import { Card } from '../components/UI/Card';
 import { useGameData } from '../hooks/useGameData';
+import { useTreeModifiers, useClanNodeMax } from '../hooks/useCalculatedStats';
+import { getWarPointsForTask, isWarPointDay, getDayBoostNodeType } from '../utils/guildWarUtils';
+import { SandboxPanel } from '../components/UI/SandboxPanel';
 import { cn } from '../lib/utils';
 import { Sword, Heart, Trophy, Play, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { BattleVisualizerModal } from '../components/Battle/BattleVisualizerModal';
@@ -332,19 +335,33 @@ export default function Dungeons() {
     // War Config
     const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
 
-    // Dynamic War Points Mapping
+    // Clan tech tree boost to war points earned from spending dungeon keys.
+    const treeModifiers = useTreeModifiers();
+    const clanMax = useClanNodeMax();
+    const profileDungeonKeyWarBonus = treeModifiers['WarPointsFromDungeonKey'] || 0;
+
+    // Sandbox: local override of the result-altering tree bonus (see SandboxPanel).
+    const [sandbox, setSandbox] = useState<Record<string, number>>({});
+    const dungeonKeyWarBonus = sandbox.warDungeonKey ?? profileDungeonKeyWarBonus;
+    // Day boost: WarPointsOnDayN multiplier, only when dungeons are active today.
+    const dungeonDayActive = isWarPointDay(new Date(), 'dungeons', warDayConfig);
+    const profileDungeonDayBoost = dungeonDayActive ? (treeModifiers[getDayBoostNodeType()] || 0) : 0;
+    const dungeonDayBoost = sandbox.dayBoost ?? profileDungeonDayBoost;
+    const sandboxControls = {
+        reset: () => setSandbox({}),
+        fields: [
+            { key: 'warDungeonKey', label: 'War points: dungeon key', value: dungeonKeyWarBonus, profileValue: profileDungeonKeyWarBonus, min: 0, max: clanMax['WarPointsFromDungeonKey'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warDungeonKey: v })) },
+            { key: 'dayBoost', label: 'Day war-points boost (today)', value: dungeonDayBoost, profileValue: profileDungeonDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
+        ],
+    };
+
+    // Dynamic War Points Mapping — read amounts from whatever day holds the task
+    // (independent of day layout), then apply the clan boost.
     const warPointsPerKey = useMemo(() => {
         if (!warDayConfig) return { Hammer: 1000, Skill: 1000, Egg: 1000, Potion: 1000 };
 
-        const day1 = warDayConfig['1'] || warDayConfig[1]; // Verify key is string or number in JSON
-        if (!day1 || !day1.Tasks) return { Hammer: 1000, Skill: 1000, Egg: 1000, Potion: 1000 };
-
-        const getPoints = (taskName: string) => {
-            const task = day1.Tasks.find((t: any) => t.Task === taskName);
-            // Reward is usually a list, get first WarPointsReward
-            const reward = task?.Rewards?.find((r: any) => r.$type === 'WarPointsReward');
-            return reward?.Amount || 0;
-        };
+        const getPoints = (taskName: string) =>
+            getWarPointsForTask(warDayConfig, taskName) * (1 + dungeonKeyWarBonus) * (1 + dungeonDayBoost);
 
         return {
             Hammer: getPoints('UseHammerThiefDungeonKey') || 1000,
@@ -352,7 +369,7 @@ export default function Dungeons() {
             Egg: getPoints('UseInvasionDungeonKey') || 1000,
             Potion: getPoints('UseZombieInvasionDungeonKey') || 1000
         };
-    }, [warDayConfig]);
+    }, [warDayConfig, dungeonKeyWarBonus, dungeonDayBoost]);
 
     // ... (rest of code) ...
 
@@ -373,13 +390,13 @@ export default function Dungeons() {
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted flex items-center gap-2">
                             <SpriteIcon name="GemSquare" size={16} />
-                            Guild War Points (Day 1)
+                            Guild War Points{dungeonKeyWarBonus > 0 ? ` (+${(dungeonKeyWarBonus * 100).toFixed(0)}% clan)` : ''}
                         </h3>
                         <div className="bg-accent-primary/20 text-accent-primary px-2 py-1 rounded text-xs font-bold border border-accent-primary/20">
-                            {Object.entries(profile?.misc?.dungeonKeyCounts || {}).reduce((sum, [type, count]) => {
+                            {Math.round(Object.entries(profile?.misc?.dungeonKeyCounts || {}).reduce((sum, [type, count]) => {
                                 const pts = warPointsPerKey[type as DungeonType] || 0;
-                                return sum + (count * pts);
-                            }, 0)} Points
+                                return sum + ((count as number) * pts);
+                            }, 0))} Points
                         </div>
                     </div>
                     <div className="grid grid-cols-4 gap-2">
@@ -427,6 +444,8 @@ export default function Dungeons() {
                     ))}
                 </div>
             </div>
+
+            <SandboxPanel fields={sandboxControls.fields} onReset={sandboxControls.reset} />
 
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

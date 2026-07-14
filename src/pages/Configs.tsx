@@ -33,8 +33,8 @@ export default function Configs() {
         async function fetchData() {
             try {
                 const [versionsRes, manifestRes] = await Promise.all([
-                    fetch('./parsed_configs/versions.json'),
-                    fetch('./parsed_configs/config_manifest.json')
+                    fetch(`${import.meta.env.BASE_URL}parsed_configs/versions.json`),
+                    fetch(`${import.meta.env.BASE_URL}parsed_configs/config_manifest.json`)
                 ]);
 
                 if (versionsRes.ok) {
@@ -111,7 +111,7 @@ export default function Configs() {
                     
                     await Promise.all(files.map(async (fileName: string) => {
                         try {
-                            const res = await fetch(`./parsed_configs/${v}/${fileName}`);
+                            const res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/${v}/${fileName}`);
                             if (res.ok) {
                                 const json = await res.json();
                                 cache[fileName] = JSON.stringify(json, null, 2);

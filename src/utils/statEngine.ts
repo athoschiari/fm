@@ -274,6 +274,8 @@ export interface LibraryData {
     mountUpgradeLibrary?: any;
     techTreeLibrary?: any;
     techTreePositionLibrary?: any;
+    guildTechTreePositionLibrary?: any;
+    guildTechTreeUpgradeLibrary?: any;
     itemBalancingLibrary?: any;
     itemBalancingConfig?: any;
     weaponLibrary?: any;
@@ -590,6 +592,38 @@ export class StatEngine {
         const trees: ('Forge' | 'Power' | 'SkillsPetTech' | 'Clan')[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
         for (const tree of trees) {
             const treeLevels = this.profile.techTree[tree] || {};
+
+            if (tree === 'Clan') {
+                const guildPos = this.libs.guildTechTreePositionLibrary;
+                const guildUpgrade = this.libs.guildTechTreeUpgradeLibrary;
+                if (!guildPos || !guildUpgrade) continue;
+
+                // Flatten all nodes from categories to index -> type mapping
+                const nodesList: string[] = [];
+                for (const cat of Object.keys(guildPos)) {
+                    if (guildPos[cat]?.Nodes) {
+                        nodesList.push(...guildPos[cat].Nodes);
+                    }
+                }
+
+                for (const [nodeIdStr, level] of Object.entries(treeLevels)) {
+                    if (typeof level !== 'number' || level <= 0) continue;
+                    const nodeId = parseInt(nodeIdStr);
+                    const nodeType = nodesList[nodeId];
+                    if (!nodeType) continue;
+
+                    const upgradeDef = guildUpgrade[nodeType];
+                    if (!upgradeDef) continue;
+
+                    // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData)
+                    const valPerLevel = upgradeDef.ValuePerLevel || 0;
+                    const totalVal = valPerLevel * level;
+
+                    this.techModifiers[nodeType] = (this.techModifiers[nodeType] || 0) + totalVal;
+                }
+                continue;
+            }
+
             const treeData = this.libs.techTreePositionLibrary[tree];
             if (!treeData?.Nodes) continue;
 
@@ -611,9 +645,12 @@ export class StatEngine {
                 if (!nodeData?.Stats) continue;
 
                 const level = treeLevels[nodeId];
+                // Use tier-specific values if available
+                const tier = node.Tier ?? 0;
+                const tierStat = nodeData.StatsByTier?.[tier]?.[0];
+                const baseVal = tierStat?.Value ?? nodeData.Stats[0]?.Value ?? 0;
+                const increment = tierStat?.ValueIncrease ?? nodeData.Stats[0]?.ValueIncrease ?? 0;
                 // Calculate total value: base + (level-1) * increment
-                const baseVal = nodeData.Stats[0]?.Value || 0;
-                const increment = nodeData.Stats[0]?.ValueIncrease || 0;
                 const totalVal = baseVal + (Math.max(0, level - 1) * increment);
 
                 // Store by node TYPE NAME (e.g., 'WeaponBonus', 'GloveBonus', 'PetBonusDamage')
@@ -1140,6 +1177,65 @@ export class StatEngine {
         const trees: ('Forge' | 'Power' | 'SkillsPetTech' | 'Clan')[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
         for (const tree of trees) {
             const treeLevels = this.profile.techTree[tree] || {};
+
+            if (tree === 'Clan') {
+                const guildPos = this.libs.guildTechTreePositionLibrary;
+                const guildUpgrade = this.libs.guildTechTreeUpgradeLibrary;
+                if (!guildPos || !guildUpgrade) continue;
+
+                // Flatten all nodes from categories to index -> type mapping
+                const nodesList: string[] = [];
+                for (const cat of Object.keys(guildPos)) {
+                    if (guildPos[cat]?.Nodes) {
+                        nodesList.push(...guildPos[cat].Nodes);
+                    }
+                }
+
+                for (const [nodeIdStr, level] of Object.entries(treeLevels)) {
+                    if (typeof level !== 'number' || level <= 0) continue;
+                    const nodeId = parseInt(nodeIdStr);
+                    const nodeType = nodesList[nodeId];
+                    if (!nodeType) continue;
+
+                    const upgradeDef = guildUpgrade[nodeType];
+                    if (!upgradeDef) continue;
+
+                    const nodeData = this.libs.techTreeLibrary[nodeType];
+                    if (!nodeData?.Stats) continue;
+
+                    // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData)
+                    const valPerLevel = upgradeDef.ValuePerLevel || 0;
+                    const totalValue = valPerLevel * level;
+
+                    for (const stat of nodeData.Stats) {
+                        const targetInfo = getNormalizedTarget(stat.StatNode);
+                        const targetType = targetInfo.$type;
+                        const statType = stat.StatNode?.UniqueStat?.StatType;
+
+                        const isHandledByModifiers = (statType === 'Damage' || statType === 'Health') &&
+                            (targetType === 'WeaponStatTarget' ||
+                                targetType === 'EquipmentStatTarget' ||
+                                targetType === 'PetStatTarget' ||
+                                targetType === 'MountStatTarget' ||
+                                targetType === 'ActiveSkillStatTarget' ||
+                                targetType === 'PassiveSkillStatTarget');
+
+                        if (isHandledByModifiers) {
+                            continue;
+                        }
+
+                        this.applyStat({
+                            statType: statType,
+                            statNature: stat.StatNode?.UniqueStat?.StatNature as StatNature || 'Multiplier',
+                            value: totalValue,
+                            target: targetType,
+                            itemType: targetInfo.ItemType
+                        } as any);
+                    }
+                }
+                continue;
+            }
+
             const treeData = this.libs.techTreePositionLibrary[tree];
             if (!treeData?.Nodes) continue;
 
@@ -1160,7 +1256,11 @@ export class StatEngine {
                 const nodeData = this.libs.techTreeLibrary[node.Type];
                 if (!nodeData?.Stats) continue;
 
-                for (const stat of nodeData.Stats) {
+                const tier = node.Tier ?? 0;
+                const tierStatsArray = nodeData.StatsByTier?.[tier];
+
+                for (let si = 0; si < nodeData.Stats.length; si++) {
+                    const stat = nodeData.Stats[si];
                     const targetInfo = getNormalizedTarget(stat.StatNode);
                     const targetType = targetInfo.$type;
                     const statType = stat.StatNode?.UniqueStat?.StatType;
@@ -1180,8 +1280,9 @@ export class StatEngine {
                     }
 
                     const level = treeLevels[nodeId];
-                    const baseValue = stat.Value || 0;
-                    const increase = stat.ValueIncrease || 0;
+                    const tierStat = tierStatsArray?.[si];
+                    const baseValue = tierStat?.Value ?? stat.Value ?? 0;
+                    const increase = tierStat?.ValueIncrease ?? stat.ValueIncrease ?? 0;
                     const levelFactor = Math.max(0, level - 1);
                     const totalValue = baseValue + (levelFactor * increase);
 

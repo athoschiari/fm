@@ -30,6 +30,8 @@ export default function SubstatsCalculator() {
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
     const { data: techTreePositionLibrary } = useGameData<any>('TechTreePositionLibrary.json');
+    const { data: guildPositionLibrary } = useGameData<any>('GuildTechTreePositionLibrary.json');
+    const { data: guildUpgradeLibrary } = useGameData<any>('GuildTechTreeUpgradeLibrary.json');
     const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: weaponLibrary } = useGameData<any>('WeaponLibrary.json');
@@ -41,11 +43,15 @@ export default function SubstatsCalculator() {
 
     const libs: LibraryData = useMemo(() => ({
         petUpgradeLibrary, petBalancingLibrary, petLibrary, skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
-        techTreeLibrary, techTreePositionLibrary, itemBalancingLibrary, itemBalancingConfig, weaponLibrary,
+        techTreeLibrary, techTreePositionLibrary,
+        guildTechTreePositionLibrary: guildPositionLibrary || undefined,
+        guildTechTreeUpgradeLibrary: guildUpgradeLibrary || undefined,
+        itemBalancingLibrary, itemBalancingConfig, weaponLibrary,
         projectilesLibrary, secondaryStatLibrary, skinsLibrary, setsLibrary, ascensionConfigsLibrary
     }), [
         petUpgradeLibrary, petBalancingLibrary, petLibrary, skillLibrary, skillPassiveLibrary, mountUpgradeLibrary,
-        techTreeLibrary, techTreePositionLibrary, itemBalancingLibrary, itemBalancingConfig, weaponLibrary,
+        techTreeLibrary, techTreePositionLibrary, guildPositionLibrary, guildUpgradeLibrary,
+        itemBalancingLibrary, itemBalancingConfig, weaponLibrary,
         projectilesLibrary, secondaryStatLibrary, skinsLibrary, setsLibrary, ascensionConfigsLibrary
     ]);
 

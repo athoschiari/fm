@@ -20,7 +20,7 @@ import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
 import { formatNumber } from '../../utils/format';
 
 import { StatBreakdownTooltip } from '../UI/StatBreakdownTooltip';
-import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 
 // Using global formatNumber from ../../utils/format
 
@@ -49,6 +49,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
     } = useComparison();
     const { optimizeSkills, isReady } = useProfileOptimizer();
     const techModifiers = useTreeModifiers();
+    const clanModifiers = useClanTreeModifiers();
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const equippedSkills = useMemo(() => {
@@ -200,6 +201,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
         // Skill Layer: computed locally to respect variant-specific ascension levels
         // Tech tree bonus (SkillDamage applies to both dmg and heal for active skills)
         const techSkillBonus = techModifiers['SkillDamage'] || 0;
+        const clanSkillBonus = clanModifiers['SkillDamage'] || 0;
         // Item substats from globalStats (these don't change between variants)
         const itemSkillDmgBonus = globalStats?.skillDamageBreakdown?.substats || 0;
         const itemSkillHpBonus = globalStats?.skillHealthBreakdown?.substats || 0;
@@ -242,6 +244,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                 damage: {
                     base: baseDmg,
                     techMulti: techSkillBonus,
+                    clanTechMulti: clanSkillBonus,
                     itemMulti: itemSkillDmgBonus,
                     ascMulti: activeAscensionDmgMulti || 1,
                     commonMulti: commonDmgMulti,
@@ -251,6 +254,7 @@ export function SkillPanel({ variant = 'default', title, compareSkills, consider
                 health: {
                     base: baseHp,
                     techMulti: techSkillBonus,
+                    clanTechMulti: clanSkillBonus,
                     itemMulti: itemSkillHpBonus,
                     ascMulti: activeAscensionHpMulti || 1,
                     commonMulti: commonHpMulti,

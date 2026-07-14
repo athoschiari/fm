@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { Card } from '../UI/Card';
 import { ConfirmModal } from '../UI/ConfirmModal';
-import { Search, Lock, Check } from 'lucide-react';
+import { Search, Lock, Check, Download, Upload, Calendar } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useGameDataContext } from '../../context/GameDataContext';
 
 import { getNormalizedTarget } from '../../utils/ascensionUtils';
+import { getTechNodeName, getClanIconStyle } from '../../utils/techUtils';
+import { SpriteIcon } from '../UI/SpriteIcon';
 
 const ICON_SIZE = 40;
 
@@ -54,10 +56,56 @@ export function TechTreePanel() {
     const { profile, updateProfile } = useProfile();
     const { data: treeMapping } = useGameData<any>('TechTreeMapping.json');
     const { data: treeEffects } = useGameData<any>('TechTreeLibrary.json');
+    const { data: guildPositionLibrary } = useGameData<any>('GuildTechTreePositionLibrary.json');
+    const { data: guildUpgradeLibrary } = useGameData<any>('GuildTechTreeUpgradeLibrary.json');
+    const { data: clanIconsMap } = useGameData<any>('ClanTechTreeIconsMap.json');
     const { selectedVersion } = useGameDataContext();
     const [activeTab, setActiveTab] = useState<TreeName>('Forge');
     const [searchTerm, setSearchTerm] = useState('');
     const [pendingReset, setPendingReset] = useState<{ nodeId: number; count: number } | null>(null);
+
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [importText, setImportText] = useState('');
+
+    const exportClanTech = () => {
+        const ranks = profile.techTree?.Clan || {};
+        const jsonStr = JSON.stringify({ ClanTech: ranks });
+        navigator.clipboard.writeText(jsonStr);
+        alert("Clan Tech ranks copied to clipboard!");
+    };
+
+    const importClanTech = () => {
+        try {
+            const parsed = JSON.parse(importText.trim());
+            if (!parsed || typeof parsed !== 'object' || !parsed.ClanTech) {
+                alert("Invalid format! Must contain a 'ClanTech' object.");
+                return;
+            }
+            const importedRanks = parsed.ClanTech;
+            
+            const cleanRanks: Record<number, number> = {};
+            Object.entries(importedRanks).forEach(([k, v]) => {
+                const nodeId = parseInt(k);
+                const rank = Number(v);
+                if (!isNaN(nodeId) && !isNaN(rank)) {
+                    cleanRanks[nodeId] = rank;
+                }
+            });
+            
+            updateProfile({
+                techTree: {
+                    ...profile.techTree,
+                    Clan: cleanRanks
+                }
+            });
+            
+            setShowImportModal(false);
+            setImportText('');
+            alert("Clan Tech ranks imported successfully!");
+        } catch (e) {
+            alert("Failed to parse JSON. Please verify the input.");
+        }
+    };
 
     // Pre-calculate GLOBAL stats across all active trees
     const globalStats = useMemo(() => {
@@ -68,6 +116,41 @@ export function TechTreePanel() {
 
         allTrees.forEach(treeName => {
             const userLevels = profile.techTree?.[treeName] || {};
+            
+            if (treeName === 'Clan') {
+                if (selectedVersion >= '2026_07_14_16_51' && guildPositionLibrary && guildUpgradeLibrary) {
+                    const nodesList: string[] = [];
+                    for (const cat of Object.keys(guildPositionLibrary)) {
+                        if (guildPositionLibrary[cat]?.Nodes) {
+                            nodesList.push(...guildPositionLibrary[cat].Nodes);
+                        }
+                    }
+
+                    Object.entries(userLevels).forEach(([nodeIdStr, lvl]) => {
+                        const level = Number(lvl);
+                        if (level <= 0) return;
+
+                        const nodeId = parseInt(nodeIdStr);
+                        const nodeType = nodesList[nodeId];
+                        if (!nodeType) return;
+
+                        const effect = treeEffects[nodeType];
+                        const upgradeDef = guildUpgradeLibrary[nodeType];
+                        if (!effect?.Stats || !upgradeDef) return;
+
+                        // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData)
+                        const valPerLevel = upgradeDef.ValuePerLevel || 0;
+
+                        effect.Stats.forEach((stat: any) => {
+                            const sig = getStatSignature(stat);
+                            const total = valPerLevel * level;
+                            stats[sig] = (stats[sig] || 0) + total;
+                        });
+                    });
+                }
+                return;
+            }
+
             // We need to look up node definitions to check Type
             const treeMap = treeMapping.trees?.[treeName];
             if (!treeMap?.nodes) return;
@@ -84,10 +167,13 @@ export function TechTreePanel() {
                 const effect = treeEffects[nodeDef.type];
                 if (!effect?.Stats) return;
 
-                effect.Stats.forEach((stat: any) => {
+                const tier = nodeDef.tier ?? 0;
+                effect.Stats.forEach((stat: any, si: number) => {
                     const sig = getStatSignature(stat);
-                    const base = stat.Value || 0;
-                    const inc = stat.ValueIncrease || 0;
+                    const tierStats = effect.StatsByTier?.[tier];
+                    const tierStat = tierStats?.[si];
+                    const base = tierStat?.Value ?? stat.Value ?? 0;
+                    const inc = tierStat?.ValueIncrease ?? stat.ValueIncrease ?? 0;
                     const total = base + ((level - 1) * inc);
 
                     stats[sig] = (stats[sig] || 0) + total;
@@ -96,7 +182,7 @@ export function TechTreePanel() {
         });
 
         return stats;
-    }, [profile.techTree, treeEffects, treeMapping]);
+    }, [profile.techTree, treeEffects, treeMapping, selectedVersion, guildPositionLibrary, guildUpgradeLibrary]);
 
     // Helper function to format stat description with Global info
     const formatStatDescription = (effect: any, currentLevel: number) => {
@@ -153,7 +239,7 @@ export function TechTreePanel() {
         return treeMapping.trees;
     }, [treeMapping]);
 
-    const treeCategories: TreeName[] = ['Forge', 'Power', 'SkillsPetTech', 'Clan'];
+
 
     // Get current tree levels
     const currentTreeLevels = useMemo(() => {
@@ -339,12 +425,46 @@ export function TechTreePanel() {
         executeLevelChange(nodeId, val);
     };
 
+    const treeCategories = useMemo(() => {
+        const categories: TreeName[] = ['Forge', 'Power', 'SkillsPetTech'];
+        if (selectedVersion >= '2026_07_14_16_51') {
+            categories.push('Clan');
+        }
+        return categories;
+    }, [selectedVersion]);
+
     // Calculate completion percentages
     const completionData = useMemo(() => {
         if (!treeMapping?.trees || !treeEffects) return {};
         const data: Record<string, { current: number; max: number; percent: number }> = {};
 
         (['Forge', 'Power', 'SkillsPetTech', 'Clan'] as TreeName[]).forEach((treeName) => {
+            if (treeName === 'Clan') {
+                if (selectedVersion >= '2026_07_14_16_51' && guildPositionLibrary && guildUpgradeLibrary) {
+                    let currentTotal = 0;
+                    let maxTotal = 0;
+                    const userTree = profile.techTree?.Clan || {};
+                    let globalId = 0;
+                    for (const category of Object.keys(guildPositionLibrary)) {
+                        const nodesList = guildPositionLibrary[category].Nodes || [];
+                        for (const nodeType of nodesList) {
+                            const upgradeDef = guildUpgradeLibrary[nodeType];
+                            const max = upgradeDef?.MaxLevel || 20;
+                            const current = userTree[globalId] || 0;
+                            maxTotal += max;
+                            currentTotal += current;
+                            globalId++;
+                        }
+                    }
+                    data['Clan'] = {
+                        current: currentTotal,
+                        max: maxTotal,
+                        percent: maxTotal > 0 ? (currentTotal / maxTotal) * 100 : 0
+                    };
+                }
+                return;
+            }
+
             const tree = treeMapping.trees[treeName];
             const nodes = tree?.nodes || [];
             let currentTotal = 0;
@@ -369,17 +489,39 @@ export function TechTreePanel() {
         });
 
         return data;
-    }, [treeMapping, treeEffects, profile.techTree]);
+    }, [treeMapping, treeEffects, profile.techTree, selectedVersion, guildPositionLibrary, guildUpgradeLibrary]);
 
-    if (!treeMapping || !treeEffects) {
+    if (!treeMapping || !treeEffects || (selectedVersion >= '2026_07_14_16_51' && (!guildPositionLibrary || !guildUpgradeLibrary))) {
         return <Card className="p-6">Loading Tech Tree...</Card>;
     }
 
     return (
         <Card className="p-6">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/TechTreeForge.png`} alt="Tech Tree" className="w-8 h-8 object-contain" />
-                Tech Tree
+            <h2 className="text-xl font-bold mb-6 flex flex-wrap justify-between items-center gap-4 border-b border-white/5 pb-4">
+                <div className="flex items-center gap-2">
+                    <img src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/TechTreeForge.png`} alt="Tech Tree" className="w-8 h-8 object-contain" />
+                    Tech Tree
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                    {activeTab === 'Clan' && (
+                        <>
+                            <button
+                                onClick={exportClanTech}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent-primary/20 border border-accent-primary/30 hover:bg-accent-primary/30 text-accent-primary text-xs font-bold transition-all"
+                            >
+                                <Download className="w-3.5 h-3.5" />
+                                Export Clan Tech
+                            </button>
+                            <button
+                                onClick={() => setShowImportModal(true)}
+                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent-secondary/20 border border-accent-secondary/30 hover:bg-accent-secondary/30 text-accent-secondary text-xs font-bold transition-all"
+                            >
+                                <Upload className="w-3.5 h-3.5" />
+                                Import Clan Tech
+                            </button>
+                        </>
+                    )}
+                </div>
             </h2>
 
             {/* Tab Filters */}
@@ -426,134 +568,282 @@ export function TechTreePanel() {
                 </div>
             </div>
 
-            {/* Tree Structure - By Layer */}
-            <div className="space-y-2 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
-                {sortedLayers.map((layer) => {
-                    const layerNodes = nodesByLayer[layer];
+            {/* Tree Structure - By Category for Clan, By Layer for Player */}
+            <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
+                {activeTab === 'Clan' ? (
+                    Object.keys(guildPositionLibrary || {}).map((category, catIdx) => {
+                        const nodesList = guildPositionLibrary[category].Nodes || [];
+                        
+                        let filteredNodes = nodesList.map((nodeType: string, localId: number) => {
+                            let globalId = 0;
+                            for (const c of Object.keys(guildPositionLibrary)) {
+                                if (c === category) break;
+                                globalId += guildPositionLibrary[c].Nodes?.length || 0;
+                            }
+                            globalId += localId;
+                            
+                            return {
+                                globalId,
+                                type: nodeType,
+                                category
+                            };
+                        });
 
-                    return (
-                        <div key={layer} className="flex flex-col items-center">
-                            {/* Connection lines from previous layer */}
-                            {layer > 0 && (
-                                <div className="h-4 flex items-center justify-center">
-                                    <div className="w-px h-full bg-accent-primary/30" />
-                                </div>
-                            )}
+                        if (searchTerm) {
+                            filteredNodes = filteredNodes.filter((n: any) =>
+                                n.type.toLowerCase().includes(searchTerm.toLowerCase())
+                            );
+                        }
 
-                            {/* Nodes in this layer */}
-                            <div className="flex flex-nowrap gap-2 sm:gap-3 justify-center w-full overflow-x-auto px-1">
-                                {layerNodes.map((node) => {
-                                    const effect = treeEffects?.[node.type];
-                                    const maxLevel = effect?.MaxLevel || 5;
-                                    const currentLevel = currentTreeLevels[node.id] || 0;
-                                    const unlocked = isNodeUnlocked(node, currentTreeLevels);
-                                    const completed = isNodeCompleted(node.id, currentTreeLevels, maxLevel);
-                                    const name = node.type.replace(/([A-Z])/g, ' $1').trim();
-                                    const spriteStyle = getSpriteStyle(node);
+                        if (filteredNodes.length === 0) return null;
 
-                                    return (
-                                        <div
-                                            key={node.uniqueKey}
-                                            className={cn(
-                                                "min-w-[140px] max-w-[180px] flex-1 p-2 sm:p-3 rounded-lg border transition-all",
-                                                !unlocked
-                                                    ? "border-border/50 bg-bg-secondary/50 opacity-50"
-                                                    : completed
+                        return (
+                            <div key={category} className="space-y-2 border-b border-white/5 pb-4 last:border-0 last:pb-0">
+                                <h3 className="text-sm font-bold text-accent-primary capitalize">
+                                    {category.replace(/([A-Z])/g, ' $1').trim()} Category
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {filteredNodes.map((nObj: any) => {
+                                        const globalId = nObj.globalId;
+                                        const nodeType = nObj.type;
+                                        const upgradeDef = guildUpgradeLibrary?.[nodeType];
+const maxLevel = upgradeDef?.MaxLevel || 20;
+                                        const currentLevel = currentTreeLevels[globalId] || 0;
+                                        const completed = currentLevel >= maxLevel;
+                                        const name = getTechNodeName(nodeType);
+
+                                        const spriteStyle = getClanIconStyle(nodeType, clanIconsMap, selectedVersion, import.meta.env.BASE_URL, treeMapping) ||
+                                            (() => {
+                                                const col = globalId % 8;
+                                                const row = Math.floor(globalId / 8);
+                                                const versionPath = selectedVersion ? `${selectedVersion}/` : '';
+                                                return {
+                                                    backgroundImage: `url(${import.meta.env.BASE_URL}Texture2D/${versionPath}ClanTechTreeIcons.png)`,
+                                                    backgroundPositionX: `${col * (100 / 7)}%`,
+                                                    backgroundPositionY: `${row * (100 / 7)}%`,
+                                                    backgroundSize: '800% 800%',
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    imageRendering: 'pixelated' as const
+                                                };
+                                            })();
+
+                                        const effectDef = treeEffects?.[nodeType];
+                                        // ValuePerLevel is already the effective value (x2 normalised at load, see useGameData)
+                                        const valPerLevel = upgradeDef?.ValuePerLevel || 0;
+                                        
+                                        const clanEffect = effectDef ? {
+                                            ...effectDef,
+                                            MaxLevel: maxLevel,
+                                            Stats: (effectDef.Stats || []).map((stat: any) => ({
+                                                ...stat,
+                                                Value: valPerLevel,
+                                                ValueIncrease: valPerLevel
+                                            }))
+                                        } : null;
+
+                                        return (
+                                            <div
+                                                key={globalId}
+                                                className={cn(
+                                                    "p-3 rounded-lg border transition-all bg-bg-secondary",
+                                                    completed
                                                         ? "border-green-500/50 bg-green-500/10"
                                                         : currentLevel > 0
                                                             ? "border-accent-primary/50 bg-accent-primary/5"
                                                             : "border-border bg-bg-secondary"
-                                            )}
-                                        >
-                                            <div className="flex gap-2 items-start">
-                                                {/* Icon */}
-                                                <div className={cn(
-                                                    "w-10 h-10 shrink-0 rounded-lg flex items-center justify-center overflow-hidden border relative",
-                                                    !unlocked
-                                                        ? "bg-black/40 border-white/5"
-                                                        : completed
-                                                            ? "bg-green-500/20 border-green-500/30"
-                                                            : "bg-black/20 border-white/5"
-                                                )}>
-                                                    {spriteStyle && (
-                                                        <div style={spriteStyle} className={cn(!unlocked && "grayscale")} />
-                                                    )}
-                                                    {!unlocked && (
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                                                            <Lock className="w-3 h-3 text-text-muted" />
-                                                        </div>
-                                                    )}
-                                                    {completed && (
-                                                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
-                                                            <Check className="w-3 h-3 text-white" />
-                                                        </div>
-                                                    )}
-                                                </div>
-
-                                                {/* Info */}
-                                                <div className="flex-1 min-w-0">
+                                                )}
+                                            >
+                                                <div className="flex gap-2 items-start">
                                                     <div className={cn(
-                                                        "text-xs font-bold truncate",
-                                                        !unlocked && "text-text-muted"
+                                                        "w-10 h-10 shrink-0 rounded-lg flex items-center justify-center overflow-hidden border relative bg-black/20 border-white/5",
+                                                        completed && "bg-green-500/20 border-green-500/30"
                                                     )}>
-                                                        {name}
+                                                        <div style={spriteStyle} />
+                                                        {completed && (
+                                                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                                                                <Check className="w-3 h-3 text-white" />
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div className="text-[10px] text-text-muted">
-                                                        T{node.tier + 1} • ID: {node.id}
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="text-xs font-bold truncate">
+                                                            {name}
+                                                        </div>
+                                                        <div className="text-[9px] text-text-muted flex items-center gap-1">
+                                                            <span>ID: {globalId} •</span>
+                                                            <SpriteIcon name="GuildPotions" size={11} />
+                                                            <span className="font-bold text-green-400">{(upgradeDef?.PointsPerLevel || 0).toLocaleString()}</span>
+                                                            <span>/lvl</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            {/* Level Controls */}
-                                            <div className="flex items-center justify-between mt-2 bg-bg-input rounded p-1 border border-border/50">
-                                                <button
-                                                    onClick={() => handleLevelChange(node.id, currentLevel - 1, maxLevel)}
-                                                    disabled={!unlocked || currentLevel === 0}
-                                                    className={cn(
-                                                        "w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors",
-                                                        unlocked && currentLevel > 0
-                                                            ? "bg-bg-secondary hover:bg-white/10"
-                                                            : "text-text-muted cursor-not-allowed"
-                                                    )}
-                                                >-</button>
-                                                <div className="text-center">
-                                                    <span className={cn(
-                                                        "font-mono font-bold text-sm",
-                                                        completed ? "text-green-400" : currentLevel > 0 ? "text-accent-primary" : "text-text-muted"
-                                                    )}>{currentLevel}</span>
-                                                    <span className="text-text-muted text-xs">/{maxLevel}</span>
+                                                <div className="flex items-center justify-between mt-2 bg-bg-input rounded p-1 border border-border/50">
+                                                    <button
+                                                        onClick={() => handleLevelChange(globalId, currentLevel - 1, maxLevel)}
+                                                        disabled={currentLevel === 0}
+                                                        className={cn(
+                                                            "w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors",
+                                                            currentLevel > 0
+                                                                ? "bg-bg-secondary hover:bg-white/10"
+                                                                : "text-text-muted cursor-not-allowed"
+                                                        )}
+                                                    >-</button>
+                                                    <div className="text-center">
+                                                        <span className={cn(
+                                                            "font-mono font-bold text-sm",
+                                                            completed ? "text-green-400" : currentLevel > 0 ? "text-accent-primary" : "text-text-muted"
+                                                        )}>{currentLevel}</span>
+                                                        <span className="text-text-muted text-xs">/{maxLevel}</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleLevelChange(globalId, currentLevel + 1, maxLevel)}
+                                                        disabled={currentLevel >= maxLevel}
+                                                        className={cn(
+                                                            "w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors",
+                                                            currentLevel < maxLevel
+                                                                ? "bg-bg-secondary hover:bg-white/10"
+                                                                : "text-text-muted cursor-not-allowed"
+                                                        )}
+                                                    >+</button>
                                                 </div>
-                                                <button
-                                                    onClick={() => handleLevelChange(node.id, currentLevel + 1, maxLevel)}
-                                                    disabled={currentLevel >= maxLevel}
-                                                    className={cn(
-                                                        "w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors",
-                                                        currentLevel < maxLevel
-                                                            ? !unlocked 
-                                                                ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"
-                                                                : "bg-bg-secondary hover:bg-white/10"
-                                                            : "text-text-muted cursor-not-allowed"
-                                                    )}
-                                                    title={!unlocked ? "Auto-unlock requirements" : ""}
-                                                >+</button>
-                                            </div>
 
-                                            {/* Stat Description */}
-                                            {unlocked && currentLevel > 0 && (
-                                                <div className="text-[10px] mt-1 text-accent-secondary truncate">
-                                                    {formatStatDescription(effect, currentLevel)}
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                                                {currentLevel > 0 && clanEffect && (
+                                                    <div className="text-[10px] mt-1 text-accent-secondary truncate">
+                                                        {formatStatDescription(clanEffect, currentLevel)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })
+                ) : (
+                    sortedLayers.map((layer) => {
+                        const layerNodes = nodesByLayer[layer] || [];
+
+                        return (
+                            <div key={layer} className="flex flex-col items-center">
+                                {layer > 0 && (
+                                    <div className="h-4 flex items-center justify-center">
+                                        <div className="w-px h-full bg-accent-primary/30" />
+                                    </div>
+                                )}
+
+                                <div className="flex flex-nowrap gap-2 sm:gap-3 justify-center w-full overflow-x-auto px-1">
+                                    {layerNodes.map((node) => {
+                                        const effect = treeEffects?.[node.type];
+                                        const maxLevel = effect?.MaxLevel || 5;
+                                        const currentLevel = currentTreeLevels[node.id] || 0;
+                                        const unlocked = isNodeUnlocked(node, currentTreeLevels);
+                                        const completed = isNodeCompleted(node.id, currentTreeLevels, maxLevel);
+                                        const name = node.type.replace(/([A-Z])/g, ' $1').trim();
+                                        const spriteStyle = getSpriteStyle(node);
+
+                                        return (
+                                            <div
+                                                key={node.uniqueKey}
+                                                className={cn(
+                                                    "min-w-[140px] max-w-[180px] flex-1 p-2 sm:p-3 rounded-lg border transition-all",
+                                                    !unlocked
+                                                        ? "border-border/50 bg-bg-secondary/50 opacity-50"
+                                                        : completed
+                                                            ? "border-green-500/50 bg-green-500/10"
+                                                            : currentLevel > 0
+                                                                ? "border-accent-primary/50 bg-accent-primary/5"
+                                                                : "border-border bg-bg-secondary"
+                                                )}
+                                            >
+                                                <div className="flex gap-2 items-start">
+                                                    <div className={cn(
+                                                        "w-10 h-10 shrink-0 rounded-lg flex items-center justify-center overflow-hidden border relative",
+                                                        !unlocked
+                                                            ? "bg-black/40 border-white/5"
+                                                            : completed
+                                                                ? "bg-green-500/20 border-green-500/30"
+                                                                : "bg-black/20 border-white/5"
+                                                    )}>
+                                                        {spriteStyle && (
+                                                            <div style={spriteStyle} className={cn(!unlocked && "grayscale")} />
+                                                        )}
+                                                        {!unlocked && (
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                                                                <Lock className="w-3 h-3 text-text-muted" />
+                                                            </div>
+                                                        )}
+                                                        {completed && (
+                                                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center">
+                                                                <Check className="w-3 h-3 text-white" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className={cn(
+                                                            "text-xs font-bold truncate",
+                                                            !unlocked && "text-text-muted"
+                                                        )}>
+                                                            {name}
+                                                        </div>
+                                                        <div className="text-[10px] text-text-muted">
+                                                            T{node.tier + 1} • ID: {node.id}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center justify-between mt-2 bg-bg-input rounded p-1 border border-border/50">
+                                                    <button
+                                                        onClick={() => handleLevelChange(node.id, currentLevel - 1, maxLevel)}
+                                                        disabled={!unlocked || currentLevel === 0}
+                                                        className={cn(
+                                                            "w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors",
+                                                            unlocked && currentLevel > 0
+                                                                ? "bg-bg-secondary hover:bg-white/10"
+                                                                : "text-text-muted cursor-not-allowed"
+                                                        )}
+                                                    >-</button>
+                                                    <div className="text-center">
+                                                        <span className={cn(
+                                                            "font-mono font-bold text-sm",
+                                                            completed ? "text-green-400" : currentLevel > 0 ? "text-accent-primary" : "text-text-muted"
+                                                        )}>{currentLevel}</span>
+                                                        <span className="text-text-muted text-xs">/{maxLevel}</span>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleLevelChange(node.id, currentLevel + 1, maxLevel)}
+                                                        disabled={currentLevel >= maxLevel}
+                                                        className={cn(
+                                                            "w-6 h-6 rounded flex items-center justify-center font-bold text-xs transition-colors",
+                                                            currentLevel < maxLevel
+                                                                ? !unlocked
+                                                                    ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"
+                                                                    : "bg-bg-secondary hover:bg-white/10"
+                                                                : "text-text-muted cursor-not-allowed"
+                                                        )}
+                                                        title={!unlocked ? "Auto-unlock requirements" : ""}
+                                                    >+</button>
+                                                </div>
+
+                                                {unlocked && currentLevel > 0 && (
+                                                    <div className="text-[10px] mt-1 text-accent-secondary truncate animate-fade-in">
+                                                        {formatStatDescription(effect, currentLevel)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
             </div>
 
-            {sortedLayers.length === 0 && (
+            {((activeTab === 'Clan' && Object.keys(guildPositionLibrary || {}).length === 0) || (activeTab !== 'Clan' && sortedLayers.length === 0)) && (
                 <div className="text-center py-8 text-text-muted">
                     No nodes found for "{activeTab}"
                 </div>
@@ -574,6 +864,32 @@ export function TechTreePanel() {
                 }}
                 onCancel={() => setPendingReset(null)}
             />
+
+            {showImportModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                    onClick={(e) => e.target === e.currentTarget && setShowImportModal(false)}>
+                    <div className="bg-bg-primary w-full max-w-2xl rounded-2xl border border-border shadow-2xl p-6 space-y-4 text-left">
+                        <h3 className="text-xl font-bold text-text-primary">Import Clan Tech JSON</h3>
+                        <p className="text-sm text-text-muted">Paste your Clan Tech JSON string below. This will overwrite your profile's Clan tech levels.</p>
+                        <textarea
+                            className="w-full h-64 bg-bg-input border border-border rounded-lg p-3 text-xs font-mono focus:border-accent-primary outline-none resize-none text-text-primary"
+                            placeholder='{"ClanTech":{"0":5,"1":10}}'
+                            value={importText}
+                            onChange={(e) => setImportText(e.target.value)}
+                        />
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowImportModal(false)}
+                                className="px-4 py-2 rounded-lg bg-bg-input border border-border hover:bg-white/5 text-xs font-bold transition-all text-text-primary"
+                            >Cancel</button>
+                            <button
+                                onClick={importClanTech}
+                                className="px-4 py-2 rounded-lg bg-accent-primary hover:bg-accent-primary/80 text-white text-xs font-bold transition-all"
+                            >Import</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Card>
     );
 }

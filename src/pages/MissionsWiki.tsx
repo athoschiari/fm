@@ -45,7 +45,8 @@ interface MissionReward {
 
 interface MissionAllMemberReward {
     Level: number;
-    Hammers: number;
+    Hammers?: number;
+    Reward?: { Amount: number; Type: string; $type: string };
 }
 
 interface MissionBaseConfig {
@@ -239,7 +240,7 @@ export default function MissionsWiki() {
                         <div className="bg-accent-primary/5 p-4 rounded-xl border border-accent-primary/30 flex flex-col items-center text-center group">
                             <GameIcon name="Hammer" className="w-12 h-12 mb-2 group-hover:rotate-12 transition-transform" />
                             <div className="text-[9px] font-black text-accent-primary uppercase mb-1">Shared Hammers</div>
-                            <div className="text-lg font-black text-white">{currentAllMemberReward?.Hammers || 0}</div>
+                            <div className="text-lg font-black text-white">{currentAllMemberReward?.Hammers ?? currentAllMemberReward?.Reward?.Amount ?? 0}</div>
                         </div>
                     </div>
                 </Card>

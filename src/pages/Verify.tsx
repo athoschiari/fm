@@ -104,8 +104,10 @@ const Verify: React.FC = () => {
                 const nodeData = techTreeLibrary?.[node.Type];
                 if (!nodeData?.Stats) continue;
 
-                const baseVal = nodeData.Stats[0]?.Value || 0;
-                const increment = nodeData.Stats[0]?.ValueIncrease || 0;
+                const tier = node.Tier ?? 0;
+                const tierStat = nodeData.StatsByTier?.[tier]?.[0];
+                const baseVal = tierStat?.Value ?? nodeData.Stats[0]?.Value ?? 0;
+                const increment = tierStat?.ValueIncrease ?? nodeData.Stats[0]?.ValueIncrease ?? 0;
                 const totalVal = baseVal + (Math.max(0, level - 1) * increment);
 
                 const key = node.Type;

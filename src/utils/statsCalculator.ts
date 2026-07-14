@@ -493,9 +493,14 @@ export function getTechTreeStats(
             const nodeData = techTreeLibrary?.[node.Type];
             if (!nodeData?.Stats) continue;
 
-            for (const stat of nodeData.Stats) {
-                const baseValue = stat.Value || 0;
-                const valueIncrease = stat.ValueIncrease || 0;
+            const tier = node.Tier ?? 0;
+            const tierStatsArray = nodeData.StatsByTier?.[tier];
+
+            for (let si = 0; si < nodeData.Stats.length; si++) {
+                const stat = nodeData.Stats[si];
+                const tierStat = tierStatsArray?.[si];
+                const baseValue = tierStat?.Value ?? stat.Value ?? 0;
+                const valueIncrease = tierStat?.ValueIncrease ?? stat.ValueIncrease ?? 0;
                 const totalValue = baseValue + (level - 1) * valueIncrease;
 
                 const target = getNormalizedTarget(stat.StatNode).$type;

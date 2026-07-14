@@ -31,7 +31,7 @@ export default function BaseDrops() {
     useEffect(() => {
         async function fetchVersions() {
             try {
-                const res = await fetch('./parsed_configs/versions.json');
+                const res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/versions.json`);
                 if (res.ok) {
                     const v = await res.json();
                     v.sort((a: string, b: string) => b.localeCompare(a));
@@ -65,7 +65,7 @@ export default function BaseDrops() {
                 await Promise.all(Object.entries(RELEVANT_FILES).map(async ([_, fileName]) => {
                     if (results[fileName]) return;
                     try {
-                        const res = await fetch(`./parsed_configs/${v}/${fileName}`);
+                        const res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/${v}/${fileName}`);
                         if (res.ok) {
                             results[fileName] = await res.json();
                         }

@@ -35,6 +35,7 @@ interface ItemSelectionCardProps {
                 base: number;
                 levelMulti?: number;
                 techMulti?: number;
+                clanTechMulti?: number;
                 ascMulti?: number;
                 skinMulti?: number;
                 meleeMulti?: number;
@@ -43,6 +44,7 @@ interface ItemSelectionCardProps {
                 base: number;
                 levelMulti?: number;
                 techMulti?: number;
+                clanTechMulti?: number;
                 ascMulti?: number;
                 skinMulti?: number;
             };

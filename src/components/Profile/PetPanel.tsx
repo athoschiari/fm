@@ -11,7 +11,7 @@ import { MAX_ACTIVE_PETS } from '../../utils/constants';
 import { PetSelectorModal } from './PetSelectorModal';
 import { useGameData } from '../../hooks/useGameData';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
-import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 
 import { InputModal } from '../UI/InputModal';
 import { AscensionStars } from '../UI/AscensionStars';
@@ -101,8 +101,11 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
 
     // Get tech tree modifiers for current tree mode
     const techModifiers = useTreeModifiers();
+    const clanModifiers = useClanTreeModifiers();
     const petDamageBonus = techModifiers['PetBonusDamage'] || 0;
     const petHealthBonus = techModifiers['PetBonusHealth'] || 0;
+    const clanPetDamageBonus = clanModifiers['PetBonusDamage'] || 0;
+    const clanPetHealthBonus = clanModifiers['PetBonusHealth'] || 0;
 
     // Pet Ascension multipliers
     const { ascensionDmgMulti, ascensionHpMulti } = useMemo(() => {
@@ -450,8 +453,8 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                                 damageMulti: (1 + petDamageBonus) * (ascensionDmgMulti || 1),
                                 healthMulti: (1 + petHealthBonus) * (ascensionHpMulti || 1),
                                 details: {
-                                    damage: { base: baseDamage, techMulti: (1 + petDamageBonus), ascMulti: (ascensionDmgMulti || 1) },
-                                    health: { base: baseHealth, techMulti: (1 + petHealthBonus), ascMulti: (ascensionHpMulti || 1) }
+                                    damage: { base: baseDamage, techMulti: (1 + petDamageBonus), clanTechMulti: clanPetDamageBonus, ascMulti: (ascensionDmgMulti || 1) },
+                                    health: { base: baseHealth, techMulti: (1 + petHealthBonus), clanTechMulti: clanPetHealthBonus, ascMulti: (ascensionHpMulti || 1) }
                                 },
                                 isMelee: false
                             }}

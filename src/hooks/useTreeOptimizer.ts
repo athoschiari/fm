@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useGameData } from './useGameData';
 import { useProfile } from '../context/ProfileContext';
 import { useTreeMode } from '../context/TreeModeContext';
+import { useTreeModifiers } from './useCalculatedStats';
 import { isWarPointDay } from '../utils/guildWarUtils';
 
 export interface TechUpgrade {
@@ -23,7 +24,7 @@ export interface TechUpgrade {
 }
 
 
-export function useTreeOptimizer() {
+export function useTreeOptimizer(warBonusOverride?: number, dayBoostOverride?: number) {
     const { profile, updateProfile } = useProfile();
     const { treeMode } = useTreeMode();
 
@@ -33,6 +34,11 @@ export function useTreeOptimizer() {
     const { data: upgradeLibrary } = useGameData<any>('TechTreeUpgradeLibrary.json');
     const { data: dayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const { data: forgeConfig } = useGameData<any>('ForgeConfig.json');
+
+    // Clan tech tree boost to war points earned from finishing tech upgrades.
+    // A sandbox override (from the Tree Calculator) takes precedence over the profile value.
+    const treeModifiers = useTreeModifiers();
+    const techUpgradeWarBonus = warBonusOverride ?? (treeModifiers['WarPointsFromTechUpgrade'] || 0);
 
     const gemSkipCostPerSecond = forgeConfig?.TechTreeGemSkipCostPerSecond || 0.0023;
 
@@ -126,6 +132,12 @@ export function useTreeOptimizer() {
                     }
                 });
             });
+        }
+
+        // Apply the clan tech tree war-point boost (+ optional day boost) uniformly.
+        const dayBoost = dayBoostOverride ?? 0;
+        for (const tier of Object.keys(tierPoints)) {
+            tierPoints[Number(tier)] = tierPoints[Number(tier)] * (1 + techUpgradeWarBonus) * (1 + dayBoost);
         }
 
         // Initialize Virtual Tree (based on My/Max/Empty mode)
@@ -264,7 +276,7 @@ export function useTreeOptimizer() {
 
                 // Calculate completion date for war point check
                 const endDate = new Date(planStartMs + endTimeSec * 1000);
-                const isWar = isWarPointDay(endDate, 'tech');
+                const isWar = isWarPointDay(endDate, 'tech', dayConfig);
                 const warPts = isWar ? best.points : 0;
 
                 actions.push({ ...best, gemCost, warPoints: warPts, isWarDay: isWar, endDate });
@@ -302,7 +314,7 @@ export function useTreeOptimizer() {
             totalGemsUsed: accumulatedGemCost
         };
 
-    }, [mapping, library, upgradeLibrary, dayConfig, treeMode, profile.techTree, timeLimitHours, potions, forgeConfig, profile.misc.gemCount, profile.misc.useGemsInCalculators]);
+    }, [mapping, library, upgradeLibrary, dayConfig, treeMode, profile.techTree, timeLimitHours, potions, forgeConfig, techUpgradeWarBonus, dayBoostOverride, profile.misc.gemCount, profile.misc.useGemsInCalculators]);
 
     const applyUpgrades = (selectedActions: TechUpgrade[]) => {
         if (selectedActions.length === 0) return;

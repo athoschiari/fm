@@ -5,6 +5,8 @@ import { useProfile } from '../../context/ProfileContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/UI/Card';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
 import { useGameData } from '../../hooks/useGameData';
+import { useTreeModifiers, useClanNodeMax } from '../../hooks/useCalculatedStats';
+import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { DndContext, closestCenter, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -12,7 +14,7 @@ import { Cpu, RefreshCcw, Info, Trophy, Timer, CheckCircle, CheckCircle2, Calend
 import { cn } from '../../lib/utils';
 import { ConfirmModal } from '../../components/UI/ConfirmModal';
 import { InputModal } from '../../components/UI/InputModal';
-import { isWarPointDay } from '../../utils/guildWarUtils';
+import { isWarPointDay, getDayBoostNodeType } from '../../utils/guildWarUtils';
 import { UserProfile } from '../../types/Profile';
 import { useGameDataContext } from '../../context/GameDataContext';
 
@@ -63,9 +65,10 @@ const ScheduleItem = React.memo(({
     onMarkDone, onAddDelay, onRemove, formatScheduleTime, formatTime, getSpriteStyle,
     onShiftPlan, isEditMode
 }: ScheduleItemProps) => {
+    const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const isRunning = now >= entry.startDate && now <= entry.endDate;
-    const isStartWar = isWarPointDay(entry.startDate, 'tech');
-    const isStopWar = isWarPointDay(entry.endDate, 'tech');
+    const isStartWar = isWarPointDay(entry.startDate, 'tech', warDayConfig);
+    const isStopWar = isWarPointDay(entry.endDate, 'tech', warDayConfig);
 
     return (
         <div className={cn(
@@ -272,7 +275,7 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
     const [autoSleepEnd, setAutoSleepEnd] = useState(profile.misc.plannerSleepEnd || '07:00');
     const [autoMaxWait, setAutoMaxWait] = useState(profile.misc.plannerMaxWait || 120);
     const [autoMinWait, setAutoMinWait] = useState(profile.misc.plannerMinWaitBetweenNodes || 1);
-    const [autoAllowedTrees, setAutoAllowedTrees] = useState<string[]>(['Forge', 'Power', 'SkillsPetTech', 'Clan']);
+    const [autoAllowedTrees, setAutoAllowedTrees] = useState<string[]>(['Forge', 'Power', 'SkillsPetTech']);
 
     return (
         <Card className="p-6 bg-gradient-to-br from-accent-primary/5 via-bg-secondary to-accent-secondary/5 border-accent-primary/30 shadow-lg shadow-accent-primary/5">
@@ -294,8 +297,7 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
                         {[
                             { key: 'Forge', label: 'Forge', icon: <Hammer size={12} /> },
                             { key: 'Power', label: 'Power', icon: <Shield size={12} /> },
-                            { key: 'SkillsPetTech', label: 'SPT', icon: <Sparkles size={12} /> },
-                            { key: 'Clan', label: 'Clan', icon: <Users size={12} /> }
+                            { key: 'SkillsPetTech', label: 'SPT', icon: <Sparkles size={12} /> }
                         ].map(t => {
                             const isActive = autoAllowedTrees.includes(t.key);
                             return (
@@ -507,19 +509,38 @@ const AutoPlannerControls = ({ planner, profile, updateNestedProfile }: {
 import { usePersistentState } from '../../hooks/usePersistentState';
 
 export default function TreeCalculator() {
+    // Sandbox: local override of the clan tech tree war-point boost (see SandboxPanel).
+    const clanModifiers = useTreeModifiers();
+    const clanMax = useClanNodeMax();
+    const warDayConfigForSandbox = useGameData<any>('GuildWarDayConfigLibrary.json').data;
+    const profileTechWarBonus = clanModifiers['WarPointsFromTechUpgrade'] || 0;
+    const techDayActive = isWarPointDay(new Date(), 'tech', warDayConfigForSandbox);
+    const profileDayBoost = techDayActive ? (clanModifiers[getDayBoostNodeType()] || 0) : 0;
+    const [sandbox, setSandbox] = useState<Record<string, number>>({});
+    const techWarBonus = sandbox.warTech ?? profileTechWarBonus;
+    const dayBoost = sandbox.dayBoost ?? profileDayBoost;
+    const treeSandbox = {
+        reset: () => setSandbox({}),
+        fields: [
+            { key: 'warTech', label: 'War points: tech upgrade', value: techWarBonus, profileValue: profileTechWarBonus, min: 0, max: clanMax['WarPointsFromTechUpgrade'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, warTech: v })) },
+            { key: 'dayBoost', label: 'Day war-points boost (completion day)', value: dayBoost, profileValue: profileDayBoost, min: 0, max: clanMax['WarPointsOnDay1'] || 0.4, step: 0.02, onChange: (v: number) => setSandbox(p => ({ ...p, dayBoost: v })) },
+        ],
+    };
+
     const {
         timeLimitHours, setTimeLimitHours,
         potions, setPotions,
         optimization,
         applyUpgrades,
         gemSkipCostPerSecond
-    } = useTreeOptimizer();
+    } = useTreeOptimizer(techWarBonus, dayBoost);
 
-    const planner = useTreePlanner();
+    const planner = useTreePlanner(techWarBonus, dayBoost);
 
     const { profile, updateNestedProfile } = useProfile();
 
     const { data: treeMapping } = useGameData<any>('TechTreeMapping.json');
+    const { data: warDayConfig } = useGameData<any>('GuildWarDayConfigLibrary.json');
     const NODE_ICON_SIZE = 40;
 
     // Tab state
@@ -629,7 +650,7 @@ export default function TreeCalculator() {
 
             // Recalculate if it lands on a war day based on NEW completion time after reordering/gems
             const endObj = new Date(startTimestamp + (accumulatedTimeSeconds + effectiveDuration) * 1000);
-            const isWarDayCurrent = isWarPointDay(endObj, 'tech');
+            const isWarDayCurrent = isWarPointDay(endObj, 'tech', warDayConfig);
 
             const result = {
                 ...action,
@@ -642,7 +663,7 @@ export default function TreeCalculator() {
             accumulatedTimeSeconds += effectiveDuration;
             return result;
         });
-    }, [orderedActions, timeLimitHours, profile.misc.useGemsInCalculators, startTime, gemSkipCostPerSecond]);
+    }, [orderedActions, timeLimitHours, profile.misc.useGemsInCalculators, startTime, gemSkipCostPerSecond, warDayConfig]);
 
     // Dependency Logic
     const isPrerequisite = (potentialReq: TechUpgrade, target: TechUpgrade) => {
@@ -898,6 +919,8 @@ export default function TreeCalculator() {
                     </button>
                 </div>
             </div>
+
+            <SandboxPanel fields={treeSandbox.fields} onReset={treeSandbox.reset} />
 
             {activeTab === 'optimizer' && (
                 <div className="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-6 items-start">
@@ -1241,7 +1264,7 @@ export default function TreeCalculator() {
                                                             const isDifferentDay = startObj.getDate() !== endObj.getDate();
                                                             const id = getActionId(action);
                                                             // Recalculate war day based on actual completion time (after reordering)
-                                                            const isWarDayNow = isWarPointDay(endObj, 'tech');
+                                                            const isWarDayNow = isWarPointDay(endObj, 'tech', warDayConfig);
 
                                                             return (
                                                                 <SortableItem key={id} id={id}>

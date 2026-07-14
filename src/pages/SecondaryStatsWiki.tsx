@@ -27,7 +27,7 @@ export default function SecondaryStatsWiki() {
     useEffect(() => {
         async function fetchVersions() {
             try {
-                const res = await fetch('./parsed_configs/versions.json');
+                const res = await fetch(`${import.meta.env.BASE_URL}parsed_configs/versions.json`);
                 if (res.ok) {
                     const v = await res.json();
                     v.sort((a: string, b: string) => b.localeCompare(a));
@@ -52,8 +52,8 @@ export default function SecondaryStatsWiki() {
             setLoading(true);
             try {
                 const [baseRes, targetRes] = await Promise.all([
-                    fetch(`./parsed_configs/${baseVersion}/SecondaryStatLibrary.json`),
-                    fetch(`./parsed_configs/${targetVersion}/SecondaryStatLibrary.json`)
+                    fetch(`${import.meta.env.BASE_URL}parsed_configs/${baseVersion}/SecondaryStatLibrary.json`),
+                    fetch(`${import.meta.env.BASE_URL}parsed_configs/${targetVersion}/SecondaryStatLibrary.json`)
                 ]);
 
                 if (baseRes.ok && targetRes.ok) {

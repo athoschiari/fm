@@ -17,7 +17,7 @@ import { cn, getInventoryIconStyle } from '../../lib/utils';
 import { getItemImage } from '../../utils/itemAssets';
 import { useGameData } from '../../hooks/useGameData';
 import { AGES } from '../../utils/constants';
-import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
 
@@ -146,6 +146,7 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
     const { data: spriteMapping } = useGameData<any>('ManualSpriteMapping.json');
 
     const techModifiers = useTreeModifiers();
+    const clanModifiers = useClanTreeModifiers();
 
     const forgeAscensionMulti = useMemo(() => {
         let total = 0;
@@ -369,10 +370,10 @@ export function EquipmentPanel({ variant = 'default', title, showCompareButton =
                                 itemName={getItemName(slot.key, equipped)}
                                 itemImage={itemImage}
                                 stats={getItemStats(
-                                    equipped, 
-                                    slot.key, 
-                                    { itemBalancingLibrary, itemBalancingConfig, weaponLibrary }, 
-                                    { techModifiers, forgeAscensionMulti }
+                                    equipped,
+                                    slot.key,
+                                    { itemBalancingLibrary, itemBalancingConfig, weaponLibrary },
+                                    { techModifiers, forgeAscensionMulti, clanModifiers }
                                 )}
                                 perfection={getPerfection(equipped, secondaryStatLibrary)}
                                 getStatPerfection={(sId, val) => getStatPerfection(sId, val, secondaryStatLibrary)}
@@ -452,8 +453,11 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
     }, [variant, originalMount, testMount, profile.mount.active]);
 
     const techModifiers = useTreeModifiers();
+    const clanModifiers = useClanTreeModifiers();
     const mountDamageBonus = techModifiers['MountDamage'] || 0;
     const mountHealthBonus = techModifiers['MountHealth'] || 0;
+    const clanMountDamageBonus = clanModifiers['MountDamage'] || 0;
+    const clanMountHealthBonus = clanModifiers['MountHealth'] || 0;
 
     const isSaved = useMemo(() => {
         if (!mount || !profile.mount.savedBuilds) return false;
@@ -580,8 +584,8 @@ function MountSlotWidget({ variant, isCompact }: { variant: string; isCompact: b
             damageMulti: techDmgMulti * ascDmgMulti,
             healthMulti: techHpMulti * ascHpMulti,
             details: {
-                damage: { base: damage, techMulti: techDmgMulti, ascMulti: ascDmgMulti },
-                health: { base: health, techMulti: techHpMulti, ascMulti: ascHpMulti }
+                damage: { base: damage, techMulti: techDmgMulti, clanTechMulti: clanMountDamageBonus, ascMulti: ascDmgMulti },
+                health: { base: health, techMulti: techHpMulti, clanTechMulti: clanMountHealthBonus, ascMulti: ascHpMulti }
             },
             ascLevel 
         };

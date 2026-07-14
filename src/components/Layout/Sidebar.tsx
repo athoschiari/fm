@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils';
 import {
     Star, Egg, Key, Shirt, Cat, Image, ChevronDown,
     Cpu, Swords, Shield, Lock, Coins, Palette, FileJson, HelpCircle, Github, TrendingUp, Hammer, Coffee, Zap, ShoppingCart, Target, Sliders,
-    Trash2, Check, Copy
+    Trash2, Check, Copy, Trophy
 } from 'lucide-react';
 import { GameIcon } from '../UI/GameIcon';
 import { useProfile } from '../../context/ProfileContext';
@@ -114,7 +114,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             items: [
                 { name: 'My Profile', path: '/', isProfile: true },
                 { name: 'Progress Prediction', path: '/progress-prediction', icon: TrendingUp },
-                { name: 'Solo Mission', path: '/solo-mission', icon: Target },
+                { name: 'Mission Calculator', path: '/solo-mission', icon: Target },
                 { name: 'PVP Simulator', path: '/pvp-arena', icon: Swords },
                 { name: 'Colors', path: '/colors', icon: Palette },
                 { name: 'Emblems', path: '/emblems', icon: Shield },
@@ -131,6 +131,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Eggs', path: '/eggs', icon: Egg },
                 { name: 'Skills', path: '/calculators/skills', icon: Star },
                 { name: 'Mounts', path: '/calculators/mounts', icon: Star },
+                { name: 'War Prizes', path: '/calculators/war-prizes', icon: Trophy },
                 { name: 'Substats', path: '/calculators/substats', icon: Sliders },
             ]
         },

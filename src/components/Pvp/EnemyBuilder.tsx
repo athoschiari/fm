@@ -69,6 +69,8 @@ export function EnemyBuilder() {
 
     const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
     const { data: techTreePositionLibrary } = useGameData<any>('TechTreePositionLibrary.json');
+    const { data: guildPositionLibrary } = useGameData<any>('GuildTechTreePositionLibrary.json');
+    const { data: guildUpgradeLibrary } = useGameData<any>('GuildTechTreeUpgradeLibrary.json');
     const { data: itemBalancingLibrary } = useGameData<any>('ItemBalancingLibrary.json');
     const { data: itemBalancingConfig } = useGameData<any>('ItemBalancingConfig.json');
     const { data: projectilesLibrary } = useGameData<any>('ProjectilesLibrary.json');
@@ -86,10 +88,13 @@ export function EnemyBuilder() {
         mountUpgradeLibrary,
         techTreeLibrary,
         techTreePositionLibrary,
+        guildTechTreePositionLibrary: guildPositionLibrary || undefined,
+        guildTechTreeUpgradeLibrary: guildUpgradeLibrary || undefined,
         itemBalancingLibrary,
         itemBalancingConfig,
         weaponLibrary,
         projectilesLibrary,
+        secondaryStatLibrary,
         skinsLibrary,
         setsLibrary,
         ascensionConfigsLibrary

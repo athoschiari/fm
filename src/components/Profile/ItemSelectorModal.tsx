@@ -16,7 +16,7 @@ import { AGES } from '../../utils/constants';
 import { getItemImage, getItemName } from '../../utils/itemAssets';
 import { getStatName } from '../../utils/statNames';
 import { getSkinSpriteStyle } from '../../utils/skinSprites';
-import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { ItemSelectionCard } from '../UI/ItemSelectionCard';
 import { getItemStats, getPerfection, getStatPerfection } from '../../utils/itemCalculations';
 
@@ -120,6 +120,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
     const { data: ascensionConfigs } = useGameData<any>('AscensionConfigsLibrary.json');
 
     const techModifiers = useTreeModifiers();
+    const clanModifiers = useClanTreeModifiers();
 
     // Calculated forge ascension multiplier
     const forgeAscensionMulti = useMemo(() => {
@@ -1537,7 +1538,7 @@ export function ItemSelectorModal({ isOpen, onClose, onSelect, slot, current, is
                                                     saved,
                                                     slot,
                                                     { itemBalancingLibrary: itemLibrary, itemBalancingConfig, weaponLibrary },
-                                                    { techModifiers, forgeAscensionMulti }
+                                                    { techModifiers, forgeAscensionMulti, clanModifiers }
                                                 )}
                                                 perfection={getPerfection(saved, secondaryStatLibrary)}
                                                 getStatPerfection={(sId, val) => getStatPerfection(sId, val, secondaryStatLibrary)}

@@ -3,7 +3,8 @@ import { useEggsCalculator } from '../hooks/useEggsCalculator';
 import { useEggSummonCalculator } from '../hooks/useEggSummonCalculator';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/UI/Card';
 import { cn } from '../lib/utils';
-import { Calculator, Plus, Egg, Info, Minus, RefreshCcw } from 'lucide-react';
+import { Calculator, Plus, Egg, Info, Minus, RefreshCcw, Trophy } from 'lucide-react';
+import { SandboxPanel } from '../components/UI/SandboxPanel';
 import { useProfile } from '../context/ProfileContext';
 import { SpriteIcon } from '../components/UI/SpriteIcon';
 import { getAscensionTexturePath } from '../utils/ascensionUtils';
@@ -52,8 +53,11 @@ export default function Eggs() {
         availableSlots, setAvailableSlots, maxSlots,
         optimization,
         hatchValues,
-        warPoints
+        warPoints,
+        warPointBonuses,
+        sandbox
     } = useEggsCalculator();
+    const eggWarBoost = Math.max(warPointBonuses?.hatch || 0, warPointBonuses?.merge || 0);
     const { selectedVersion } = useGameDataContext();
 
     const eggSummon = useEggSummonCalculator();
@@ -110,7 +114,17 @@ export default function Eggs() {
                     Egg Calculator
                 </h1>
                 <p className="text-text-secondary">Optimize your egg hatching for Guild Wars</p>
+                {eggWarBoost > 0 && (
+                    <div className="flex justify-center pt-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider">
+                            <Trophy size={14} />
+                            Clan Boost: +{(eggWarBoost * 100).toFixed(0)}% War Points
+                        </div>
+                    </div>
+                )}
             </div>
+
+            <SandboxPanel fields={sandbox.fields} onReset={sandbox.reset} />
 
             {/* Tabs */}
             <div className="flex justify-center gap-2 sm:gap-4 mb-6 flex-wrap">
@@ -617,8 +631,8 @@ export default function Eggs() {
                                             {/* Points Info */}
                                             {warPoints && warPoints[rarity] && (
                                                 <div className="absolute top-1 left-0 right-0 flex justify-center gap-2 text-[9px] font-mono text-text-tertiary opacity-80">
-                                                    <span>H:<span className="text-text-primary ml-0.5">{warPoints[rarity].hatch}</span></span>
-                                                    <span>M:<span className="text-text-primary ml-0.5">{warPoints[rarity].merge}</span></span>
+                                                    <span>H:<span className="text-text-primary ml-0.5">{Math.round(warPoints[rarity].hatch)}</span></span>
+                                                    <span>M:<span className="text-text-primary ml-0.5">{Math.round(warPoints[rarity].merge)}</span></span>
                                                 </div>
                                             )}
                                             <EggIcon rarity={rarity} size={48} ascensionLevel={profile.misc.petAscensionLevel || 0} />

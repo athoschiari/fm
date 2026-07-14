@@ -8,7 +8,7 @@ import { cn, getRarityBgStyle } from '../../lib/utils';
 import { useGameData } from '../../hooks/useGameData';
 import { MountSelectorModal } from './MountSelectorModal';
 import { SpriteSheetIcon } from '../UI/SpriteSheetIcon';
-import { useTreeModifiers } from '../../hooks/useCalculatedStats';
+import { useTreeModifiers, useClanTreeModifiers } from '../../hooks/useCalculatedStats';
 import { getStatName, getStatColor } from '../../utils/statNames';
 import { InputModal } from '../UI/InputModal';
 import { AscensionStars } from '../UI/AscensionStars';
@@ -27,8 +27,11 @@ export function MountPanel() {
 
     // Get tech tree modifiers
     const techModifiers = useTreeModifiers();
+    const clanModifiers = useClanTreeModifiers();
     const mountDamageBonus = techModifiers['MountDamage'] || 0;
     const mountHealthBonus = techModifiers['MountHealth'] || 0;
+    const clanMountDamageBonus = clanModifiers['MountDamage'] || 0;
+    const clanMountHealthBonus = clanModifiers['MountHealth'] || 0;
 
     const handleSelectMount = (rarity: string | null, id?: number, level?: number, secondaryStats?: { statId: string; value: number }[]) => {
         if (!rarity) {
@@ -151,8 +154,8 @@ export function MountPanel() {
             damageMulti: techDmgFactor * ascDmgFactor,
             healthMulti: techHpFactor * ascHpFactor,
             details: {
-                damage: { base: baseDamageMulti, techMulti: techDmgFactor, ascMulti: ascDmgFactor },
-                health: { base: baseHealthMulti, techMulti: techHpFactor, ascMulti: ascHpFactor }
+                damage: { base: baseDamageMulti, techMulti: techDmgFactor, clanTechMulti: clanMountDamageBonus, ascMulti: ascDmgFactor },
+                health: { base: baseHealthMulti, techMulti: techHpFactor, clanTechMulti: clanMountHealthBonus, ascMulti: ascHpFactor }
             }
         };
     };
