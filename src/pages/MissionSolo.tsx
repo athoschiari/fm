@@ -167,8 +167,23 @@ export default function MissionSolo() {
     const treeModifiers = useTreeModifiers();
     const clanMax = useClanNodeMax();
     const profileMissionRewardBonus = treeModifiers['MissionRewards'] || 0;
+    const defaultAscension =
+        (profile?.misc?.mountAscensionLevel || 0) +
+        (profile?.misc?.skillAscensionLevel || 0) +
+        (profile?.misc?.forgeAscensionLevel || 0) +
+        (profile?.misc?.petAscensionLevel || 0);
+
     const [sandbox, setSandbox] = useState<Record<string, number>>({});
     const missionRewardBonus = sandbox.missionRewards ?? profileMissionRewardBonus;
+    const ascensionStars = sandbox.ascensionStars ?? defaultAscension;
+
+    const isSandboxModified = useMemo(() => {
+        return (
+            Math.abs(missionRewardBonus - profileMissionRewardBonus) > 1e-9 ||
+            ascensionStars !== defaultAscension
+        );
+    }, [missionRewardBonus, profileMissionRewardBonus, ascensionStars, defaultAscension]);
+
     const missionSandbox = {
         reset: () => setSandbox({}),
         fields: [
@@ -178,8 +193,26 @@ export default function MissionSolo() {
 
     const displayRewards = useMemo(() => {
         if (!currentRewards?.Rewards) return [];
-        return currentRewards.Rewards.map((r: Reward) => ({ ...r, Amount: r.Amount * (1 + missionRewardBonus) }));
-    }, [currentRewards, missionRewardBonus]);
+        return currentRewards.Rewards.map((r: Reward) => {
+            let mult = 1 + missionRewardBonus;
+            if (r.Type === 'GuildPotions') {
+                mult *= (1 + ascensionStars * 0.1);
+            }
+            return { ...r, Amount: r.Amount * mult };
+        });
+    }, [currentRewards, missionRewardBonus, ascensionStars]);
+
+    const displayAllMemberReward = useMemo(() => {
+        if (!currentAllMemberReward) return null;
+        let hammers = currentAllMemberReward.Hammers;
+        let reward = currentAllMemberReward.Reward;
+        
+        if (reward && reward.Type === 'GuildPotions') {
+            reward = { ...reward, Amount: reward.Amount * (1 + ascensionStars * 0.1) };
+        }
+        
+        return { hammers, reward };
+    }, [currentAllMemberReward, ascensionStars]);
 
     const getScaledValue = (base: number) => {
         if (!baseConfig) return base;
@@ -219,7 +252,53 @@ export default function MissionSolo() {
                 </div>
             </div>
 
-            <SandboxPanel fields={missionSandbox.fields} onReset={missionSandbox.reset} />
+            <SandboxPanel
+                fields={missionSandbox.fields}
+                onReset={missionSandbox.reset}
+                isModified={isSandboxModified}
+            >
+                <div className="pt-4 border-t border-purple-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Ascension Stars</span>
+                        <div className="relative">
+                            <select
+                                value={ascensionStars}
+                                onChange={(e) => setSandbox(p => ({ ...p, ascensionStars: parseInt(e.target.value) }))}
+                                className="bg-bg-input border border-purple-500/30 hover:border-purple-500/50 focus:border-purple-500/80 rounded-lg px-3 py-1.5 text-xs text-white outline-none transition-all font-mono cursor-pointer appearance-none pr-8"
+                            >
+                                {Array.from({ length: 13 }).map((_, idx) => (
+                                    <option key={idx} value={idx}>
+                                        {idx} {idx === 1 ? 'Star' : 'Stars'} (+{idx * 10}%)
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-purple-400">
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Visual stars preview */}
+                    <div className="flex items-center gap-1 min-h-[24px] flex-wrap bg-purple-500/10 rounded-lg px-3 py-1.5 border border-purple-500/20">
+                        {ascensionStars > 0 ? (
+                            <div className="flex items-center gap-0.5">
+                                {Array.from({ length: ascensionStars }).map((_, idx) => (
+                                    <img
+                                        key={idx}
+                                        src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/AscensionStar.png`}
+                                        alt="Star"
+                                        className="w-4 h-4 object-contain drop-shadow-[0_0_3px_rgba(251,191,36,0.6)] animate-fade-in"
+                                        style={{ animationDelay: `${idx * 20}ms` }}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <span className="text-[10px] text-purple-300/60 italic font-medium">No ascension stars active</span>
+                        )}
+                    </div>
+                </div>
+            </SandboxPanel>
 
             {/* Level Slider Section */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -284,17 +363,46 @@ export default function MissionSolo() {
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-                        {displayRewards.map((r, idx) => (
-                            <div key={idx} className="bg-bg-primary/50 p-4 rounded-xl border border-border/50 flex flex-col items-center text-center group hover:border-accent-primary/50 transition-all">
-                                <GameIcon name={getRewardIcon(r.Type)} className="w-12 h-12 mb-2 group-hover:scale-110 transition-transform" />
-                                <div className="text-[9px] font-black text-text-muted uppercase mb-1">{r.Type.replace(/([A-Z])/g, ' $1').trim()}</div>
-                                <div className="text-lg font-black text-white">{formatNumber(Math.round(r.Amount))}</div>
+                        {displayRewards.map((r, idx) => {
+                            const isGuildPotions = r.Type === 'GuildPotions';
+                            return (
+                                <div key={idx} className="bg-bg-primary/50 p-4 rounded-xl border border-border/50 flex flex-col items-center text-center group hover:border-accent-primary/50 transition-all relative">
+                                    <GameIcon name={getRewardIcon(r.Type)} className="w-12 h-12 mb-2 group-hover:scale-110 transition-transform" />
+                                    <div className="text-[9px] font-black text-text-muted uppercase mb-1">{r.Type.replace(/([A-Z])/g, ' $1').trim()}</div>
+                                    <div className="text-lg font-black text-white flex items-center justify-center gap-1.5">
+                                        {formatNumber(Math.round(r.Amount))}
+                                        {isGuildPotions && ascensionStars > 0 && (
+                                            <div className="flex items-center gap-0.5 bg-amber-500/10 px-1 py-0.5 rounded border border-amber-500/20 text-[9px] text-amber-400 font-mono font-bold">
+                                                <img
+                                                    src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/AscensionStar.png`}
+                                                    alt="Ascension"
+                                                    className="w-2.5 h-2.5 object-contain"
+                                                />
+                                                x{ascensionStars}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        <div className="bg-accent-primary/5 p-4 rounded-xl border border-accent-primary/30 flex flex-col items-center text-center group hover:border-accent-primary/50 transition-all relative">
+                            <GameIcon name={displayAllMemberReward?.reward ? getRewardIcon(displayAllMemberReward.reward.Type) : "Hammer"} className="w-12 h-12 mb-2 group-hover:rotate-12 transition-transform" />
+                            <div className="text-[9px] font-black text-accent-primary uppercase mb-1">
+                                {displayAllMemberReward?.reward ? displayAllMemberReward.reward.Type.replace(/([A-Z])/g, ' $1').trim() : "Shared Hammers"}
                             </div>
-                        ))}
-                        <div className="bg-accent-primary/5 p-4 rounded-xl border border-accent-primary/30 flex flex-col items-center text-center group">
-                            <GameIcon name="Hammer" className="w-12 h-12 mb-2 group-hover:rotate-12 transition-transform" />
-                            <div className="text-[9px] font-black text-accent-primary uppercase mb-1">Shared Hammers</div>
-                            <div className="text-lg font-black text-white">{currentAllMemberReward?.Hammers ?? currentAllMemberReward?.Reward?.Amount ?? 0}</div>
+                            <div className="text-lg font-black text-white flex items-center justify-center gap-1.5">
+                                {formatNumber(Math.round(displayAllMemberReward?.hammers ?? displayAllMemberReward?.reward?.Amount ?? 0))}
+                                {displayAllMemberReward?.reward?.Type === 'GuildPotions' && ascensionStars > 0 && (
+                                    <div className="flex items-center gap-0.5 bg-amber-500/10 px-1 py-0.5 rounded border border-amber-500/20 text-[9px] text-amber-400 font-mono font-bold">
+                                        <img
+                                            src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/AscensionStar.png`}
+                                            alt="Ascension"
+                                            className="w-2.5 h-2.5 object-contain"
+                                        />
+                                        x{ascensionStars}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </Card>
