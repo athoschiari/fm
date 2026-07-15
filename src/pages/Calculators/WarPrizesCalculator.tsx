@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useGameData } from '../../hooks/useGameData';
 import { useGameDataContext } from '../../context/GameDataContext';
+import { useProfile } from '../../context/ProfileContext';
 import { useTreeModifiers, useClanNodeMax } from '../../hooks/useCalculatedStats';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
@@ -33,6 +34,12 @@ const CURRENCY_ICON: Record<string, string> = {
 export default function WarPrizesCalculator() {
     const { data: tierConfig } = useGameData<Record<string, TierConfig>>('GuildTierConfig.json');
     const { selectedVersion } = useGameDataContext();
+    const { profile } = useProfile();
+    const defaultAscension =
+        (profile?.misc?.mountAscensionLevel || 0) +
+        (profile?.misc?.skillAscensionLevel || 0) +
+        (profile?.misc?.forgeAscensionLevel || 0) +
+        (profile?.misc?.petAscensionLevel || 0);
 
     // Clan tech tree reward multipliers (already effective, see useGameData).
     const treeModifiers = useTreeModifiers();
@@ -48,7 +55,7 @@ export default function WarPrizesCalculator() {
     const loseBonus = sandbox.lose ?? profileLose;
     const potionsWinBonus = sandbox.potWin ?? profilePotionsWin;
     const potionsLoseBonus = sandbox.potLose ?? profilePotionsLose;
-    const ascensionStars = sandbox.ascensionStars ?? 0;
+    const ascensionStars = sandbox.ascensionStars ?? defaultAscension;
 
     const isSandboxModified = useMemo(() => {
         return (
@@ -56,9 +63,9 @@ export default function WarPrizesCalculator() {
             Math.abs(loseBonus - profileLose) > 1e-9 ||
             Math.abs(potionsWinBonus - profilePotionsWin) > 1e-9 ||
             Math.abs(potionsLoseBonus - profilePotionsLose) > 1e-9 ||
-            ascensionStars !== 0
+            ascensionStars !== defaultAscension
         );
-    }, [winBonus, profileWin, loseBonus, profileLose, potionsWinBonus, profilePotionsWin, potionsLoseBonus, profilePotionsLose, ascensionStars]);
+    }, [winBonus, profileWin, loseBonus, profileLose, potionsWinBonus, profilePotionsWin, potionsLoseBonus, profilePotionsLose, ascensionStars, defaultAscension]);
 
     const sandboxControls = {
         reset: () => setSandbox({}),
