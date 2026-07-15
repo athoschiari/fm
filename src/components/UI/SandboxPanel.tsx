@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { FlaskConical, RotateCcw } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -19,9 +20,9 @@ export interface SandboxField {
  * override the tree-node bonuses that alter the result, and restore them to the
  * profile-derived values. Purely local to each calculator.
  */
-export function SandboxPanel({ fields, onReset }: { fields: SandboxField[]; onReset: () => void }) {
-    if (!fields.length) return null;
-    const modified = fields.some(f => Math.abs(f.value - f.profileValue) > 1e-9);
+export function SandboxPanel({ fields, onReset, children, isModified }: { fields: SandboxField[]; onReset: () => void; children?: ReactNode; isModified?: boolean }) {
+    if (!fields.length && !children) return null;
+    const modified = isModified !== undefined ? isModified : fields.some(f => Math.abs(f.value - f.profileValue) > 1e-9);
     const fmt = (v: number) => `${v >= 0 ? '+' : ''}${(v * 100).toFixed(0)}%`;
 
     return (
@@ -40,28 +41,31 @@ export function SandboxPanel({ fields, onReset }: { fields: SandboxField[]; onRe
                     </button>
                 )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                {fields.map(f => {
-                    const isMod = Math.abs(f.value - f.profileValue) > 1e-9;
-                    return (
-                        <div key={f.key} className="space-y-1">
-                            <div className="flex justify-between text-[11px]">
-                                <span className="text-text-secondary">{f.label}</span>
-                                <span className={cn('font-mono font-bold', isMod ? 'text-purple-300' : 'text-white')}>{fmt(f.value)}</span>
+            {fields.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                    {fields.map(f => {
+                        const isMod = Math.abs(f.value - f.profileValue) > 1e-9;
+                        return (
+                            <div key={f.key} className="space-y-1">
+                                <div className="flex justify-between text-[11px]">
+                                    <span className="text-text-secondary">{f.label}</span>
+                                    <span className={cn('font-mono font-bold', isMod ? 'text-purple-300' : 'text-white')}>{fmt(f.value)}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min={f.min}
+                                    max={f.max}
+                                    step={f.step}
+                                    value={f.value}
+                                    onChange={(e) => f.onChange(parseFloat(e.target.value))}
+                                    className="w-full h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-purple-400"
+                                />
                             </div>
-                            <input
-                                type="range"
-                                min={f.min}
-                                max={f.max}
-                                step={f.step}
-                                value={f.value}
-                                onChange={(e) => f.onChange(parseFloat(e.target.value))}
-                                className="w-full h-1.5 bg-bg-input rounded-lg appearance-none cursor-pointer accent-purple-400"
-                            />
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
+            {children}
         </div>
     );
 }

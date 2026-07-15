@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useGameData } from '../../hooks/useGameData';
+import { useGameDataContext } from '../../context/GameDataContext';
 import { useTreeModifiers, useClanNodeMax } from '../../hooks/useCalculatedStats';
 import { SandboxPanel } from '../../components/UI/SandboxPanel';
 import { SpriteIcon } from '../../components/UI/SpriteIcon';
@@ -31,6 +32,7 @@ const CURRENCY_ICON: Record<string, string> = {
 
 export default function WarPrizesCalculator() {
     const { data: tierConfig } = useGameData<Record<string, TierConfig>>('GuildTierConfig.json');
+    const { selectedVersion } = useGameDataContext();
 
     // Clan tech tree reward multipliers (already effective, see useGameData).
     const treeModifiers = useTreeModifiers();
@@ -46,6 +48,17 @@ export default function WarPrizesCalculator() {
     const loseBonus = sandbox.lose ?? profileLose;
     const potionsWinBonus = sandbox.potWin ?? profilePotionsWin;
     const potionsLoseBonus = sandbox.potLose ?? profilePotionsLose;
+    const ascensionStars = sandbox.ascensionStars ?? 0;
+
+    const isSandboxModified = useMemo(() => {
+        return (
+            Math.abs(winBonus - profileWin) > 1e-9 ||
+            Math.abs(loseBonus - profileLose) > 1e-9 ||
+            Math.abs(potionsWinBonus - profilePotionsWin) > 1e-9 ||
+            Math.abs(potionsLoseBonus - profilePotionsLose) > 1e-9 ||
+            ascensionStars !== 0
+        );
+    }, [winBonus, profileWin, loseBonus, profileLose, potionsWinBonus, profilePotionsWin, potionsLoseBonus, profilePotionsLose, ascensionStars]);
 
     const sandboxControls = {
         reset: () => setSandbox({}),
@@ -61,10 +74,10 @@ export default function WarPrizesCalculator() {
     const [tierIdx, setTierIdx] = useState(0);
     const tier = tiers[tierIdx];
 
-    // Apply the multipliers; GuildPotions get an extra win/lose-specific boost.
+    // Apply the multipliers; GuildPotions get an extra win/lose-specific boost and ascension stars boost (+10% per star).
     const applyBonus = (rewards: CurrencyReward[], baseBonus: number, potionBonus: number) =>
         (rewards || []).map(r => {
-            const extra = r.Type === 'GuildPotions' ? potionBonus : 0;
+            const extra = r.Type === 'GuildPotions' ? (potionBonus + ascensionStars * 0.1) : 0;
             return { ...r, boosted: r.Amount * (1 + baseBonus + extra) };
         });
 
@@ -74,11 +87,22 @@ export default function WarPrizesCalculator() {
     const RewardRow = ({ type, base, boosted }: { type: string; base: number; boosted: number }) => {
         const icon = CURRENCY_ICON[type];
         const changed = Math.abs(boosted - base) > 0.5;
+        const isGuildPotions = type === 'GuildPotions';
         return (
             <div className="flex items-center justify-between gap-3 py-1.5 border-b border-white/5 last:border-0">
                 <div className="flex items-center gap-2 min-w-0">
                     {icon ? <SpriteIcon name={icon} size={22} /> : <span className="w-[22px]" />}
                     <span className="text-xs text-text-secondary truncate">{type.replace(/([A-Z])/g, ' $1').trim()}</span>
+                    {isGuildPotions && ascensionStars > 0 && (
+                        <div className="flex items-center gap-0.5 shrink-0 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                            <img
+                                src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/AscensionStar.png`}
+                                alt="Ascension"
+                                className="w-3 h-3 object-contain"
+                            />
+                            <span className="text-[10px] text-amber-400 font-mono font-bold">x{ascensionStars}</span>
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-2 font-mono">
                     {changed && <span className="text-[10px] text-text-muted line-through">{Math.round(base).toLocaleString()}</span>}
@@ -98,7 +122,53 @@ export default function WarPrizesCalculator() {
                 <p className="text-text-secondary">Guild War win/lose rewards per tier, boosted by your clan tech tree.</p>
             </div>
 
-            <SandboxPanel fields={sandboxControls.fields} onReset={sandboxControls.reset} />
+            <SandboxPanel
+                fields={sandboxControls.fields}
+                onReset={sandboxControls.reset}
+                isModified={isSandboxModified}
+            >
+                <div className="pt-4 border-t border-purple-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">Ascension Stars</span>
+                        <div className="relative">
+                            <select
+                                value={ascensionStars}
+                                onChange={(e) => setSandbox(p => ({ ...p, ascensionStars: parseInt(e.target.value) }))}
+                                className="bg-bg-input border border-purple-500/30 hover:border-purple-500/50 focus:border-purple-500/80 rounded-lg px-3 py-1.5 text-xs text-white outline-none transition-all font-mono cursor-pointer appearance-none pr-8"
+                            >
+                                {Array.from({ length: 13 }).map((_, idx) => (
+                                    <option key={idx} value={idx}>
+                                        {idx} {idx === 1 ? 'Star' : 'Stars'} (+{idx * 10}%)
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-purple-400">
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    {/* Visual stars preview */}
+                    <div className="flex items-center gap-1 min-h-[24px] flex-wrap bg-purple-500/10 rounded-lg px-3 py-1.5 border border-purple-500/20">
+                        {ascensionStars > 0 ? (
+                            <div className="flex items-center gap-0.5">
+                                {Array.from({ length: ascensionStars }).map((_, idx) => (
+                                    <img
+                                        key={idx}
+                                        src={`${import.meta.env.BASE_URL}Texture2D/${selectedVersion}/AscensionStar.png`}
+                                        alt="Star"
+                                        className="w-4 h-4 object-contain drop-shadow-[0_0_3px_rgba(251,191,36,0.6)] animate-fade-in"
+                                        style={{ animationDelay: `${idx * 20}ms` }}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <span className="text-[10px] text-purple-300/60 italic font-medium">No ascension stars active</span>
+                        )}
+                    </div>
+                </div>
+            </SandboxPanel>
 
             {/* Guild tier selector */}
             <Card className="p-4">
