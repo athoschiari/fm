@@ -1208,6 +1208,10 @@ export class StatEngine {
                     const totalValue = valPerLevel * level;
 
                     for (const stat of nodeData.Stats) {
+                        if (stat.StatNode?.Condition && stat.StatNode.Condition !== 'None') {
+                            continue;
+                        }
+
                         const targetInfo = getNormalizedTarget(stat.StatNode);
                         const targetType = targetInfo.$type;
                         const statType = stat.StatNode?.UniqueStat?.StatType;
@@ -1261,6 +1265,10 @@ export class StatEngine {
 
                 for (let si = 0; si < nodeData.Stats.length; si++) {
                     const stat = nodeData.Stats[si];
+                    if (stat.StatNode?.Condition && stat.StatNode.Condition !== 'None') {
+                        continue;
+                    }
+
                     const targetInfo = getNormalizedTarget(stat.StatNode);
                     const targetType = targetInfo.$type;
                     const statType = stat.StatNode?.UniqueStat?.StatType;
