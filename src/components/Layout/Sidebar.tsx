@@ -133,6 +133,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 { name: 'Mounts', path: '/calculators/mounts', icon: Star },
                 { name: 'War Prizes', path: '/calculators/war-prizes', icon: Trophy },
                 { name: 'Substats', path: '/calculators/substats', icon: Sliders },
+                { name: 'Loadout Optimizer', path: '/calculators/loadout', icon: Trophy },
             ]
         },
         {

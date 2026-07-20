@@ -154,7 +154,7 @@ function formatDelta(original: number, comparison: number, isCompact: boolean): 
     };
 }
 
-interface ComparisonStatRowProps {
+export interface ComparisonStatRowProps {
     icon: React.ReactNode;
     label: string;
     originalValue: number;
@@ -170,7 +170,7 @@ interface ComparisonStatRowProps {
     className?: string;
 }
 
-function ComparisonStatRow({
+export function ComparisonStatRow({
     icon,
     label,
     originalValue,

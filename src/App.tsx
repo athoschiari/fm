@@ -32,6 +32,7 @@ import MountCalculator from './pages/Calculators/MountCalculator';
 import SkillCalculator from './pages/Calculators/SkillCalculator';
 import TreeCalculator from './pages/Calculators/TreeCalculator';
 import WarPrizesCalculator from './pages/Calculators/WarPrizesCalculator';
+import LoadoutOptimizer from './pages/Calculators/LoadoutOptimizer';
 import Verify from './pages/Verify';
 import ForgeWiki from './pages/ForgeWiki';
 import SkinsPage from './pages/Skins';
@@ -83,6 +84,7 @@ function App() {
                                     <Route path="calculators/tree" element={<TreeCalculator />} />
                                     <Route path="calculators/substats" element={<SubstatsCalculator />} />
                                     <Route path="calculators/war-prizes" element={<WarPrizesCalculator />} />
+                                    <Route path="calculators/loadout" element={<LoadoutOptimizer />} />
                                     <Route path="solo-mission" element={<MissionSolo />} />
                                     <Route path="wiki/forge" element={<ForgeWiki />} />
                                     <Route path="wiki/base-drops" element={<BaseDrops />} />
