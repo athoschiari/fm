@@ -41,7 +41,7 @@ const ModalContent = memo(({ current, proposed, onClose }: Omit<LoadoutCompariso
                     <ComparisonStatRow variant="minimal" icon={<Heart className="w-4 h-4" />} label="Lifesteal/sec"
                         originalValue={current.lifestealPerSec} testValue={proposed.lifestealPerSec}
                         formatFn={formatNumber} color="text-purple-400" />
-                    <ComparisonStatRow variant="minimal" icon={<Activity className="w-4 h-4" />} label="Heal/sec"
+                    <ComparisonStatRow variant="minimal" icon={<Activity className="w-4 h-4" />} label="HPS"
                         originalValue={current.healPerSec} testValue={proposed.healPerSec}
                         formatFn={formatNumber} color="text-emerald-400" />
                     <ComparisonStatRow variant="minimal" icon={<Swords className="w-4 h-4" />} label="Shown Dmg"

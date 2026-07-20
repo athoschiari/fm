@@ -211,7 +211,7 @@ export function useLoadoutSweep() {
                 acc.push({
                     ...combo,
                     // Real-time throughout: the stepped breakpoint model, matching
-                    // the Real-Time Metrics card. Lifesteal/sec and Heal/sec below
+                    // the Real-Time Metrics card. Lifesteal/sec and HPS below
                     // are real-time too, so all three headline metrics agree.
                     dps: stats.realTotalDps,
                     lifestealPerSec: stats.realWeaponDps * stats.lifeSteal,
@@ -239,7 +239,7 @@ export function useLoadoutSweep() {
 
     // --- Scoring ------------------------------------------------------------
     // Each metric is normalised by its own max across the sweep so that combining
-    // DPS and lifesteal/sec isn't dominated by whichever has the bigger raw scale.
+    // DPS and HPS isn't dominated by whichever has the bigger raw scale.
     const maxima = useMemo(() => {
         let dps = 0, lifesteal = 0, heal = 0;
         for (const r of results) {
@@ -260,7 +260,7 @@ export function useLoadoutSweep() {
             case 'dps': return dpsScore;
             case 'lifesteal': return lsScore;
             case 'heal': return healScore;
-            case 'balanced': return 0.5 * dpsScore + 0.5 * lsScore;
+            case 'balanced': return 0.5 * dpsScore + 0.5 * healScore;
         }
     }, [maxima]);
 

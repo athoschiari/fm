@@ -21,12 +21,12 @@ const METRICS: { id: SweepMetric; label: string; icon: typeof Heart; blurb: stri
         blurb: 'Maximises real-time total DPS — weapon, skill and skill-buff damage on the stepped breakpoint model.'
     },
     {
-        id: 'heal', label: 'Heal/sec', icon: Activity,
+        id: 'heal', label: 'HPS', icon: Activity,
         blurb: 'Maximises total real-time healing: lifesteal plus health regen and skill healing, block-amplified.'
     },
     {
         id: 'balanced', label: 'Balanced', icon: Check,
-        blurb: 'Balances DPS and lifesteal/sec 50/50, normalised across every combination so neither metric dominates by raw scale.'
+        blurb: 'Balances DPS and HPS 50/50, normalised across every combination so neither metric dominates by raw scale.'
     }
 ];
 
@@ -215,7 +215,7 @@ export default function LoadoutOptimizer() {
                                     <div className="text-[11px] font-mono text-text-muted mt-1">
                                         DPS {formatNumber(result.dps)}
                                         {'  -  '}LS/s {formatNumber(result.lifestealPerSec)}
-                                        {'  -  '}Heal/s {formatNumber(result.healPerSec)}
+                                        {'  -  '}HPS {formatNumber(result.healPerSec)}
                                     </div>
                                 </div>
                                 <span className="text-sm font-mono text-blue-400 shrink-0 pt-0.5">{Math.round(score * 100)}%</span>
@@ -248,7 +248,7 @@ function StatStrip({ loadout }: { loadout: ExpandedLoadout | null }) {
     const cells: { label: string; value: number; color: string }[] = loadout ? [
         { label: 'DPS', value: loadout.dps, color: 'text-orange-400' },
         { label: 'Lifesteal/sec', value: loadout.lifestealPerSec, color: 'text-purple-400' },
-        { label: 'Heal/sec', value: loadout.healPerSec, color: 'text-emerald-400' },
+        { label: 'HPS', value: loadout.healPerSec, color: 'text-emerald-400' },
         { label: 'Shown Dmg', value: loadout.shownDmg, color: 'text-red-400' },
         { label: 'Calculated Dmg', value: loadout.calcDmg, color: 'text-red-400' },
         { label: 'Shown HP', value: loadout.shownHp, color: 'text-green-400' },
