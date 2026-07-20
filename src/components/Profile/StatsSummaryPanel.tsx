@@ -21,6 +21,7 @@ import { calculateStats, LibraryData, AggregatedStats } from '../../utils/statEn
 import { useTreeMode } from '../../context/TreeModeContext';
 import { UserProfile } from '../../types/Profile';
 import { DpsBreakdownModal } from './DpsBreakdownModal';
+import { LifestealBreakdownModal } from './LifestealBreakdownModal';
 
 interface StatRowProps {
     icon: React.ReactNode;
@@ -355,6 +356,12 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const openDpsModal = (s: AggregatedStats, p: UserProfile, v: 'default' | 'original' | 'test' = 'default') => {
         setModalData({ stats: s, profile: p, variant: v });
         setShowDpsModal(true);
+    };
+
+    const [showLifestealModal, setShowLifestealModal] = useState(false);
+    const openLifestealModal = (s: AggregatedStats, p: UserProfile, v: 'default' | 'original' | 'test' = 'default') => {
+        setModalData({ stats: s, profile: p, variant: v });
+        setShowLifestealModal(true);
     };
     const [openSection, setOpenSection] = useState<string | null>(null);
     const [viewTab, setViewTab] = useState<'general' | 'metrics' | 'hits' | 'passives'>(defaultTab);
@@ -767,6 +774,24 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     { label: 'Skills', value: testHpsDetails.skills }
                                 ]}
                             />
+                            <ComparisonStatRow
+                                isCompact={isCompactStats}
+                                icon={<Heart className="w-4 h-4 text-purple-400" />}
+                                label="Lifesteal/sec"
+                                originalValue={originalHpsDetails.lifesteal}
+                                testValue={testHpsDetails.lifesteal}
+                                color="text-purple-400"
+                                onOriginalDetailsClick={() => {
+                                    if (originalFullStats && originalProfile) {
+                                        openLifestealModal(originalFullStats, originalProfile, 'original');
+                                    }
+                                }}
+                                onTestDetailsClick={() => {
+                                    if (testFullStats && testProfile) {
+                                        openLifestealModal(testFullStats, testProfile, 'test');
+                                    }
+                                }}
+                            />
                         </div>
                     </div>
 
@@ -820,6 +845,24 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     { label: 'Lifesteal', value: testRealHpsDetails.lifesteal },
                                     { label: 'Skills', value: testRealHpsDetails.skills }
                                 ]}
+                            />
+                            <ComparisonStatRow
+                                isCompact={isCompactStats}
+                                icon={<Heart className="w-4 h-4 text-purple-500" />}
+                                label="Lifesteal/sec"
+                                originalValue={originalRealHpsDetails.lifesteal}
+                                testValue={testRealHpsDetails.lifesteal}
+                                color="text-purple-500"
+                                onOriginalDetailsClick={() => {
+                                    if (originalFullStats && originalProfile) {
+                                        openLifestealModal(originalFullStats, originalProfile, 'original');
+                                    }
+                                }}
+                                onTestDetailsClick={() => {
+                                    if (testFullStats && testProfile) {
+                                        openLifestealModal(testFullStats, testProfile, 'test');
+                                    }
+                                }}
                             />
                         </div>
                     </div>
@@ -1122,13 +1165,20 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 </div>
                 )}
 
-                <DpsBreakdownModal 
-                    isOpen={showDpsModal} 
-                    onClose={() => setShowDpsModal(false)} 
-                    stats={modalData?.stats || stats} 
-                    profile={modalData?.profile || profile} 
+                <DpsBreakdownModal
+                    isOpen={showDpsModal}
+                    onClose={() => setShowDpsModal(false)}
+                    stats={modalData?.stats || stats}
+                    profile={modalData?.profile || profile}
                     variant={modalData?.variant || 'default'}
-                    skillLibrary={skillLibrary} 
+                    skillLibrary={skillLibrary}
+                />
+                <LifestealBreakdownModal
+                    isOpen={showLifestealModal}
+                    onClose={() => setShowLifestealModal(false)}
+                    stats={modalData?.stats || stats}
+                    profile={modalData?.profile || profile}
+                    variant={modalData?.variant || 'default'}
                 />
             </div>
         );
@@ -1440,6 +1490,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         subValue={`Regen: ${formatCompactNumber(currentHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentHpsDetails.skills)}${currentHpsDetails.blockBenefit > 0 ? `, Block Benefit: +${formatCompactNumber(currentHpsDetails.blockBenefit)}` : ''}`}
                                         color="text-emerald-400"
                                     />
+                                    <StatRow
+                                        icon={<Heart className="w-4 h-4" />}
+                                        label="Lifesteal/sec"
+                                        value={formatValue(currentHpsDetails.lifesteal)}
+                                        subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}`}
+                                        color="text-purple-400"
+                                        onInfoPointsClick={() => setShowLifestealModal(true)}
+                                    />
                                 </div>
                             </div>
 
@@ -1464,6 +1522,14 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                         value={formatValue(realHps)}
                                         subValue={`Regen: ${formatCompactNumber(currentRealHpsDetails.regen)}, LifeSteal: ${formatCompactNumber(currentRealHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentRealHpsDetails.skills)}${currentRealHpsDetails.blockBenefit > 0 ? `, Block Benefit: +${formatCompactNumber(currentRealHpsDetails.blockBenefit)}` : ''}`}
                                         color="text-emerald-500"
+                                    />
+                                    <StatRow
+                                        icon={<Heart className="w-4 h-4" />}
+                                        label="Lifesteal/sec"
+                                        value={formatValue(currentRealHpsDetails.lifesteal)}
+                                        subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}`}
+                                        color="text-purple-500"
+                                        onInfoPointsClick={() => setShowLifestealModal(true)}
                                     />
                                 </div>
                             </div>
@@ -1706,6 +1772,22 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     subValue={`Regen: ${formatCompactNumber(currentRealHpsDetails.regen)}, Life: ${formatCompactNumber(currentRealHpsDetails.lifesteal)}, Skills: ${formatCompactNumber(currentRealHpsDetails.skills)}`}
                                     color="text-emerald-500"
                                 />
+                                <StatRow
+                                    icon={<Heart className="w-4 h-4 text-purple-400" />}
+                                    label="Theo Lifesteal/sec"
+                                    value={formatCompactNumber(currentHpsDetails.lifesteal)}
+                                    subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}`}
+                                    color="text-purple-400"
+                                    onInfoPointsClick={() => setShowLifestealModal(true)}
+                                />
+                                <StatRow
+                                    icon={<Heart className="w-4 h-4 text-purple-500" />}
+                                    label="Real Lifesteal/sec"
+                                    value={formatCompactNumber(currentRealHpsDetails.lifesteal)}
+                                    subValue={`Weapon DPS × LifeSteal ${formatPercent(fullStats.lifeSteal)}`}
+                                    color="text-purple-500"
+                                    onInfoPointsClick={() => setShowLifestealModal(true)}
+                                />
 
                                 <StatRow
                                     icon={<Clock className="w-4 h-4" />}
@@ -1814,6 +1896,13 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 profile={modalData?.profile || profile}
                 variant={modalData?.variant || 'default'}
                 skillLibrary={skillLibrary}
+            />
+            <LifestealBreakdownModal
+                isOpen={showLifestealModal}
+                onClose={() => { setShowLifestealModal(false); setModalData(null); }}
+                stats={modalData?.stats || fullStats}
+                profile={modalData?.profile || profile}
+                variant={modalData?.variant || 'default'}
             />
         </Card>
     );

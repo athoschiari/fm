@@ -2,9 +2,9 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
-import { Zap as PowerIcon, Plus, Cat, Sword, RotateCcw } from 'lucide-react';
+import { Zap as PowerIcon, Plus, Cat, Sword, RotateCcw, Heart } from 'lucide-react';
 import { Button } from '../UI/Button';
-import { PetSlot } from '../../types/Profile';
+import { PetSlot, MountSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { cn } from '../../lib/utils';
 import { MAX_ACTIVE_PETS } from '../../utils/constants';
@@ -40,7 +40,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         updateTestPetAscension,
         isCompactStats
     } = useComparison();
-    const { optimizePets, isReady } = useProfileOptimizer();
+    const { optimizeLoadout, isReady } = useProfileOptimizer();
     
     const activePets = useMemo(() => {
         if (variant === 'original' && originalPets) return originalPets;
@@ -60,6 +60,8 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     const [editingPetIdx, setEditingPetIdx] = useState<number | null>(null);
     const [petToSave, setPetToSave] = useState<PetSlot | null>(null);
     const [previousPets, setPreviousPets] = useState<PetSlot[] | null>(null);
+    // undefined = nothing to revert; null = revert to "no mount equipped"
+    const [previousMount, setPreviousMount] = useState<MountSlot | null | undefined>(undefined);
 
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
     const { data: petBalancing } = useGameData<any>('PetBalancingLibrary.json');
@@ -210,16 +212,26 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         }
     };
 
-    const handleAutoOptimize = (metric: 'dps' | 'power') => {
+    const handleAutoOptimize = (metric: 'dps' | 'power' | 'lifesteal') => {
         setPreviousPets([...activePets]);
-        const best = optimizePets(metric);
-        if (best) updatePets(best);
+        if (variant === 'default') setPreviousMount(profile.mount.active);
+
+        const best = optimizeLoadout(metric);
+        if (!best) return;
+
+        updatePets(best.pets);
+        // Mount is a single global slot with no per-variant override, so only apply in default.
+        if (variant === 'default') updateNestedProfile('mount', { active: best.mount });
     };
 
     const handleRevert = () => {
         if (previousPets) {
             updatePets(previousPets);
             setPreviousPets(null);
+        }
+        if (previousMount !== undefined) {
+            updateNestedProfile('mount', { active: previousMount });
+            setPreviousMount(undefined);
         }
     };
 

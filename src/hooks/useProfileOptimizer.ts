@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { useProfile } from '../context/ProfileContext';
 import { useGameData } from './useGameData';
 import { StatEngine, LibraryData } from '../utils/statEngine';
-import { PetSlot, SkillSlot, UserProfile } from '../types/Profile';
+import { PetSlot, SkillSlot, MountSlot, UserProfile } from '../types/Profile';
 import { MAX_ACTIVE_PETS, MAX_ACTIVE_SKILLS } from '../utils/constants';
 
 export function useProfileOptimizer() {
@@ -49,57 +49,79 @@ export function useProfileOptimizer() {
         ascensionConfigsLibrary
     };
 
-    const optimizePets = useCallback((metric: 'dps' | 'power'): PetSlot[] | null => {
+    const optimizeLoadout = useCallback((metric: 'dps' | 'power' | 'lifesteal'): { pets: PetSlot[]; mount: MountSlot | null } | null => {
+        // --- Pet candidate sets: every combination of up to MAX_ACTIVE_PETS from saved builds ---
         const savedPets = profile.pets.savedBuilds || [];
-        if (savedPets.length === 0) return null;
-
-        let bestSet: PetSlot[] = [];
-        let bestValue = -1;
-
-        // Helper to generate combinations
+        const petSets: PetSlot[][] = [];
         const n = savedPets.length;
         const slotsToFill = Math.min(n, MAX_ACTIVE_PETS);
-
-        // Simple nested loops for small N (up to 3 slots)
-        const checkSet = (candidate: PetSlot[]) => {
-            const tempProfile: UserProfile = {
-                ...profile,
-                pets: {
-                    ...profile.pets,
-                    active: candidate
-                }
-            };
-
-            const engine = new StatEngine(tempProfile, libs);
-            const stats = engine.calculate();
-            
-            const value = metric === 'dps' ? stats.averageTotalDps : stats.power;
-            
-            if (value > bestValue) {
-                bestValue = value;
-                bestSet = candidate;
-            }
-        };
 
         for (let i = 0; i < n; i++) {
             const set1 = [savedPets[i]];
             if (slotsToFill === 1) {
-                checkSet(set1);
+                petSets.push(set1);
                 continue;
             }
             for (let j = i + 1; j < n; j++) {
                 const set2 = [...set1, savedPets[j]];
                 if (slotsToFill === 2) {
-                    checkSet(set2);
+                    petSets.push(set2);
                     continue;
                 }
                 for (let k = j + 1; k < n; k++) {
-                    checkSet([...set2, savedPets[k]]);
+                    petSets.push([...set2, savedPets[k]]);
+                }
+            }
+        }
+        // If there are no saved pets, keep the current active pets (don't force a change).
+        if (petSets.length === 0) petSets.push(profile.pets.active);
+
+        // --- Mount candidates: current active + saved builds, deduped ---
+        const mountCandidates: (MountSlot | null)[] = [];
+        const seen = new Set<string>();
+        const mountKey = (m: MountSlot) => `${m.id}|${m.rarity}|${m.level}|${JSON.stringify(m.secondaryStats)}`;
+        const addMount = (m: MountSlot | null) => {
+            if (!m) return;
+            const key = mountKey(m);
+            if (seen.has(key)) return;
+            seen.add(key);
+            mountCandidates.push(m);
+        };
+        addMount(profile.mount.active);
+        (profile.mount.savedBuilds || []).forEach(addMount);
+        // If there are no mounts at all, keep the current mount (no change).
+        if (mountCandidates.length === 0) mountCandidates.push(profile.mount.active);
+
+        const scoreOf = (stats: ReturnType<StatEngine['calculate']>): number => {
+            if (metric === 'dps') return stats.averageTotalDps;
+            if (metric === 'power') return stats.power;
+            return stats.realWeaponDps * stats.lifeSteal; // lifesteal/sec (real-time)
+        };
+
+        let bestPets: PetSlot[] = [];
+        let bestMount: MountSlot | null = profile.mount.active;
+        let bestValue = -1;
+
+        for (const petSet of petSets) {
+            for (const mount of mountCandidates) {
+                const tempProfile: UserProfile = {
+                    ...profile,
+                    pets: { ...profile.pets, active: petSet },
+                    mount: { ...profile.mount, active: mount }
+                };
+
+                const engine = new StatEngine(tempProfile, libs);
+                const value = scoreOf(engine.calculate());
+
+                if (value > bestValue) {
+                    bestValue = value;
+                    bestPets = petSet;
+                    bestMount = mount;
                 }
             }
         }
 
-        return bestSet.length > 0 ? bestSet : null;
+        return bestPets.length > 0 ? { pets: bestPets, mount: bestMount } : null;
     }, [profile, libs]);
 
     const optimizeSkills = useCallback((): SkillSlot[] | null => {
@@ -164,8 +186,8 @@ export function useProfileOptimizer() {
     }, [profile, libs, skillLibrary]);
 
     return {
-        optimizePets,
+        optimizeLoadout,
         optimizeSkills,
-        isReady: !!petLibrary && !!skillLibrary && !!itemBalancingConfig
+        isReady: !!petLibrary && !!skillLibrary && !!mountUpgradeLibrary && !!itemBalancingConfig
     };
 }
