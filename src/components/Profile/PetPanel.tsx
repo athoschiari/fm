@@ -212,6 +212,9 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         }
     };
 
+    // Optimizer searches saved pets AND saved mounts, so enable when either pool has entries.
+    const autoDisabled = (profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1;
+
     const handleAutoOptimize = (metric: 'dps' | 'power' | 'lifesteal') => {
         setPreviousPets([...activePets]);
         if (variant === 'default') setPreviousMount(profile.mount.active);
@@ -339,29 +342,40 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                     </h2>
                     
                     <div className="flex items-center gap-1.5 flex-wrap">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
                             onClick={() => handleAutoOptimize('dps')}
-                            disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
-                            title="Select best 3 saved pets for Max DPS"
+                            disabled={!isReady || autoDisabled}
+                            title="Select best 3 pets + mount for Max DPS"
                         >
                             <Sword className="w-3 h-3" />
                             AUTO DPS
                         </Button>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit"
                             onClick={() => handleAutoOptimize('power')}
-                            disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
-                            title="Select best 3 saved pets for Max Power"
+                            disabled={!isReady || autoDisabled}
+                            title="Select best 3 pets + mount for Max Power"
                         >
                             <PowerIcon className="w-3 h-3" />
                             AUTO POWER
                         </Button>
-                        {previousPets && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-fit"
+                            onClick={() => handleAutoOptimize('lifesteal')}
+                            disabled={!isReady || autoDisabled}
+                            title="Select best 3 pets + mount for Max Lifesteal/sec"
+                        >
+                            <Heart className="w-3 h-3" />
+                            AUTO LIFESTEAL/SEC
+                        </Button>
+                        {(previousPets || previousMount !== undefined) && (
                             <Button 
                                 variant="ghost" 
                                 size="sm" 
