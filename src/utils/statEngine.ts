@@ -6,6 +6,10 @@
 import { UserProfile } from '../types/Profile';
 import { SKILL_MECHANICS } from './constants';
 import { getNormalizedTarget } from './ascensionUtils';
+import {
+    StatAttribution, StatContribution, SourceRef, canonicalStatKey,
+    TOTAL_DAMAGE_KEY, TOTAL_HEALTH_KEY, TOTAL_POWER_KEY
+} from '../types/statAttribution';
 
 export type StatNature = 'Multiplier' | 'Additive' | 'OneMinusMultiplier' | 'Divisor';
 
@@ -148,6 +152,13 @@ export interface AggregatedStats {
 
     // Source tracking
     statCounts: Record<string, number>;
+
+    /**
+     * Per-source contribution records. Only populated when the engine is constructed with
+     * trackAttribution=true (see calculateStats opts). Deliberately NOT part of DEFAULT_STATS:
+     * reset() deep-clones DEFAULT_STATS, which would clone the live profile refs held here.
+     */
+    attribution?: StatAttribution;
 
     // Calculation temporary properties
     equipDamageMultiplier: number;
@@ -297,6 +308,12 @@ export interface LibraryData {
     mainBattleLookup?: any;
 }
 
+/** 'CriticalChanceBoost' -> 'Critical Chance Boost' (tech node types are PascalCase ids) */
+function formatNodeType(nodeType: string): string {
+    if (!nodeType) return 'Unknown Node';
+    return nodeType.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+}
+
 export class StatEngine {
     private profile: UserProfile;
     private libs: LibraryData;
@@ -371,10 +388,15 @@ export class StatEngine {
 
     private excludeSubstats: boolean;
 
-    constructor(profile: UserProfile, libs: LibraryData, excludeSubstats = false) {
+    // Attribution tracking (opt-in: off in the optimizer/sweep hot paths)
+    private trackAttribution: boolean;
+    private attribution: StatAttribution = { byStat: {}, formula: {} };
+
+    constructor(profile: UserProfile, libs: LibraryData, excludeSubstats = false, trackAttribution = false) {
         this.profile = profile;
         this.libs = libs;
         this.excludeSubstats = excludeSubstats;
+        this.trackAttribution = trackAttribution;
         this.stats = { ...DEFAULT_STATS };
     }
 
@@ -475,6 +497,10 @@ export class StatEngine {
         this.stats = JSON.parse(JSON.stringify(DEFAULT_STATS));
         this.displayStats = {};
         this.debugLogs = [];
+
+        // Reset attribution separately: it holds live profile references and must never be
+        // routed through the DEFAULT_STATS deep clone above.
+        this.attribution = { byStat: {}, formula: {} };
 
         // Pulisci la cache ad ogni nuovo calcolo
         this.nodeValidityCache.clear();
@@ -749,6 +775,21 @@ export class StatEngine {
             this.stats.itemDamage += dmg;
             this.stats.itemHealth += hp;
 
+            // Attribution: retain the per-slot flat contribution that the accumulators above discard.
+            // Recorded PRE-melee (the weapon x1.6 is surfaced as its own layer in finalizeCalculation).
+            if (dmg !== 0) {
+                this.track(TOTAL_DAMAGE_KEY, {
+                    kind: 'item', id: `item:${slotKey}`, label: slotKey, value: dmg, op: 'add',
+                    ref: { kind: 'item', slot: slotKey as any, item }
+                });
+            }
+            if (hp !== 0) {
+                this.track(TOTAL_HEALTH_KEY, {
+                    kind: 'item', id: `item:${slotKey}`, label: slotKey, value: hp, op: 'add',
+                    ref: { kind: 'item', slot: slotKey as any, item }
+                });
+            }
+
             // Separate weapon damage (gets base melee multiplier later)
             if (slotKey === 'Weapon') {
                 this.stats.weaponDamage = dmg;
@@ -861,7 +902,8 @@ export class StatEngine {
         const petDamageBonus = this.techModifiers['PetBonusDamage'] || 0;
         const petHealthBonus = this.techModifiers['PetBonusHealth'] || 0;
 
-        for (const pet of this.profile.pets.active) {
+        for (let petIndex = 0; petIndex < this.profile.pets.active.length; petIndex++) {
+            const pet = this.profile.pets.active[petIndex];
             const upgradeData = this.libs.petUpgradeLibrary?.[pet.rarity];
             if (!upgradeData?.LevelInfo) continue;
 
@@ -911,6 +953,17 @@ export class StatEngine {
 
             this.stats.petDamage += dmg;
             this.stats.petHealth += hp;
+
+            // Attribution: dmg/hp already include tech bonus and pet ascension, so the card
+            // shows the pet's true contribution and no ascension line must be re-added on top.
+            const petRef: SourceRef = { kind: 'pet', index: petIndex, pet };
+            const petLabel = pet.customName || `${pet.rarity} Pet`;
+            if (dmg !== 0) {
+                this.track(TOTAL_DAMAGE_KEY, { kind: 'pet', id: `pet:${petIndex}`, label: petLabel, value: dmg, op: 'add', ref: petRef });
+            }
+            if (hp !== 0) {
+                this.track(TOTAL_HEALTH_KEY, { kind: 'pet', id: `pet:${petIndex}`, label: petLabel, value: hp, op: 'add', ref: petRef });
+            }
             this.debugLogs.push(`Pet ${pet.rarity} ${pet.id} (${petType}) L${pet.level} Asc${petAscensionLevel}: Damage=${dmg.toFixed(0)}, Health=${hp.toFixed(0)}`);
         }
     }
@@ -969,6 +1022,17 @@ export class StatEngine {
         this.mountHealth *= (1 + mountHpMulti) * (ascensionHpMulti || 1);
 
         this.debugLogs.push(`Mount final absolute: Damage=${this.mountDamage.toFixed(0)}, Health=${this.mountHealth.toFixed(0)}`);
+
+        // Attribution: recorded after tech + ascension are folded in, so the card shows the
+        // mount's true contribution. (mount is in scope from the early-return guard above.)
+        const mountRef: SourceRef = { kind: 'mount', mount };
+        const mountLabel = mount.customName || `${mount.rarity} Mount`;
+        if (this.mountDamage !== 0) {
+            this.track(TOTAL_DAMAGE_KEY, { kind: 'mount', id: 'mount', label: mountLabel, value: this.mountDamage, op: 'add', ref: mountRef });
+        }
+        if (this.mountHealth !== 0) {
+            this.track(TOTAL_HEALTH_KEY, { kind: 'mount', id: 'mount', label: mountLabel, value: this.mountHealth, op: 'add', ref: mountRef });
+        }
     }
 
     private incrementStatCount(statId: string) {
@@ -976,11 +1040,29 @@ export class StatEngine {
     }
 
     /**
+     * Record a per-source contribution to a stat.
+     * No-op unless attribution tracking is enabled, so hot paths pay only a boolean check.
+     *
+     * IMPORTANT: always pass the exact value the engine consumed - never a re-derived number,
+     * or the modal totals will drift from the displayed totals.
+     */
+    private track(statKey: string, c: StatContribution) {
+        if (!this.trackAttribution) return;
+        const key = canonicalStatKey(statKey);
+        (this.attribution.byStat[key] ||= []).push(c);
+    }
+
+    private trackFormula(statKey: string, formula: string) {
+        if (!this.trackAttribution) return;
+        (this.attribution.formula ||= {})[statKey] = formula;
+    }
+
+    /**
      * Collect ALL Secondary Stats from items, pets, mount (same as Verify.tsx)
      * These are stored separately and applied in finalizeCalculation
      */
     private collectAllSecondaryStats() {
-        const collectSecondary = (statId: string, rawValue: number) => {
+        const collectSecondary = (statId: string, rawValue: number, ref?: SourceRef) => {
             if (rawValue > 0) {
                 this.incrementStatCount(statId);
             }
@@ -992,6 +1074,18 @@ export class StatEngine {
             // Standardized Parsing: ALL secondary stats from items/pets are stored as Percentage Points (e.g. 10.5 = 10.5%).
             // Use strict division by 100.
             const val = rounded / 100;
+
+            // Attribution: one call covers every case below, with the exact normalized value.
+            if (ref && val !== 0) {
+                const id = ref.kind === 'item' ? `item:${ref.slot}`
+                    : ref.kind === 'pet' ? `pet:${ref.index}`
+                        : 'mount';
+                const label = ref.kind === 'item' ? ref.slot
+                    : ref.kind === 'pet' ? (ref.pet.customName || `Pet ${ref.index + 1}`)
+                        : (ref.mount.customName || 'Mount');
+                this.track(statId, { kind: ref.kind, id, label, value: val, op: 'add', ref });
+            }
+
             switch (statId) {
                 case 'DamageMulti': this.secondaryStats.damageMulti += val; break;
                 case 'HealthMulti': this.secondaryStats.healthMulti += val; break;
@@ -1034,16 +1128,17 @@ export class StatEngine {
             const item = this.profile.items[slot];
             if (item?.secondaryStats) {
                 for (const sec of item.secondaryStats) {
-                    collectSecondary(sec.statId, sec.value);
+                    collectSecondary(sec.statId, sec.value, { kind: 'item', slot, item });
                 }
             }
         }
 
         // From all pets
-        for (const pet of this.profile.pets.active) {
+        for (let petIndex = 0; petIndex < this.profile.pets.active.length; petIndex++) {
+            const pet = this.profile.pets.active[petIndex];
             if (pet.secondaryStats) {
                 for (const sec of pet.secondaryStats) {
-                    collectSecondary(sec.statId, sec.value);
+                    collectSecondary(sec.statId, sec.value, { kind: 'pet', index: petIndex, pet });
                 }
             }
         }
@@ -1055,13 +1150,14 @@ export class StatEngine {
         // (which then divides by 100), OR we just modify collectSecondary?
         // Let's modify the loop to manually add them or create a variant.
         // Easier: Just multiply by 100 here so collectSecondary's division neutralizes it.
-        if (this.profile.mount.active?.secondaryStats) {
-            for (const sec of this.profile.mount.active.secondaryStats) {
+        const activeMount = this.profile.mount.active;
+        if (activeMount?.secondaryStats) {
+            for (const sec of activeMount.secondaryStats) {
                 // REGRESSION HANDLING: Old profiles store Mount stats as fractions (e.g. 0.013).
                 // New profiles store them as percentage points (e.g. 1.3).
                 // If value < 0.5, we assume it's an old fractional value and normalize it to percentage points.
                 const val = sec.value < 0.5 ? sec.value * 100 : sec.value;
-                collectSecondary(sec.statId, val);
+                collectSecondary(sec.statId, val, { kind: 'mount', mount: activeMount });
             }
         }
 
@@ -1233,7 +1329,12 @@ export class StatEngine {
                             statNature: stat.StatNode?.UniqueStat?.StatNature as StatNature || 'Multiplier',
                             value: totalValue,
                             target: targetType,
-                            itemType: targetInfo.ItemType
+                            itemType: targetInfo.ItemType,
+                            source: {
+                                id: `tech:Clan:${nodeId}`,
+                                label: `Clan Tree - ${formatNodeType(nodeType)}`,
+                                detail: `Level ${level}`
+                            }
                         } as any);
                     }
                 }
@@ -1299,15 +1400,31 @@ export class StatEngine {
                         statNature: stat.StatNode?.UniqueStat?.StatNature as StatNature || 'Multiplier',
                         value: totalValue,
                         target: targetType,
-                        itemType: targetInfo.ItemType
+                        itemType: targetInfo.ItemType,
+                        source: {
+                            id: `tech:${tree}:${nodeId}`,
+                            label: `${tree} Tree - ${formatNodeType(node.Type)}`,
+                            detail: `Level ${level}`
+                        }
                     } as any);
                 }
             }
         }
     }
 
-    private applyStat(stat: StatEntry) {
-        const { statType, statNature, value, target } = stat;
+    private applyStat(stat: StatEntry & { source?: { id: string; label: string; detail?: string } }) {
+        const { statType, statNature, value, target, source } = stat;
+
+        // Attribution helper: record under the key the value ACTUALLY lands on, so the
+        // per-case branches below stay reconcilable against the *Breakdown fields.
+        const attribute = (statKey: string) => {
+            if (source && value !== 0) {
+                this.track(statKey, {
+                    kind: 'tech', id: source.id, label: source.label,
+                    value, op: 'add', detail: source.detail
+                });
+            }
+        };
 
         // Count sources
         let countKey = statType;
@@ -1332,13 +1449,17 @@ export class StatEngine {
                     // Tech Tree usually 'Multiplier'.
                 } else if (target === 'PlayerMeleeOnlyStatTarget') {
                     this.stats.meleeDamageMultiplier = this.combine(this.stats.meleeDamageMultiplier, value, statNature);
+                    attribute('MeleeDamageMulti');
                 } else if (target === 'PlayerRangedOnlyStatTarget') {
                     this.stats.rangedDamageMultiplier = this.combine(this.stats.rangedDamageMultiplier, value, statNature);
+                    attribute('RangedDamageMulti');
                 } else if (target === 'ActiveSkillStatTarget') {
                     // Skill Damage Multiplier
                     this.stats.skillDamageMultiplier = this.combine(this.stats.skillDamageMultiplier, value, statNature);
+                    attribute('SkillDamageMulti');
                 } else {
                     this.stats.damageMultiplier = this.combine(this.stats.damageMultiplier, value, statNature);
+                    attribute('DamageMulti');
                 }
                 break;
             case 'Health':
@@ -1346,6 +1467,7 @@ export class StatEngine {
                     this.stats.skillHealthMultiplier = this.combine(this.stats.skillHealthMultiplier, value, statNature);
                 } else if (statNature !== 'Additive') {
                     this.stats.healthMultiplier = this.combine(this.stats.healthMultiplier, value, statNature);
+                    attribute('HealthMulti');
                 }
                 break;
             case 'TimerSpeed':
@@ -1356,6 +1478,7 @@ export class StatEngine {
                     if (statNature === 'Multiplier' || statNature === 'OneMinusMultiplier') {
                         this.stats.skillCooldownBreakdown.tree += value;
                     }
+                    attribute('SkillCooldownMulti');
                 }
                 break;
             case 'CriticalChance':
@@ -1363,33 +1486,40 @@ export class StatEngine {
                 if (statNature === 'Multiplier' || statNature === 'Additive') {
                     this.stats.critChanceBreakdown.tree += value;
                 }
+                attribute('CriticalChance');
                 break;
             case 'CriticalDamage':
                 this.stats.criticalDamage = this.combine(this.stats.criticalDamage, value, statNature);
                 if (statNature === 'Multiplier' || statNature === 'Additive') {
                     this.stats.critDamageBreakdown.tree += value;
                 }
+                attribute('CriticalMulti');
                 break;
             case 'BlockChance':
                 this.stats.blockChance = this.combine(this.stats.blockChance, value, statNature);
+                attribute('BlockChance');
                 break;
             case 'DoubleDamageChance':
                 this.stats.doubleDamageChance = this.combine(this.stats.doubleDamageChance, value, statNature);
                 if (statNature === 'Multiplier' || statNature === 'Additive') {
                     this.stats.doubleDamageBreakdown.tree += value;
                 }
+                attribute('DoubleDamageChance');
                 break;
             case 'HealthRegen':
                 this.stats.healthRegen = this.combine(this.stats.healthRegen, value, statNature);
+                attribute('HealthRegen');
                 break;
             case 'LifeSteal':
                 this.stats.lifeSteal = this.combine(this.stats.lifeSteal, value, statNature);
+                attribute('LifeSteal');
                 break;
             case 'AttackSpeed':
                 this.stats.attackSpeedMultiplier = this.combine(this.stats.attackSpeedMultiplier, value, statNature);
                 if (statNature === 'Multiplier') {
                     this.stats.attackSpeedBreakdown.tree += value;
                 }
+                attribute('AttackSpeed');
                 break;
             case 'Experience':
                 this.stats.experienceMultiplier = this.combine(this.stats.experienceMultiplier, value, statNature);
@@ -1574,6 +1704,52 @@ export class StatEngine {
         this.stats.totalDamage = finalDamage;
         this.stats.totalHealth = healthAfterGlobalMultis;
 
+        // --- Attribution: base values, multiplier layers and formulas for the total views ---
+        if (this.trackAttribution) {
+            const line = (key: string, id: string, label: string, value: number, op: 'add' | 'mul', kind: any = 'base', detail?: string) => {
+                this.track(key, { kind, id, label, value, op, detail });
+            };
+
+            // Base player stats
+            line(TOTAL_DAMAGE_KEY, 'base:player', 'Base player damage', this.stats.basePlayerDamage, 'add');
+            line(TOTAL_HEALTH_KEY, 'base:player', 'Base player health', this.stats.basePlayerHealth, 'add');
+            line('CriticalMulti', 'base:critDamage', 'Base critical damage', baseStats.baseCritDamage, 'add');
+
+            // Skill passives (no card component exists for skills)
+            if (this.stats.skillPassiveDamage !== 0) {
+                line(TOTAL_DAMAGE_KEY, 'skill:passives', 'Skill passives', this.stats.skillPassiveDamage, 'add', 'skill');
+            }
+            if (this.stats.skillPassiveHealth !== 0) {
+                line(TOTAL_HEALTH_KEY, 'skill:passives', 'Skill passives', this.stats.skillPassiveHealth, 'add', 'skill');
+            }
+
+            // Weapon melee base multiplier is a damage-only layer on the weapon's flat value
+            if (isWeaponMelee) {
+                line(TOTAL_DAMAGE_KEY, 'base:melee', `Melee weapon base (weapon flat only)`, baseStats.meleeDamageMultiplier, 'mul');
+            }
+
+            // Ordered multiplier layers, in application order
+            line(TOTAL_DAMAGE_KEY, 'layer:common', 'Common multiplier (tech + damage % substats)', commonDamageMulti, 'mul', 'tech');
+            line(TOTAL_HEALTH_KEY, 'layer:common', 'Common multiplier (tech + health % substats)', commonHealthMulti, 'mul', 'tech');
+
+            if (this.forgeAscensionDamageMulti) {
+                line(TOTAL_DAMAGE_KEY, 'asc:forge', 'Forge ascension (equipment only)', this.forgeAscensionDamageMulti, 'mul', 'ascension');
+            }
+            if (this.forgeAscensionHealthMulti) {
+                line(TOTAL_HEALTH_KEY, 'asc:forge', 'Forge ascension (equipment only)', this.forgeAscensionHealthMulti, 'mul', 'ascension');
+            }
+
+            line(TOTAL_DAMAGE_KEY, 'layer:global', 'Skins + set bonuses', globalFactorDmg, 'mul', 'skin');
+            line(TOTAL_HEALTH_KEY, 'layer:global', 'Skins + set bonuses', globalFactorHp, 'mul', 'skin');
+
+            line(TOTAL_DAMAGE_KEY, 'layer:specific', isWeaponMelee ? 'Melee damage %' : 'Ranged damage %', specificDamageMulti, 'mul');
+
+            this.trackFormula(TOTAL_DAMAGE_KEY,
+                '(base + equipment x forgeAsc + pets/mount/skills) x common x (skins + sets) x melee|ranged %');
+            this.trackFormula(TOTAL_HEALTH_KEY,
+                '(base + equipment x forgeAsc + pets/mount/skills) x common x (skins + sets)');
+        }
+
         // Store the Common layer for skills/pets/mounts
         // Includes ONLY: Tech Tree Damage + Item DamageMulti substats
         // EXCLUDES: Skins and Sets (per user request)
@@ -1709,6 +1885,24 @@ export class StatEngine {
 
         const basePower = ((finalDamage - baseDmg) * powerDmgMulti + (healthAfterGlobalMultis - baseHp)) * 3;
         this.stats.power = Math.round(basePower);
+
+        // Attribution: Power is a formula over the two totals, not a sum of sources.
+        // Record the two inputs and the constants; the Damage/Health modals hold the detail.
+        if (this.trackAttribution) {
+            this.track(TOTAL_POWER_KEY, {
+                kind: 'base', id: 'power:damage', label: 'Total damage (above base)', op: 'add',
+                value: finalDamage - baseDmg, detail: `x${powerDmgMulti} - see Total Damage for its sources`
+            });
+            this.track(TOTAL_POWER_KEY, {
+                kind: 'base', id: 'power:health', label: 'Total health (above base)', op: 'add',
+                value: healthAfterGlobalMultis - baseHp, detail: 'see Total Health for its sources'
+            });
+            this.track(TOTAL_POWER_KEY, {
+                kind: 'base', id: 'power:scale', label: 'Power scaling constant', value: 3, op: 'mul'
+            });
+            this.trackFormula(TOTAL_POWER_KEY,
+                `((Damage - ${baseDmg}) x ${powerDmgMulti} + (Health - ${baseHp})) x 3`);
+        }
 
 
 
@@ -1870,11 +2064,40 @@ export class StatEngine {
 
         this.debugLogs.push(`FINAL DPS: Weapon=${this.stats.weaponDps.toFixed(0)}, RealWeapon=${this.stats.realWeaponDps.toFixed(0)}, Total=${this.stats.averageTotalDps.toFixed(0)}`);
         this.debugLogs.push(`FINAL HPS: Theo=${this.stats.theoreticalTotalHps.toFixed(0)}, Real=${this.stats.realTotalHps.toFixed(0)}`);
+
+        this.publishAttribution();
     } // end finalizeCalculation
+
+    /**
+     * Attach attribution to the result. Assigned by reference (never cloned) so the SourceRef
+     * entries keep pointing at live profile objects.
+     */
+    private publishAttribution() {
+        if (!this.trackAttribution) return;
+
+        // excludeSubstats zeroes item/pet/mount contributions for these four keys only
+        // (see the itemDmgMulti/itemMeleeDmgMulti guards above). Drop the matching entries
+        // so the modal never lists a card that contributed nothing in this mode.
+        if (this.excludeSubstats) {
+            const substatExcludedKeys = ['DamageMulti', 'HealthMulti', 'MeleeDamageMulti', 'RangedDamageMulti'];
+            for (const key of substatExcludedKeys) {
+                const entries = this.attribution.byStat[key];
+                if (!entries) continue;
+                this.attribution.byStat[key] = entries.filter(e => !e.ref);
+            }
+        }
+
+        this.stats.attribution = this.attribution;
+    }
 } // end class
 
-export function calculateStats(profile: UserProfile, libs: LibraryData, excludeSubstats = false): any {
-    const engine = new StatEngine(profile, libs, excludeSubstats);
+export function calculateStats(
+    profile: UserProfile,
+    libs: LibraryData,
+    excludeSubstats = false,
+    opts?: { attribution?: boolean }
+): any {
+    const engine = new StatEngine(profile, libs, excludeSubstats, opts?.attribution === true);
     if (typeof window !== 'undefined') {
         (window as any).debugCalculator = engine;
     }

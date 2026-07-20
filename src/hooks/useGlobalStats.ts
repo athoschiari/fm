@@ -132,7 +132,9 @@ export function useGlobalStats(excludeSubstats = false): AggregatedStats | null 
         if (!itemBalancingConfig || !itemBalancingLibrary) {
             return null;
         }
-        return calculateStats(effectiveProfile, libs, excludeSubstats);
+        // Attribution is enabled here only: this hook runs per render, not in a loop.
+        // The optimizer/sweep hot paths deliberately leave it off.
+        return calculateStats(effectiveProfile, libs, excludeSubstats, { attribution: true });
     }, [effectiveProfile, libs, itemBalancingConfig, itemBalancingLibrary, excludeSubstats]);
 
     return stats;

@@ -2,9 +2,9 @@ import { useProfile } from '../../context/ProfileContext';
 import { useComparison } from '../../context/ComparisonContext';
 import { useGameDataContext } from '../../context/GameDataContext';
 import { Card } from '../UI/Card';
-import { Zap as PowerIcon, Plus, Cat, Sword, RotateCcw } from 'lucide-react';
+import { Zap as PowerIcon, Plus, Cat, Sword, RotateCcw, Heart } from 'lucide-react';
 import { Button } from '../UI/Button';
-import { PetSlot } from '../../types/Profile';
+import { PetSlot, MountSlot } from '../../types/Profile';
 import { useState, useMemo } from 'react';
 import { cn } from '../../lib/utils';
 import { MAX_ACTIVE_PETS } from '../../utils/constants';
@@ -40,7 +40,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         updateTestPetAscension,
         isCompactStats
     } = useComparison();
-    const { optimizePets, isReady } = useProfileOptimizer();
+    const { optimizeLoadout, isReady } = useProfileOptimizer();
     
     const activePets = useMemo(() => {
         if (variant === 'original' && originalPets) return originalPets;
@@ -60,6 +60,8 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     const [editingPetIdx, setEditingPetIdx] = useState<number | null>(null);
     const [petToSave, setPetToSave] = useState<PetSlot | null>(null);
     const [previousPets, setPreviousPets] = useState<PetSlot[] | null>(null);
+    // undefined = nothing to revert; null = revert to "no mount equipped"
+    const [previousMount, setPreviousMount] = useState<MountSlot | null | undefined>(undefined);
 
     const { data: petLibrary } = useGameData<any>('PetLibrary.json');
     const { data: petBalancing } = useGameData<any>('PetBalancingLibrary.json');
@@ -210,16 +212,29 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
         }
     };
 
-    const handleAutoOptimize = (metric: 'dps' | 'power') => {
+    // Optimizer searches saved pets AND saved mounts, so enable when either pool has entries.
+    const autoDisabled = (profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1;
+
+    const handleAutoOptimize = (metric: 'dps' | 'power' | 'lifesteal') => {
         setPreviousPets([...activePets]);
-        const best = optimizePets(metric);
-        if (best) updatePets(best);
+        if (variant === 'default') setPreviousMount(profile.mount.active);
+
+        const best = optimizeLoadout(metric);
+        if (!best) return;
+
+        updatePets(best.pets);
+        // Mount is a single global slot with no per-variant override, so only apply in default.
+        if (variant === 'default') updateNestedProfile('mount', { active: best.mount });
     };
 
     const handleRevert = () => {
         if (previousPets) {
             updatePets(previousPets);
             setPreviousPets(null);
+        }
+        if (previousMount !== undefined) {
+            updateNestedProfile('mount', { active: previousMount });
+            setPreviousMount(undefined);
         }
     };
 
@@ -327,29 +342,40 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                     </h2>
                     
                     <div className="flex items-center gap-1.5 flex-wrap">
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
                             onClick={() => handleAutoOptimize('dps')}
-                            disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
-                            title="Select best 3 saved pets for Max DPS"
+                            disabled={!isReady || autoDisabled}
+                            title="Select best 3 pets + mount for Max DPS"
                         >
                             <Sword className="w-3 h-3" />
                             AUTO DPS
                         </Button>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit"
                             onClick={() => handleAutoOptimize('power')}
-                            disabled={!isReady || (profile.pets.savedBuilds?.length || 0) < 1}
-                            title="Select best 3 saved pets for Max Power"
+                            disabled={!isReady || autoDisabled}
+                            title="Select best 3 pets + mount for Max Power"
                         >
                             <PowerIcon className="w-3 h-3" />
                             AUTO POWER
                         </Button>
-                        {previousPets && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-fit"
+                            onClick={() => handleAutoOptimize('lifesteal')}
+                            disabled={!isReady || autoDisabled}
+                            title="Select best 3 pets + mount for Max Lifesteal/sec"
+                        >
+                            <Heart className="w-3 h-3" />
+                            AUTO LIFESTEAL/SEC
+                        </Button>
+                        {(previousPets || previousMount !== undefined) && (
                             <Button 
                                 variant="ghost" 
                                 size="sm" 
