@@ -13,7 +13,9 @@ export function useProfileOptimizer() {
     const { data: petUpgradeLibrary } = useGameData<any>('PetUpgradeLibrary.json');
     const { data: petBalancingLibrary } = useGameData<any>('PetBalancingLibrary.json');
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
-    const { data: skillPassiveLibrary } = useGameData<any>('PassiveSkillLibrary.json');
+    // Filename is SkillPassiveLibrary, not PassiveSkillLibrary — the wrong name
+    // 404s silently, dropping skill passive flat damage/health from every score.
+    const { data: skillPassiveLibrary } = useGameData<any>('SkillPassiveLibrary.json');
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
     const { data: techTreePositionLibrary } = useGameData<any>('TechTreePositionLibrary.json');

@@ -58,7 +58,7 @@ export function useLoadoutSweep() {
     const { data: petUpgradeLibrary } = useGameData<any>('PetUpgradeLibrary.json');
     const { data: petBalancingLibrary } = useGameData<any>('PetBalancingLibrary.json');
     const { data: skillLibrary } = useGameData<any>('SkillLibrary.json');
-    const { data: skillPassiveLibrary } = useGameData<any>('PassiveSkillLibrary.json');
+    const { data: skillPassiveLibrary } = useGameData<any>('SkillPassiveLibrary.json');
     const { data: mountUpgradeLibrary } = useGameData<any>('MountUpgradeLibrary.json');
     const { data: techTreeLibrary } = useGameData<any>('TechTreeLibrary.json');
     const { data: techTreePositionLibrary } = useGameData<any>('TechTreePositionLibrary.json');
@@ -210,7 +210,10 @@ export function useLoadoutSweep() {
                 const stats = new StatEngine(buildTempProfile(combo), libs).calculate();
                 acc.push({
                     ...combo,
-                    dps: stats.averageTotalDps,
+                    // Real-time throughout: the stepped breakpoint model, matching
+                    // the Real-Time Metrics card. Lifesteal/sec and Heal/sec below
+                    // are real-time too, so all three headline metrics agree.
+                    dps: stats.realTotalDps,
                     lifestealPerSec: stats.realWeaponDps * stats.lifeSteal,
                     healPerSec: stats.realTotalHps
                 });
@@ -282,7 +285,7 @@ export function useLoadoutSweep() {
         return {
             petSet: combo.petSet,
             mount: combo.mount,
-            dps: combo.dps ?? calcStats.averageTotalDps,
+            dps: combo.dps ?? calcStats.realTotalDps,
             lifestealPerSec: combo.lifestealPerSec ?? calcStats.realWeaponDps * calcStats.lifeSteal,
             healPerSec: combo.healPerSec ?? calcStats.realTotalHps,
             calcStats,

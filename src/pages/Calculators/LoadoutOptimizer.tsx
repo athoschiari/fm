@@ -18,7 +18,7 @@ const METRICS: { id: SweepMetric; label: string; icon: typeof Heart; blurb: stri
     },
     {
         id: 'dps', label: 'DPS', icon: Zap,
-        blurb: 'Maximises average total DPS — weapon, skill and skill-buff damage combined.'
+        blurb: 'Maximises real-time total DPS — weapon, skill and skill-buff damage on the stepped breakpoint model.'
     },
     {
         id: 'heal', label: 'Heal/sec', icon: Activity,
