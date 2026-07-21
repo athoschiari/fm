@@ -48,7 +48,7 @@ const mountKey = (m: MountSlot) => `${m.id}|${m.rarity}|${m.level}|${JSON.string
  * a full roster is tens of thousands of StatEngine runs. Results are cached, so
  * switching the ranking metric only re-sorts — it never re-sweeps.
  */
-export function useLoadoutSweep() {
+export function useLoadoutSweep(enabled: boolean = true) {
     const { profile } = useProfile();
 
     const profileRef = useRef(profile);
@@ -190,7 +190,7 @@ export function useLoadoutSweep() {
     const [results, setResults] = useState<SweepResult[]>([]);
 
     useEffect(() => {
-        if (!isReady || combos.length === 0) return;
+        if (!enabled || !isReady || combos.length === 0) return;
 
         let cancelled = false;
         let frame = 0;
@@ -235,7 +235,7 @@ export function useLoadoutSweep() {
             cancelled = true;
             cancelAnimationFrame(frame);
         };
-    }, [combos, libs, isReady, engineKey, buildTempProfile]);
+    }, [enabled, combos, libs, isReady, engineKey, buildTempProfile]);
 
     // --- Scoring ------------------------------------------------------------
     // Each metric is normalised by its own max across the sweep so that combining
