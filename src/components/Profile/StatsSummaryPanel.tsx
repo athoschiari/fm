@@ -4,7 +4,7 @@ import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
     ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download,
-    ArrowLeftRight, Info, Scale
+    ArrowLeftRight, Info
 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
@@ -15,7 +15,6 @@ import { useGlobalStats } from '../../hooks/useGlobalStats';
 import { useTreeModifiers } from '../../hooks/useCalculatedStats';
 import { getStatName } from '../../utils/statNames';
 import { useComparison } from '../../context/ComparisonContext';
-import { useLoadoutSweep } from '../../hooks/useLoadoutSweep';
 import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { calculateStats, LibraryData, AggregatedStats } from '../../utils/statEngine';
@@ -439,17 +438,11 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         keepOriginal,
         applyTestBuild,
         loadProfileIntoTest,
-        updateTestPet,
-        updateTestMount,
         isCompactStats,
         setIsCompactStats,
         excludeSubstats,
         setExcludeSubstats
     } = useComparison();
-    // Same balanced principle as the Loadout Optimizer: sweep the saved pet+mount
-    // builds and rank by 0.5·DPS + 0.5·HPS (each normalised across the sweep).
-    // Only runs while comparing so it adds no background cost to the normal panel.
-    const { status: sweepStatus, rank: rankLoadout } = useLoadoutSweep(isComparing);
     const stats = useGlobalStats(excludeSubstats);
     const fullStats = useGlobalStats(false);
     const techModifiers = useTreeModifiers() as Record<string, number>;
@@ -711,16 +704,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const formatValue = (val: number) => isCompactStats
         ? formatCompactNumber(val)
         : val.toLocaleString(undefined, { maximumFractionDigits: 0 });
-
-    // "Auto Balanced": load the balanced-best pet+mount loadout (from the saved
-    // builds) into the test side, using the Loadout Optimizer's scoring verbatim.
-    const autoBalancedReady = sweepStatus === 'done';
-    const applyAutoBalanced = () => {
-        const best = rankLoadout('balanced')[0]?.result;
-        if (!best) return;
-        updateTestPet(best.petSet);
-        updateTestMount(best.mount);
-    };
 
     // The comparison UI block
     // The comparison UI block
@@ -1217,17 +1200,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             </select>
                         </div>
                     )}
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={applyAutoBalanced}
-                        disabled={!autoBalancedReady}
-                        title="Fill the test build with the balanced-best pet + mount loadout from your saved builds (same scoring as the Loadout Optimizer)"
-                        className="h-8 sm:h-10 px-2 flex flex-col items-center justify-center p-0 gap-0.5 text-[9px] text-violet-400/70 hover:text-violet-400 hover:bg-violet-500/10 border border-transparent hover:border-violet-500/20 transition-all font-bold uppercase tracking-tight disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        <Scale className={cn("w-3.5 h-3.5", !autoBalancedReady && "animate-pulse")} />
-                        <span>Auto Bal</span>
-                    </Button>
                     <Button variant="ghost" size="sm" onClick={exitCompareMode} className="h-8 sm:h-10 px-2 sm:px-6 gap-1 sm:gap-2 text-[10px] sm:text-xs text-text-muted hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all font-bold">
                         <X className="w-3.5 h-3.5 sm:w-4 h-4" />
                         <span className="hidden sm:inline">Exit Comparison</span>
@@ -1385,7 +1357,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <div className="mt-4 pt-4 border-t border-border/30 space-y-4">
                         <div className="space-y-3">
                             <div className="text-[10px] text-text-muted text-center font-bold uppercase tracking-widest opacity-60">Build Actions</div>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-4 gap-2">
                                 {/* Load Profile - Small Button with hidden select */}
                                 {profiles.length > 1 && (
                                     <div className="relative">
@@ -1418,17 +1390,6 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={applyAutoBalanced}
-                                    disabled={!autoBalancedReady}
-                                    title="Fill the test build with the balanced-best pet + mount loadout from your saved builds (same scoring as the Loadout Optimizer)"
-                                    className="h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] text-violet-400/70 hover:text-violet-400 grayscale hover:grayscale-0 transition-all font-bold uppercase tracking-tight border border-transparent hover:border-violet-500/20 bg-violet-500/5 disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                    <Scale className={cn("w-4 h-4", !autoBalancedReady && "animate-pulse")} />
-                                    <span>Auto Balanced</span>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
                                     onClick={exitCompareMode}
                                     className="h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] text-text-muted hover:text-red-400 grayscale hover:grayscale-0 transition-all font-bold uppercase tracking-tight border border-transparent hover:border-red-500/20"
                                 >
@@ -1448,7 +1409,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                                     variant="primary"
                                     size="sm"
                                     onClick={applyTestBuild}
-                                    className="col-span-2 h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] font-bold uppercase tracking-tight bg-accent-primary shadow-lg shadow-accent-primary/10 hover:scale-105 transition-transform"
+                                    className="h-10 flex flex-col items-center justify-center p-0 gap-1 text-[10px] font-bold uppercase tracking-tight bg-accent-primary shadow-lg shadow-accent-primary/10 hover:scale-105 transition-transform"
                                 >
                                     <ArrowRight className="w-4 h-4" />
                                     <span>Apply Test</span>
