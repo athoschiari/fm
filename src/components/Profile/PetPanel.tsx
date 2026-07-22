@@ -215,16 +215,17 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
     // Optimizer searches saved pets AND saved mounts, so enable when either pool has entries.
     const autoDisabled = (profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1;
 
+    // Only rendered for the default (non-compare) panel. Compare mode drives its
+    // own optimizer from the comparison strip (see StatsSummaryPanel).
     const handleAutoOptimize = (metric: 'dps' | 'power' | 'lifesteal' | 'balanced') => {
         setPreviousPets([...activePets]);
-        if (variant === 'default') setPreviousMount(profile.mount.active);
+        setPreviousMount(profile.mount.active);
 
         const best = optimizeLoadout(metric);
         if (!best) return;
 
         updatePets(best.pets);
-        // Mount is a single global slot with no per-variant override, so only apply in default.
-        if (variant === 'default') updateNestedProfile('mount', { active: best.mount });
+        updateNestedProfile('mount', { active: best.mount });
     };
 
     const handleRevert = () => {
@@ -341,6 +342,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                         {panelTitle}
                     </h2>
                     
+                    {variant === 'default' && (
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <Button
                             variant="outline"
@@ -398,6 +400,7 @@ export function PetPanel({ variant = 'default', title, comparePets }: PetPanelPr
                             </Button>
                         )}
                     </div>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-end">

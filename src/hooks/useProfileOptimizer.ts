@@ -51,9 +51,9 @@ export function useProfileOptimizer() {
         ascensionConfigsLibrary
     };
 
-    const optimizeLoadout = useCallback((metric: 'dps' | 'power' | 'lifesteal' | 'balanced'): { pets: PetSlot[]; mount: MountSlot | null } | null => {
+    const optimizeLoadout = useCallback((metric: 'dps' | 'power' | 'lifesteal' | 'balanced', base: UserProfile = profile): { pets: PetSlot[]; mount: MountSlot | null } | null => {
         // --- Pet candidate sets: every combination of up to MAX_ACTIVE_PETS from saved builds ---
-        const savedPets = profile.pets.savedBuilds || [];
+        const savedPets = base.pets.savedBuilds || [];
         const petSets: PetSlot[][] = [];
         const n = savedPets.length;
         const slotsToFill = Math.min(n, MAX_ACTIVE_PETS);
@@ -76,7 +76,7 @@ export function useProfileOptimizer() {
             }
         }
         // If there are no saved pets, keep the current active pets (don't force a change).
-        if (petSets.length === 0) petSets.push(profile.pets.active);
+        if (petSets.length === 0) petSets.push(base.pets.active);
 
         // --- Mount candidates: current active + saved builds, deduped ---
         const mountCandidates: (MountSlot | null)[] = [];
@@ -89,10 +89,10 @@ export function useProfileOptimizer() {
             seen.add(key);
             mountCandidates.push(m);
         };
-        addMount(profile.mount.active);
-        (profile.mount.savedBuilds || []).forEach(addMount);
+        addMount(base.mount.active);
+        (base.mount.savedBuilds || []).forEach(addMount);
         // If there are no mounts at all, keep the current mount (no change).
-        if (mountCandidates.length === 0) mountCandidates.push(profile.mount.active);
+        if (mountCandidates.length === 0) mountCandidates.push(base.mount.active);
 
         // Evaluate every combination once. "Balanced" needs two passes (it
         // normalises DPS and HPS by their maxima across the sweep), so keep the
@@ -102,9 +102,9 @@ export function useProfileOptimizer() {
         for (const petSet of petSets) {
             for (const mount of mountCandidates) {
                 const tempProfile: UserProfile = {
-                    ...profile,
-                    pets: { ...profile.pets, active: petSet },
-                    mount: { ...profile.mount, active: mount }
+                    ...base,
+                    pets: { ...base.pets, active: petSet },
+                    mount: { ...base.mount, active: mount }
                 };
                 const engine = new StatEngine(tempProfile, libs);
                 combos.push({ pets: petSet, mount, stats: engine.calculate() });
@@ -135,7 +135,7 @@ export function useProfileOptimizer() {
         };
 
         let bestPets: PetSlot[] = [];
-        let bestMount: MountSlot | null = profile.mount.active;
+        let bestMount: MountSlot | null = base.mount.active;
         let bestValue = -1;
 
         for (const c of combos) {

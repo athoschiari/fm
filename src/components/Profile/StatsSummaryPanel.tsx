@@ -4,7 +4,7 @@ import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
     ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download,
-    ArrowLeftRight, Info
+    ArrowLeftRight, Info, Sword, Scale, RotateCcw
 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
@@ -19,7 +19,8 @@ import { useProfile } from '../../context/ProfileContext';
 import { useGameData } from '../../hooks/useGameData';
 import { calculateStats, LibraryData, AggregatedStats } from '../../utils/statEngine';
 import { useTreeMode } from '../../context/TreeModeContext';
-import { UserProfile } from '../../types/Profile';
+import { UserProfile, PetSlot, MountSlot } from '../../types/Profile';
+import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
 import { DpsBreakdownModal } from './DpsBreakdownModal';
 import { LifestealBreakdownModal } from './LifestealBreakdownModal';
 import { StatSourcesModal, MultiplierBreakdown } from './StatSourcesModal';
@@ -434,6 +435,8 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         testSkills,
         originalUseSkinWindup,
         testUseSkinWindup,
+        updateTestPet,
+        updateTestMount,
         exitCompareMode,
         keepOriginal,
         applyTestBuild,
@@ -447,6 +450,52 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const fullStats = useGlobalStats(false);
     const techModifiers = useTreeModifiers() as Record<string, number>;
     const { profile, profiles, activeProfileId } = useProfile();
+
+    // --- Auto-optimize the Test build (drives the strip's AUTO buttons) --------
+    const { optimizeLoadout, isReady: optimizerReady } = useProfileOptimizer();
+    // undefined = nothing to revert; null = revert to "no mount equipped"
+    const [previousTestPets, setPreviousTestPets] = useState<PetSlot[] | null>(null);
+    const [previousTestMount, setPreviousTestMount] = useState<MountSlot | null | undefined>(undefined);
+
+    // Saved builds are global, so the optimizer has candidates whenever either pool is non-empty.
+    const autoOptimizeDisabled = !optimizerReady
+        || ((profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1);
+
+    const handleAutoOptimizeTest = (metric: 'dps' | 'power' | 'lifesteal' | 'balanced') => {
+        // Evaluate against the Test build's own items/mount/ascensions, keeping
+        // everything the Test side doesn't override (tech tree, passives, saved builds).
+        const testBase: UserProfile = {
+            ...profile,
+            items: testItems ?? profile.items,
+            mount: { ...profile.mount, active: testMount ?? profile.mount.active },
+            pets: { ...profile.pets, active: testPets ?? profile.pets.active },
+            skills: { ...profile.skills, equipped: testSkills ?? profile.skills.equipped },
+            misc: {
+                ...profile.misc,
+                forgeAscensionLevel: testForgeAscension ?? profile.misc.forgeAscensionLevel,
+                mountAscensionLevel: testMountAscension ?? profile.misc.mountAscensionLevel,
+                petAscensionLevel: testPetAscension ?? profile.misc.petAscensionLevel,
+                skillAscensionLevel: testSkillAscension ?? profile.misc.skillAscensionLevel,
+                useSkinWindup: testUseSkinWindup ?? profile.misc.useSkinWindup,
+            },
+        };
+
+        setPreviousTestPets(testPets ? [...testPets] : null);
+        setPreviousTestMount(testMount);
+
+        const best = optimizeLoadout(metric, testBase);
+        if (!best) return;
+
+        updateTestPet(best.pets);
+        updateTestMount(best.mount);
+    };
+
+    const handleRevertTest = () => {
+        if (previousTestPets) updateTestPet(previousTestPets);
+        if (previousTestMount !== undefined) updateTestMount(previousTestMount);
+        setPreviousTestPets(null);
+        setPreviousTestMount(undefined);
+    };
 
     const { treeMode, setTreeMode } = useTreeMode();
 
@@ -1215,6 +1264,67 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         <span className="hidden sm:inline">Apply Test Build</span>
                         <span className="inline sm:hidden tracking-tight">Apply Test</span>
                     </Button>
+                </div>
+                )}
+
+                {isComparing && !actualHideActions && (
+                <div className="flex items-center justify-center gap-1.5 flex-wrap w-full pt-2">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted/60 mr-0.5">Auto Test Build</span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
+                        onClick={() => handleAutoOptimizeTest('dps')}
+                        disabled={autoOptimizeDisabled}
+                        title="Set best 3 pets + mount for Max DPS on the Test build"
+                    >
+                        <Sword className="w-3 h-3" />
+                        AUTO DPS
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit"
+                        onClick={() => handleAutoOptimizeTest('power')}
+                        disabled={autoOptimizeDisabled}
+                        title="Set best 3 pets + mount for Max Power on the Test build"
+                    >
+                        <Zap className="w-3 h-3" />
+                        AUTO POWER
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-fit"
+                        onClick={() => handleAutoOptimizeTest('lifesteal')}
+                        disabled={autoOptimizeDisabled}
+                        title="Set best 3 pets + mount for Max Lifesteal/sec on the Test build"
+                    >
+                        <Heart className="w-3 h-3" />
+                        AUTO LIFESTEAL/SEC
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-fit"
+                        onClick={() => handleAutoOptimizeTest('balanced')}
+                        disabled={autoOptimizeDisabled}
+                        title="Set best 3 pets + mount for a balance of DPS and HPS on the Test build (same scoring as the Loadout Optimizer)"
+                    >
+                        <Scale className="w-3 h-3" />
+                        AUTO BALANCED
+                    </Button>
+                    {(previousTestPets || previousTestMount !== undefined) && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-[10px] font-bold text-text-muted hover:text-white gap-1 active:scale-95 transition-all w-fit"
+                            onClick={handleRevertTest}
+                        >
+                            <RotateCcw className="w-3 h-3" />
+                            REVERT
+                        </Button>
+                    )}
                 </div>
                 )}
 
