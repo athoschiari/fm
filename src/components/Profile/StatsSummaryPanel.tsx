@@ -21,6 +21,8 @@ import { calculateStats, LibraryData, AggregatedStats } from '../../utils/statEn
 import { useTreeMode } from '../../context/TreeModeContext';
 import { UserProfile, PetSlot, MountSlot } from '../../types/Profile';
 import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
+import { getAveragePerfection } from '../../utils/itemCalculations';
+import { PerfectionMeter } from '../UI/PerfectionMeter';
 import { DpsBreakdownModal } from './DpsBreakdownModal';
 import { LifestealBreakdownModal } from './LifestealBreakdownModal';
 import { StatSourcesModal, MultiplierBreakdown } from './StatSourcesModal';
@@ -518,6 +520,16 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const { data: skinsLibrary } = useGameData<any>('SkinsLibrary.json');
     const { data: setsLibrary } = useGameData<any>('SetsLibrary.json');
     const { data: ascensionConfigsLibrary } = useGameData<any>('AscensionConfigsLibrary.json');
+
+    // Average perfection across all gear (items + pets + mount) for each compare side.
+    const originalPerfection = useMemo(() => originalItems ? getAveragePerfection(
+        [...Object.values(originalItems), ...(originalPets || []), originalMount],
+        secondaryStatLibrary
+    ) : null, [originalItems, originalPets, originalMount, secondaryStatLibrary]);
+    const testPerfection = useMemo(() => testItems ? getAveragePerfection(
+        [...Object.values(testItems), ...(testPets || []), testMount],
+        secondaryStatLibrary
+    ) : null, [testItems, testPets, testMount, secondaryStatLibrary]);
 
     const treeModeLabels: Record<typeof treeMode, string> = {
         empty: 'Empty Tree',
@@ -1270,7 +1282,15 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                 )}
 
                 {isComparing && !actualHideActions && (
-                <div className="flex items-center justify-center gap-1.5 flex-wrap w-full pt-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap w-full pt-2">
+                    {/* Equipped build perfection (far left) */}
+                    <div className="flex flex-col gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-bg-input/30 min-w-[120px] shrink-0">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted/70 text-center">Equipped Perfection</span>
+                        <PerfectionMeter value={originalPerfection} className="gap-2" />
+                    </div>
+
+                    {/* Auto Test Build controls (center) */}
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
                     <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted/60 mr-0.5">Auto Test Build</span>
                     <button
                         onClick={() => setRespectSavedLevels(v => !v)}
@@ -1342,6 +1362,13 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                             REVERT
                         </Button>
                     )}
+                    </div>
+
+                    {/* Test build perfection (far right) */}
+                    <div className="flex flex-col gap-1 px-2.5 py-1.5 rounded-lg border border-accent-primary/30 bg-accent-primary/5 min-w-[120px] shrink-0">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-accent-primary/80 text-center">Test Perfection</span>
+                        <PerfectionMeter value={testPerfection} className="gap-2" />
+                    </div>
                 </div>
                 )}
 
