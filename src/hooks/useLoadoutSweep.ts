@@ -48,7 +48,13 @@ const mountKey = (m: MountSlot) => `${m.id}|${m.rarity}|${m.level}|${JSON.string
  * a full roster is tens of thousands of StatEngine runs. Results are cached, so
  * switching the ranking metric only re-sorts — it never re-sweeps.
  */
-export function useLoadoutSweep() {
+/**
+ * @param respectSavedLevels When true (default) each saved build is scored at its own
+ * stored level. When false, candidates are scored at the equipped slot's level (mounts
+ * at the equipped mount's level) so only secondary stats decide — equipping still uses
+ * the saved level.
+ */
+export function useLoadoutSweep(respectSavedLevels: boolean = true) {
     const { profile } = useProfile();
 
     const profileRef = useRef(profile);
@@ -177,12 +183,20 @@ export function useLoadoutSweep() {
 
     const buildTempProfile = useCallback((combo: LoadoutCombo): UserProfile => {
         const p = profileRef.current;
+        // Off mode: override candidate levels with the equipped slot's level for scoring.
+        const equippedPets = p.pets.active || [];
+        const petSet = respectSavedLevels
+            ? combo.petSet
+            : combo.petSet.map((pet, i) => equippedPets[i] ? { ...pet, level: equippedPets[i].level } : pet);
+        const mount = (respectSavedLevels || !combo.mount || !p.mount.active)
+            ? combo.mount
+            : { ...combo.mount, level: p.mount.active.level };
         return {
             ...p,
-            pets: { ...p.pets, active: combo.petSet },
-            mount: { ...p.mount, active: combo.mount }
+            pets: { ...p.pets, active: petSet },
+            mount: { ...p.mount, active: mount }
         };
-    }, []);
+    }, [respectSavedLevels]);
 
     // --- Time-sliced sweep --------------------------------------------------
     const [status, setStatus] = useState<SweepStatus>('idle');

@@ -51,7 +51,11 @@ export function useProfileOptimizer() {
         ascensionConfigsLibrary
     };
 
-    const optimizeLoadout = useCallback((metric: 'dps' | 'power' | 'lifesteal' | 'balanced', base: UserProfile = profile): { pets: PetSlot[]; mount: MountSlot | null } | null => {
+    // respectSavedLevels: when true (default), each saved build is scored at its own
+    // stored level — the original behavior. When false, candidates are scored at the
+    // equipped slot's level (mounts at the equipped mount's level) so only secondary
+    // stats decide. Either way the returned build keeps its saved level for equipping.
+    const optimizeLoadout = useCallback((metric: 'dps' | 'power' | 'lifesteal' | 'balanced', base: UserProfile = profile, respectSavedLevels: boolean = true): { pets: PetSlot[]; mount: MountSlot | null } | null => {
         // --- Pet candidate sets: every combination of up to MAX_ACTIVE_PETS from saved builds ---
         const savedPets = base.pets.savedBuilds || [];
         const petSets: PetSlot[][] = [];
@@ -99,12 +103,22 @@ export function useProfileOptimizer() {
         // full stats around rather than collapsing to a single scalar up front.
         type Combo = { pets: PetSlot[]; mount: MountSlot | null; stats: ReturnType<StatEngine['calculate']> };
         const combos: Combo[] = [];
+        const equippedPets = base.pets.active || [];
+        const equippedMount = base.mount.active;
         for (const petSet of petSets) {
             for (const mount of mountCandidates) {
+                // Score at equipped levels when respectSavedLevels is off; the original
+                // petSet/mount (with saved levels) are still what we push and return.
+                const scoredPets = respectSavedLevels
+                    ? petSet
+                    : petSet.map((p, i) => equippedPets[i] ? { ...p, level: equippedPets[i].level } : p);
+                const scoredMount = (respectSavedLevels || !mount || !equippedMount)
+                    ? mount
+                    : { ...mount, level: equippedMount.level };
                 const tempProfile: UserProfile = {
                     ...base,
-                    pets: { ...base.pets, active: petSet },
-                    mount: { ...base.mount, active: mount }
+                    pets: { ...base.pets, active: scoredPets },
+                    mount: { ...base.mount, active: scoredMount }
                 };
                 const engine = new StatEngine(tempProfile, libs);
                 combos.push({ pets: petSet, mount, stats: engine.calculate() });
