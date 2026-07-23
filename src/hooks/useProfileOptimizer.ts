@@ -136,7 +136,8 @@ export function useProfileOptimizer() {
         }
 
         const scoreOf = (stats: ReturnType<StatEngine['calculate']>): number => {
-            if (metric === 'dps') return stats.averageTotalDps;
+            // Real-time DPS, matching the Loadout Optimizer sweep (not the theoretical average).
+            if (metric === 'dps') return stats.realTotalDps;
             if (metric === 'power') return stats.power;
             if (metric === 'balanced') {
                 const dpsScore = maxDps > 0 ? stats.realTotalDps / maxDps : 0;
