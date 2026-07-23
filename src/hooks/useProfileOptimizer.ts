@@ -124,25 +124,17 @@ export function useProfileOptimizer() {
         }
         if (combos.length === 0) return null;
 
-        // Same balanced principle as the Loadout Optimizer: score each combo as
-        // 0.5·(DPS / maxDPS) + 0.5·(HPS / maxHPS) over the real-time metrics, so
-        // neither term dominates just because of its raw scale.
-        let maxDps = 0, maxHps = 0;
-        if (metric === 'balanced') {
-            for (const c of combos) {
-                if (c.stats.realTotalDps > maxDps) maxDps = c.stats.realTotalDps;
-                if (c.stats.realTotalHps > maxHps) maxHps = c.stats.realTotalHps;
-            }
-        }
-
         const scoreOf = (stats: ReturnType<StatEngine['calculate']>): number => {
             // Real-time DPS, matching the Loadout Optimizer sweep (not the theoretical average).
             if (metric === 'dps') return stats.realTotalDps;
             if (metric === 'power') return stats.power;
             if (metric === 'balanced') {
-                const dpsScore = maxDps > 0 ? stats.realTotalDps / maxDps : 0;
-                const hpsScore = maxHps > 0 ? stats.realTotalHps / maxHps : 0;
-                return 0.5 * dpsScore + 0.5 * hpsScore;
+                // Geometric mean (product) of real-time DPS and HPS. Unlike a weighted
+                // sum of the two, the product rewards being strong on BOTH axes and
+                // collapses toward zero if either is weak — that's what a balanced build
+                // actually is. Raw scale is fine: the product is scale-invariant for
+                // ranking, so no normalisation is needed. Matches the Substats Calculator.
+                return stats.realTotalDps * stats.realTotalHps;
             }
             return stats.realWeaponDps * stats.lifeSteal; // lifesteal/sec (real-time)
         };

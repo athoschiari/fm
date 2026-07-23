@@ -262,7 +262,7 @@ export function useLoadoutSweep(respectSavedLevels: boolean = true) {
         return { dps, lifesteal, heal };
     }, [results]);
 
-    /** Normalised 0..1 score for a result under the given metric. */
+    /** 0..1 score for a result under the given metric (relative to the sweep's best). */
     const scoreOf = useCallback((r: SweepResult, metric: SweepMetric): number => {
         const dpsScore = maxima.dps > 0 ? r.dps / maxima.dps : 0;
         const lsScore = maxima.lifesteal > 0 ? r.lifestealPerSec / maxima.lifesteal : 0;
@@ -272,7 +272,13 @@ export function useLoadoutSweep(respectSavedLevels: boolean = true) {
             case 'dps': return dpsScore;
             case 'lifesteal': return lsScore;
             case 'heal': return healScore;
-            case 'balanced': return 0.5 * dpsScore + 0.5 * healScore;
+            // Geometric mean of DPS and HPS, not a 0.5/0.5 average: the product rewards
+            // being strong on BOTH axes and collapses if either is weak, which is what a
+            // balanced build is. sqrt(dps/max · heal/max) ranks identically to the raw
+            // product dps·heal (the extra constants and sqrt are monotonic), and stays in
+            // 0..1 only so the "% of best" column can render it. Matches the Substats
+            // Calculator's dps·hps and useProfileOptimizer's balanced metric.
+            case 'balanced': return Math.sqrt(dpsScore * healScore);
         }
     }, [maxima]);
 
