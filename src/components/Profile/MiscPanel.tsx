@@ -212,8 +212,8 @@ export function MiscPanel() {
                     )}
                 </Card>
 
-                {/* Egg Slots + Average Perfection stacked in one grid column (half the panel width) */}
-                <div className="space-y-4">
+                {/* Egg Slots + Average Perfection (share one grid column, each half width) */}
+                <div className="grid grid-cols-2 gap-4 content-start">
                     {/* Egg Slots */}
                     <Card className="p-4 bg-bg-secondary/40 border-border/50">
                         <div className="flex items-center gap-3 mb-4">
