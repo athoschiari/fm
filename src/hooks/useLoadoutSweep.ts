@@ -50,9 +50,8 @@ const mountKey = (m: MountSlot) => `${m.id}|${m.rarity}|${m.level}|${JSON.string
  */
 /**
  * @param respectSavedLevels When true (default) each saved build is scored at its own
- * stored level. When false, candidates are scored at the equipped slot's level (mounts
- * at the equipped mount's level) so only secondary stats decide — equipping still uses
- * the saved level.
+ * stored level. When false, every candidate is scored at level 1 so only secondary
+ * stats decide — equipping still uses the saved level.
  */
 export function useLoadoutSweep(respectSavedLevels: boolean = true) {
     const { profile } = useProfile();
@@ -183,14 +182,13 @@ export function useLoadoutSweep(respectSavedLevels: boolean = true) {
 
     const buildTempProfile = useCallback((combo: LoadoutCombo): UserProfile => {
         const p = profileRef.current;
-        // Off mode: override candidate levels with the equipped slot's level for scoring.
-        const equippedPets = p.pets.active || [];
+        // Off mode: score every candidate at level 1 so only secondary stats decide.
         const petSet = respectSavedLevels
             ? combo.petSet
-            : combo.petSet.map((pet, i) => equippedPets[i] ? { ...pet, level: equippedPets[i].level } : pet);
-        const mount = (respectSavedLevels || !combo.mount || !p.mount.active)
+            : combo.petSet.map(pet => ({ ...pet, level: 1 }));
+        const mount = (respectSavedLevels || !combo.mount)
             ? combo.mount
-            : { ...combo.mount, level: p.mount.active.level };
+            : { ...combo.mount, level: 1 };
         return {
             ...p,
             pets: { ...p.pets, active: petSet },

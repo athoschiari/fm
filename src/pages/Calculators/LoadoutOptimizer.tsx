@@ -153,7 +153,7 @@ export default function LoadoutOptimizer() {
                         onClick={() => setRespectSavedLevels(v => !v)}
                         role="switch"
                         aria-checked={respectSavedLevels}
-                        title="On: score each saved build at its own level. Off: score every candidate at your equipped pets'/mount's level so only secondary stats decide. Equipping always keeps the saved level."
+                        title="On: score each saved build at its own level. Off: score every candidate at level 1 so only secondary stats decide. Equipping always keeps the saved level."
                         className={cn(
                             "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all",
                             respectSavedLevels
@@ -162,12 +162,12 @@ export default function LoadoutOptimizer() {
                         )}
                     >
                         <Layers className="w-4 h-4" />
-                        Level basis: {respectSavedLevels ? 'Saved' : 'Equipped'}
+                        Level basis: {respectSavedLevels ? 'Saved' : 'Level 1'}
                     </button>
                     <span className="text-xs text-text-muted">
                         {respectSavedLevels
                             ? "Using each saved build's own level."
-                            : 'Ignoring saved levels — comparing at your equipped levels.'}
+                            : 'Ignoring saved levels — comparing everything at level 1.'}
                     </span>
                 </div>
             </div>

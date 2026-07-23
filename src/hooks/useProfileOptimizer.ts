@@ -52,9 +52,9 @@ export function useProfileOptimizer() {
     };
 
     // respectSavedLevels: when true (default), each saved build is scored at its own
-    // stored level — the original behavior. When false, candidates are scored at the
-    // equipped slot's level (mounts at the equipped mount's level) so only secondary
-    // stats decide. Either way the returned build keeps its saved level for equipping.
+    // stored level — the original behavior. When false, every candidate is scored at
+    // level 1 so only secondary stats decide. Either way the returned build keeps its
+    // saved level for equipping.
     const optimizeLoadout = useCallback((metric: 'dps' | 'power' | 'lifesteal' | 'balanced', base: UserProfile = profile, respectSavedLevels: boolean = true): { pets: PetSlot[]; mount: MountSlot | null } | null => {
         // --- Pet candidate sets: every combination of up to MAX_ACTIVE_PETS from saved builds ---
         const savedPets = base.pets.savedBuilds || [];
@@ -103,18 +103,16 @@ export function useProfileOptimizer() {
         // full stats around rather than collapsing to a single scalar up front.
         type Combo = { pets: PetSlot[]; mount: MountSlot | null; stats: ReturnType<StatEngine['calculate']> };
         const combos: Combo[] = [];
-        const equippedPets = base.pets.active || [];
-        const equippedMount = base.mount.active;
         for (const petSet of petSets) {
             for (const mount of mountCandidates) {
-                // Score at equipped levels when respectSavedLevels is off; the original
+                // Score at level 1 when respectSavedLevels is off; the original
                 // petSet/mount (with saved levels) are still what we push and return.
                 const scoredPets = respectSavedLevels
                     ? petSet
-                    : petSet.map((p, i) => equippedPets[i] ? { ...p, level: equippedPets[i].level } : p);
-                const scoredMount = (respectSavedLevels || !mount || !equippedMount)
+                    : petSet.map(p => ({ ...p, level: 1 }));
+                const scoredMount = (respectSavedLevels || !mount)
                     ? mount
-                    : { ...mount, level: equippedMount.level };
+                    : { ...mount, level: 1 };
                 const tempProfile: UserProfile = {
                     ...base,
                     pets: { ...base.pets, active: scoredPets },

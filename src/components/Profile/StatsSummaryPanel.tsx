@@ -456,7 +456,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     // undefined = nothing to revert; null = revert to "no mount equipped"
     const [previousTestPets, setPreviousTestPets] = useState<PetSlot[] | null>(null);
     const [previousTestMount, setPreviousTestMount] = useState<MountSlot | null | undefined>(undefined);
-    // On: score saved builds at their own level. Off: score at the Test build's equipped levels.
+    // On: score saved builds at their own level. Off: score everything at level 1.
     const [respectSavedLevels, setRespectSavedLevels] = useState(true);
 
     // Saved builds are global, so the optimizer has candidates whenever either pool is non-empty.
@@ -1276,7 +1276,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         onClick={() => setRespectSavedLevels(v => !v)}
                         role="switch"
                         aria-checked={respectSavedLevels}
-                        title="On: score saved builds at their own level. Off: score them at the Test build's equipped pets'/mount's level, so only secondary stats decide. Equipping always keeps the saved level."
+                        title="On: score saved builds at their own level. Off: score everything at level 1, so only secondary stats decide. Equipping always keeps the saved level."
                         className={cn(
                             "h-7 px-2 text-[10px] font-bold rounded border gap-1 inline-flex items-center active:scale-95 transition-all w-fit",
                             respectSavedLevels
@@ -1285,7 +1285,7 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                         )}
                     >
                         <Layers className="w-3 h-3" />
-                        {respectSavedLevels ? 'SAVED LVL' : 'EQUIPPED LVL'}
+                        {respectSavedLevels ? 'SAVED LVL' : 'LVL 1'}
                     </button>
                     <Button
                         variant="outline"
