@@ -9,7 +9,8 @@ import { RefreshCw, Sliders, Hash, Zap, TrendingUp, Sparkles, Wand2 } from 'luci
 import { getStatName } from '../../utils/statNames';
 import { cn } from '../../lib/utils';
 import { UserProfile } from '../../types/Profile';
-import { calculateStats, LibraryData } from '../../utils/statEngine';
+import { LibraryData } from '../../utils/statEngine';
+import { optimizeSubstats as runSubstatOptimizer } from '../../utils/substatOptimizer';
 
 export default function SubstatsCalculator() {
     const { profile } = useProfile();
@@ -159,202 +160,15 @@ export default function SubstatsCalculator() {
 
         // Small timeout to allow UI to update with "Optimizing..." state
         setTimeout(() => {
-            const maxPossible = 12; // 8 items + 3 pets + 1 mount
-            let currentAllocs: Record<string, number> = {};
-            const statList = Object.keys(secondaryStatLibrary);
-            
-            // Pre-calculate the base profile to avoid deep cloning 10,000 times
-            const baseTestProfile = JSON.parse(JSON.stringify(profile));
-            if (!baseTestProfile.items.Weapon) {
-                baseTestProfile.items.Weapon = { age: 1, idx: 0, level: 1, rarity: "Legendary", secondaryStats: [] };
-            }
-            const slots: (keyof UserProfile['items'])[] = ['Helmet', 'Body', 'Gloves', 'Belt', 'Necklace', 'Ring', 'Shoe'];
-            slots.forEach(slot => { if (baseTestProfile.items[slot]) baseTestProfile.items[slot].secondaryStats = []; });
-            baseTestProfile.pets.active.forEach((pet: any) => { pet.secondaryStats = []; });
-            if (baseTestProfile.mount.active) baseTestProfile.mount.active.secondaryStats = [];
-
-            const getScore = (allocs: Record<string, number>) => {
-                // Create simulated stats
-                const simulatedStats = Object.entries(allocs)
-                    .filter(([_, count]) => count > 0)
-                    .map(([statId, count]) => ({ statId, value: count * (secondaryStatLibrary[statId]?.UpperRange || 0) * perfectionPercentage }));
-                
-                // Inject directly into the cached base profile (calculateStats does not mutate it)
-                baseTestProfile.items.Weapon.secondaryStats = simulatedStats;
-                
-                const stats = calculateStats(baseTestProfile, libs);
-                
-                // Calculate objective
-                const cappedCrit = Math.min(stats.criticalChance, 1);
-                const cappedDouble = Math.min(stats.doubleDamageChance, 1);
-                const critMult = 1 + cappedCrit * (stats.criticalDamage - 1);
-                const doubleMult = 1 + cappedDouble;
-                const aps = 1 / (stats.weaponAttackDuration / stats.attackSpeedMultiplier);
-                const weaponTheor = stats.totalDamage * aps * critMult * doubleMult;
-                const weaponReal = stats.realWeaponDps;
-                
-                const theorDps = weaponTheor + (includeSkills ? stats.skillDps + (stats.skillBuffDps || 0) : 0);
-                const realDps = weaponReal + (includeSkills ? stats.skillDps + (stats.skillBuffDps || 0) : 0);
-                
-                const blockChance = Math.min(stats.blockChance || 0, 0.95);
-                const theorHps = (stats.totalHealth * stats.healthRegen + weaponTheor * stats.lifeSteal + (includeSkills ? stats.skillHps : 0)) / (1 - blockChance);
-                const realHps = (stats.totalHealth * stats.healthRegen + weaponReal * stats.lifeSteal + (includeSkills ? stats.skillHps : 0)) / (1 - blockChance);
-
-                const dps = optimizeType === 'real' ? realDps : theorDps;
-                const hps = optimizeType === 'real' ? realHps : theorHps;
-
-                if (objective === 'dps') return dps;
-                if (objective === 'hps') return hps;
-                if (objective === 'power') {
-                    const powerDmgMulti = stats.powerDamageMultiplier || 8.0;
-                    return ((stats.totalDamage - 10) * powerDmgMulti + (stats.totalHealth - 80)) * 3;
-                }
-                if (objective === 'damage') return stats.totalDamage;
-                if (objective === 'health') return stats.totalHealth;
-                return dps * hps; // hybrid
-            };
-
-            // Lookahead Greedy Ascent algorithm
-            let remainingPoints = totalAvailablePool;
-            while (remainingPoints > 0) {
-                let bestStat = '';
-                let bestPointsToADD = 0;
-                let bestScoreIncreasePerPoint = -1;
-                const baseScore = getScore(currentAllocs);
-                
-                for (const stat of statList) {
-                    const currentPoints = currentAllocs[stat] || 0;
-                    const maxToAdd = Math.min(remainingPoints, maxPossible - currentPoints);
-                    if (maxToAdd <= 0) continue;
-                    
-                    // Lookahead: try adding 1, 2, ..., maxToAdd points to find breakpoint jumps
-                    let localBestIncreasePerPoint = -1;
-                    let localBestPoints = 0;
-                    
-                    for (let k = 1; k <= maxToAdd; k++) {
-                        const tempAllocs = { ...currentAllocs, [stat]: currentPoints + k };
-                        const score = getScore(tempAllocs);
-                        const increasePerPoint = (score - baseScore) / k;
-                        
-                        // We strictly want the highest return on investment per stat point
-                        if (increasePerPoint > localBestIncreasePerPoint) {
-                            localBestIncreasePerPoint = increasePerPoint;
-                            localBestPoints = k;
-                        }
-                    }
-                    
-                    if (localBestIncreasePerPoint > bestScoreIncreasePerPoint) {
-                        bestScoreIncreasePerPoint = localBestIncreasePerPoint;
-                        bestStat = stat;
-                        bestPointsToADD = localBestPoints;
-                    }
-                }
-                
-                if (bestStat && bestScoreIncreasePerPoint > 0) {
-                    currentAllocs[bestStat] = (currentAllocs[bestStat] || 0) + bestPointsToADD;
-                    remainingPoints -= bestPointsToADD;
-                } else {
-                    // Fallback: if no score improvement can be found at all, just add 1 point randomly
-                    const fallbackStat = statList.find(s => (currentAllocs[s] || 0) < maxPossible);
-                    if (fallbackStat) {
-                        currentAllocs[fallbackStat] = (currentAllocs[fallbackStat] || 0) + 1;
-                        remainingPoints -= 1;
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            // ---------------------------------------------------------
-            // RANDOM RESTART LOCAL SEARCH
-            // ---------------------------------------------------------
-            // The state space has complex submodular synergies (e.g. 1 point in Cooldown + 1 point in AttackSpeed).
-            // A pure greedy/hill-climb approach can get stuck if a synergy requires 2-3 points across DIFFERENT stats.
-            // By running multiple random starting points and hill-climbing them, we can find global maximums.
-            
-            const maxRestarts = 20;
-            let globalBestAllocs = { ...currentAllocs }; // start by trusting the greedy solution
-            let globalBestScore = getScore(globalBestAllocs);
-            
-            const startingPoints = [currentAllocs]; // 0th is greedy
-            
-            // Generate Random Starting Points
-            for (let i = 0; i < maxRestarts; i++) {
-                let randomAlloc: Record<string, number> = {};
-                let pointsLeft = totalAvailablePool;
-                let availableStats = [...statList];
-                
-                while (pointsLeft > 0 && availableStats.length > 0) {
-                    const idx = Math.floor(Math.random() * availableStats.length);
-                    const s = availableStats[idx];
-                    const maxCanAdd = Math.min(pointsLeft, maxPossible - (randomAlloc[s] || 0));
-                    
-                    if (maxCanAdd <= 0) {
-                        availableStats.splice(idx, 1);
-                        continue;
-                    }
-                    
-                    const add = Math.floor(Math.random() * maxCanAdd) + 1;
-                    randomAlloc[s] = (randomAlloc[s] || 0) + add;
-                    pointsLeft -= add;
-                    
-                    if (randomAlloc[s] === maxPossible) {
-                        availableStats.splice(idx, 1);
-                    }
-                }
-                startingPoints.push(randomAlloc);
-            }
-
-            // Run Multi-Point Hill Climbing for each starting point
-            for (const startAlloc of startingPoints) {
-                let localAllocs = { ...startAlloc };
-                let improved = true;
-                
-                while (improved) {
-                    improved = false;
-                    let bestSwapScore = getScore(localAllocs);
-                    let bestSwap: { remove: string, add: string, count: number } | null = null;
-                    
-                    const currentStats = Object.keys(localAllocs).filter(s => localAllocs[s] > 0);
-                    for (const removeStat of currentStats) {
-                        const removeAvailable = localAllocs[removeStat];
-                        
-                        for (const addStat of statList) {
-                            if (removeStat === addStat) continue;
-                            const addAvailable = maxPossible - (localAllocs[addStat] || 0);
-                            if (addAvailable <= 0) continue;
-                            
-                            // Try swapping 1 to 2 points to jump over local minimums caused by breakpoints
-                            const maxSwap = Math.min(removeAvailable, addAvailable, 2); 
-                            for (let k = 1; k <= maxSwap; k++) {
-                                const tempAllocs = { ...localAllocs };
-                                tempAllocs[removeStat] -= k;
-                                tempAllocs[addStat] = (tempAllocs[addStat] || 0) + k;
-                                
-                                const score = getScore(tempAllocs);
-                                if (score > bestSwapScore) {
-                                    bestSwapScore = score;
-                                    bestSwap = { remove: removeStat, add: addStat, count: k };
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (bestSwap) {
-                        localAllocs[bestSwap.remove] -= bestSwap.count;
-                        localAllocs[bestSwap.add] = (localAllocs[bestSwap.add] || 0) + bestSwap.count;
-                        improved = true;
-                    }
-                }
-                
-                const finalLocalScore = getScore(localAllocs);
-                if (finalLocalScore > globalBestScore) {
-                    globalBestScore = finalLocalScore;
-                    globalBestAllocs = { ...localAllocs };
-                }
-            }
-            
-            setStatAllocations(globalBestAllocs);
+            // Shared with the profile Comparison panel — see utils/substatOptimizer.ts.
+            const result = runSubstatOptimizer(profile, libs, secondaryStatLibrary, {
+                objective,
+                perfection: perfectionPercentage,
+                optimizeType,
+                includeSkills,
+                totalPool: totalAvailablePool,
+            });
+            if (result) setStatAllocations(result.allocations);
             setIsOptimizing(false);
         }, 50);
     }, [secondaryStatLibrary, itemSubstatsConfig, petSubstatsConfig, mountSubstatsConfig, profile, libs, optimizeType, includeSkills, itemBalancingConfig, itemBalancingLibrary, totalAvailablePool]);

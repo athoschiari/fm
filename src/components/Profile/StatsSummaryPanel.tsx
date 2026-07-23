@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
     Swords, Heart, Shield, Zap, Target, Gauge,
     TrendingUp, Clock, Coins, Star, Crosshair, TreeDeciduous, Sparkles,
     ArrowUp, ArrowDown, X, Check, ArrowRight, Hash, Minimize2, Layout, Download,
-    ArrowLeftRight, Info, Sword, Scale, RotateCcw, Layers
+    ArrowLeftRight, Info, Sword, Scale, RotateCcw, Layers, ChevronDown, Wand2, RefreshCw
 } from 'lucide-react';
 import { Button } from '../UI/Button';
 import { AnimatedClock } from '../UI/AnimatedClock';
@@ -21,12 +21,29 @@ import { calculateStats, LibraryData, AggregatedStats } from '../../utils/statEn
 import { useTreeMode } from '../../context/TreeModeContext';
 import { UserProfile, PetSlot, MountSlot } from '../../types/Profile';
 import { useProfileOptimizer } from '../../hooks/useProfileOptimizer';
+import { optimizeSubstats, SubstatObjective } from '../../utils/substatOptimizer';
 import { getAveragePerfection } from '../../utils/itemCalculations';
 import { PerfectionMeter } from '../UI/PerfectionMeter';
 import { DpsBreakdownModal } from './DpsBreakdownModal';
 import { LifestealBreakdownModal } from './LifestealBreakdownModal';
 import { StatSourcesModal, MultiplierBreakdown } from './StatSourcesModal';
 import { TOTAL_DAMAGE_KEY, TOTAL_HEALTH_KEY, TOTAL_POWER_KEY } from '../../types/statAttribution';
+
+/** The four objectives the AUTO buttons select; they double as the "Most Optimal Build" target. */
+type OptimalMetric = 'dps' | 'power' | 'lifesteal' | 'balanced';
+/** AUTO metric -> the Substats Calculator objective it maps to ("balanced" = the calculator's hybrid). */
+const OPTIMAL_OBJECTIVE: Record<OptimalMetric, SubstatObjective> = {
+    dps: 'dps',
+    power: 'power',
+    lifesteal: 'lifesteal',
+    balanced: 'hybrid',
+};
+const OPTIMAL_LABEL: Record<OptimalMetric, string> = {
+    dps: 'Max DPS',
+    power: 'Max Power',
+    lifesteal: 'Max LS/sec',
+    balanced: 'Balanced',
+};
 
 interface StatRowProps {
     icon: React.ReactNode;
@@ -461,11 +478,23 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     // On: score saved builds at their own level. Off: score everything at level 1.
     const [respectSavedLevels, setRespectSavedLevels] = useState(true);
 
+    // "Most Optimal Build" (metrics tab): the substat-perfected ceiling for the selected objective,
+    // computed for both sides at each build's own average perfection. Driven by the AUTO buttons.
+    const [optimalMetric, setOptimalMetric] = useState<OptimalMetric>('balanced');
+    const [showOptimal, setShowOptimal] = useState(false);
+    const [optimalResult, setOptimalResult] = useState<{ originalStats: AggregatedStats; testStats: AggregatedStats } | null>(null);
+    const [optimalLoading, setOptimalLoading] = useState(false);
+
     // Saved builds are global, so the optimizer has candidates whenever either pool is non-empty.
     const autoOptimizeDisabled = !optimizerReady
         || ((profile.pets.savedBuilds?.length || 0) < 1 && (profile.mount.savedBuilds?.length || 0) < 1);
 
     const handleAutoOptimizeTest = (metric: 'dps' | 'power' | 'lifesteal' | 'balanced') => {
+        // Selecting a metric also picks which "Most Optimal Build" ceiling the metrics tab shows.
+        setOptimalMetric(metric);
+        // No saved-build candidates (or optimizer not ready): selection only, skip the loadout sweep.
+        if (autoOptimizeDisabled) return;
+
         // Evaluate against the Test build's own items/mount/ascensions, keeping
         // everything the Test side doesn't override (tech tree, passives, saved builds).
         const testBase: UserProfile = {
@@ -692,6 +721,29 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
         return result;
     }, [profile, secondaryStatLibrary]);
 
+    // Most Optimal Build: run the Substats Calculator's optimizer for the selected objective on
+    // BOTH sides, each at its own average perfection, so the metrics tab can show the substat
+    // ceiling next to the live numbers. Only while expanded on the metrics tab; deferred behind a
+    // short timeout with a spinner because each side is a full random-restart search.
+    useEffect(() => {
+        if (!showOptimal || viewTab !== 'metrics' || !isComparing || !originalProfile || !testProfile
+            || !secondaryStatLibrary || !itemBalancingConfig || !itemBalancingLibrary) {
+            return;
+        }
+        let cancelled = false;
+        setOptimalLoading(true);
+        const t = setTimeout(() => {
+            const objective = OPTIMAL_OBJECTIVE[optimalMetric];
+            const orig = optimizeSubstats(originalProfile, libs, secondaryStatLibrary, { objective, perfection: originalPerfection ?? 100 });
+            const test = optimizeSubstats(testProfile, libs, secondaryStatLibrary, { objective, perfection: testPerfection ?? 100 });
+            if (cancelled) return;
+            setOptimalResult(orig && test ? { originalStats: orig.stats, testStats: test.stats } : null);
+            setOptimalLoading(false);
+        }, 50);
+        return () => { cancelled = true; clearTimeout(t); };
+    }, [showOptimal, viewTab, isComparing, originalProfile, testProfile, optimalMetric,
+        originalPerfection, testPerfection, libs, secondaryStatLibrary, itemBalancingConfig, itemBalancingLibrary]);
+
     if (!stats || !fullStats) {
         return (
             <Card className="h-full flex items-center justify-center">
@@ -763,6 +815,18 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
     const testHps = testHpsDetails.total;
     const originalRealHps = originalRealHpsDetails.total;
     const testRealHps = testRealHpsDetails.total;
+
+    // Most Optimal Build metrics, derived from each side's optimized stats the same way the live
+    // cards are. Null until the optimizer has produced a result.
+    const optimalOrigDps = optimalResult ? calculateDpsDetails(optimalResult.originalStats) : null;
+    const optimalTestDps = optimalResult ? calculateDpsDetails(optimalResult.testStats) : null;
+    const optimalOrigHpsTheo = (optimalResult && optimalOrigDps) ? calculateHpsDetails(optimalResult.originalStats, optimalOrigDps.weapon) : null;
+    const optimalOrigHpsReal = (optimalResult && optimalOrigDps) ? calculateHpsDetails(optimalResult.originalStats, optimalOrigDps.realWeapon) : null;
+    const optimalTestHpsTheo = (optimalResult && optimalTestDps) ? calculateHpsDetails(optimalResult.testStats, optimalTestDps.weapon) : null;
+    const optimalTestHpsReal = (optimalResult && optimalTestDps) ? calculateHpsDetails(optimalResult.testStats, optimalTestDps.realWeapon) : null;
+    const optimalReady = !!(optimalResult && optimalOrigDps && optimalTestDps && optimalOrigHpsTheo && optimalOrigHpsReal && optimalTestHpsTheo && optimalTestHpsReal);
+    /** An AUTO button is "selected" (highlighted) only while its objective drives the metrics tab. */
+    const optimalSelected = (m: OptimalMetric) => viewTab === 'metrics' && optimalMetric === m;
 
     const formatValue = (val: number) => isCompactStats
         ? formatCompactNumber(val)
@@ -1231,6 +1295,48 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     )}
                 </div>
 
+                {viewTab === 'metrics' && !actualHideActions && (
+                    <div className="w-full flex flex-col items-center gap-2 pt-2 border-t border-white/5">
+                        <button
+                            onClick={() => setShowOptimal(v => !v)}
+                            className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-orange-400/80 hover:text-orange-400 transition-colors"
+                            title="Show your gear's metrics if substats were optimally allocated for the selected objective, at each build's current perfection. Pick the objective with the AUTO buttons below."
+                        >
+                            <Wand2 className="w-3 h-3" />
+                            Most Optimal Build · {OPTIMAL_LABEL[optimalMetric]}
+                            <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", showOptimal && "rotate-180")} />
+                        </button>
+                        {showOptimal && (
+                            optimalLoading ? (
+                                <div className="flex items-center justify-center gap-2 py-3 text-text-muted text-[10px] font-bold uppercase tracking-widest">
+                                    <RefreshCw className="w-4 h-4 animate-spin text-orange-400" /> Optimizing…
+                                </div>
+                            ) : optimalReady ? (
+                                <div className="flex items-center justify-start sm:justify-center gap-6 overflow-x-auto no-scrollbar w-full pb-2 px-8">
+                                    {/* Optimal — Theoretical */}
+                                    <div className="shrink-0 flex items-center gap-4 p-1.5 bg-white/5 rounded-xl border border-white/5">
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-400" />} label="Theo DPS" originalValue={optimalOrigDps!.total} testValue={optimalTestDps!.total} color="text-orange-400" />
+                                        <div className="w-px h-6 bg-white/10" />
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-400" />} label="Theo HPS" originalValue={optimalOrigHpsTheo!.total} testValue={optimalTestHpsTheo!.total} color="text-emerald-400" />
+                                        <div className="w-px h-6 bg-white/10" />
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-400" />} label="Theo LS/s" originalValue={optimalOrigHpsTheo!.lifesteal} testValue={optimalTestHpsTheo!.lifesteal} color="text-purple-400" />
+                                    </div>
+                                    {/* Optimal — Real-Time */}
+                                    <div className="shrink-0 flex items-center gap-4 p-1.5 bg-orange-500/5 rounded-xl border border-orange-500/10 ring-1 ring-orange-500/10">
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Zap className="w-4 h-4 text-orange-500" />} label="Real DPS" originalValue={optimalOrigDps!.realTotal} testValue={optimalTestDps!.realTotal} color="text-orange-500" />
+                                        <div className="w-px h-6 bg-orange-500/10" />
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<TrendingUp className="w-4 h-4 text-emerald-500" />} label="Real HPS" originalValue={optimalOrigHpsReal!.total} testValue={optimalTestHpsReal!.total} color="text-emerald-500" />
+                                        <div className="w-px h-6 bg-orange-500/10" />
+                                        <ComparisonStatRow isCompact={isCompactStats} variant="minimal" icon={<Heart className="w-4 h-4 text-purple-500" />} label="Real LS/s" originalValue={optimalOrigHpsReal!.lifesteal} testValue={optimalTestHpsReal!.lifesteal} color="text-purple-500" />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-[10px] text-text-muted py-2">Optimal build unavailable.</div>
+                            )
+                        )}
+                    </div>
+                )}
+
 
                 {!actualHideActions && (
                 <div className="flex items-center justify-center gap-1.5 sm:gap-4 w-full pt-2 border-t border-white/5">
@@ -1310,10 +1416,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit"
+                        className={cn("h-7 px-2 text-[10px] font-bold border-red-500/20 hover:bg-red-500/10 hover:border-red-500/40 text-red-400 gap-1 active:scale-95 transition-all w-fit", optimalSelected('dps') && "ring-2 ring-red-500/60 bg-red-500/15 !text-red-300 scale-105")}
                         onClick={() => handleAutoOptimizeTest('dps')}
-                        disabled={autoOptimizeDisabled}
-                        title="Set best 3 pets + mount for Max DPS on the Test build"
+                        disabled={autoOptimizeDisabled && viewTab !== 'metrics'}
+                        title="Set best 3 pets + mount for Max DPS on the Test build, and show the Max DPS substat ceiling"
                     >
                         <Sword className="w-3 h-3" />
                         AUTO DPS
@@ -1321,10 +1427,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit"
+                        className={cn("h-7 px-2 text-[10px] font-bold border-amber-500/20 hover:bg-amber-500/10 hover:border-amber-500/40 text-amber-500 gap-1 active:scale-95 transition-all w-fit", optimalSelected('power') && "ring-2 ring-amber-500/60 bg-amber-500/15 !text-amber-300 scale-105")}
                         onClick={() => handleAutoOptimizeTest('power')}
-                        disabled={autoOptimizeDisabled}
-                        title="Set best 3 pets + mount for Max Power on the Test build"
+                        disabled={autoOptimizeDisabled && viewTab !== 'metrics'}
+                        title="Set best 3 pets + mount for Max Power on the Test build, and show the Max Power substat ceiling"
                     >
                         <Zap className="w-3 h-3" />
                         AUTO POWER
@@ -1332,10 +1438,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-fit"
+                        className={cn("h-7 px-2 text-[10px] font-bold border-purple-500/20 hover:bg-purple-500/10 hover:border-purple-500/40 text-purple-400 gap-1 active:scale-95 transition-all w-fit", optimalSelected('lifesteal') && "ring-2 ring-purple-500/60 bg-purple-500/15 !text-purple-300 scale-105")}
                         onClick={() => handleAutoOptimizeTest('lifesteal')}
-                        disabled={autoOptimizeDisabled}
-                        title="Set best 3 pets + mount for Max Lifesteal/sec on the Test build"
+                        disabled={autoOptimizeDisabled && viewTab !== 'metrics'}
+                        title="Set best 3 pets + mount for Max Lifesteal/sec on the Test build, and show the Max Lifesteal/sec substat ceiling"
                     >
                         <Heart className="w-3 h-3" />
                         AUTO LIFESTEAL/SEC
@@ -1343,10 +1449,10 @@ export function StatsSummaryPanel({ variant = 'sidebar', onClose, hideActions = 
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-fit"
+                        className={cn("h-7 px-2 text-[10px] font-bold border-violet-500/20 hover:bg-violet-500/10 hover:border-violet-500/40 text-violet-400 gap-1 active:scale-95 transition-all w-fit", optimalSelected('balanced') && "ring-2 ring-violet-500/60 bg-violet-500/15 !text-violet-300 scale-105")}
                         onClick={() => handleAutoOptimizeTest('balanced')}
-                        disabled={autoOptimizeDisabled}
-                        title="Set best 3 pets + mount for a balance of DPS and HPS on the Test build (same scoring as the Loadout Optimizer)"
+                        disabled={autoOptimizeDisabled && viewTab !== 'metrics'}
+                        title="Set best 3 pets + mount for a balance of DPS and HPS on the Test build (same scoring as the Loadout Optimizer), and show the Balanced substat ceiling"
                     >
                         <Scale className="w-3 h-3" />
                         AUTO BALANCED
